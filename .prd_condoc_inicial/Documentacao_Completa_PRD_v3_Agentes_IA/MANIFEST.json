@@ -1,0 +1,125 @@
+{
+  "version": "3.0",
+  "date": "2026-10-08",
+  "artifact_kind": "development_documentation",
+  "not_application_code": true,
+  "acceptance_criteria": 141,
+  "numbered_master_sections": 37,
+  "journey_diagrams": 5,
+  "phases_mvp": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "phase_optional": [
+    9
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1461,
+      "sha256": "85c601ceb0afc9cc612ec6b80c3e74aecc561eedf79f90373dc6d41525a42927"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 5228,
+      "sha256": "9b8edcbf24399da2baa50e09395b08456fa1a6c8f63a8102647648e6373f960d"
+    },
+    {
+      "path": "core/AGENTS.md",
+      "bytes": 1840,
+      "sha256": "9d7fdfbcc32ce7501e1185dae81d5fe1154e1f98dc0da4dfdeb55db18460a8c2"
+    },
+    {
+      "path": "docs/prd/PRD_Mestre_v3.md",
+      "bytes": 85501,
+      "sha256": "c20cad084c3c31a9041c643bd10e6841fb591912b65fce320edcdca72ef5f40a"
+    },
+    {
+      "path": "docs/api/Contrato_API_v3.md",
+      "bytes": 5943,
+      "sha256": "8fea47bd643c5750fd897b9f6a25ec03af4ebce594568cc315c126a5161b2832"
+    },
+    {
+      "path": "docs/ui/Telas_Portal_Fluxos_v3.md",
+      "bytes": 11952,
+      "sha256": "8c70cf9f68d6fc09b626b94a20674da2b62e76b02da9e38e82e562aa1fa2f4aa"
+    },
+    {
+      "path": "docs/deployment/Arquitetura_Instalacao_v3.md",
+      "bytes": 14816,
+      "sha256": "f9d0b0bfc4b0b0efac1df38d1f57185a48a55d73fa8fba37db1022f0e8ae1475"
+    },
+    {
+      "path": "docs/phases/Plano_Fases_v3.md",
+      "bytes": 5051,
+      "sha256": "1e8e9195cb1e49aa06e7623b07b0cc40bf5409275281b817c80213ee3b379a4c"
+    },
+    {
+      "path": "docs/security/Criterios_Aceite_v3.md",
+      "bytes": 9066,
+      "sha256": "effe514fa5baa3d76381083edfed038db1c573904efab8f4cca0c6e73a790b7d"
+    },
+    {
+      "path": "docs/phases/Fase_00_Prompt.md",
+      "bytes": 2276,
+      "sha256": "f166da7ce0563a3720c5d44ae7812580aad4e93c8bc4f979f55a8466346fbd73"
+    },
+    {
+      "path": "docs/phases/Fase_01_Prompt.md",
+      "bytes": 2285,
+      "sha256": "f399f4d91d7348e08a29bbeca6ffccee875ee5b9186f836949d8ebb8dd66c4ad"
+    },
+    {
+      "path": "docs/phases/Fase_02_Prompt.md",
+      "bytes": 2280,
+      "sha256": "f22f573ec5179d8679d3d4b3c4c42ee5b6dfcf58f84361e4485197f3c483ae04"
+    },
+    {
+      "path": "docs/phases/Fase_03_Prompt.md",
+      "bytes": 2212,
+      "sha256": "f55c6381d2ea44b0a3e29cf1b8a67094873e5e602d2ee03be99843d579bf6aa0"
+    },
+    {
+      "path": "docs/phases/Fase_04_Prompt.md",
+      "bytes": 2200,
+      "sha256": "7514a376cf3c75a936bbac56cba7dbcafc9af0978638999f561083908e30b599"
+    },
+    {
+      "path": "docs/phases/Fase_05_Prompt.md",
+      "bytes": 2270,
+      "sha256": "3fcccff3ef6a3c5ac45d83dbde5a7e9d09e55fb17deb4666030fe45575d16199"
+    },
+    {
+      "path": "docs/phases/Fase_06_Prompt.md",
+      "bytes": 2264,
+      "sha256": "556abf56ecf890d0740bcf27fe9dd55ede0b9b86fd03dffed6fa8c43388dd972"
+    },
+    {
+      "path": "docs/phases/Fase_07_Prompt.md",
+      "bytes": 2216,
+      "sha256": "0ada15e7ec0b378c9586fed18d6557f98a4e28e3b7ad68d1113fce852a04b3d1"
+    },
+    {
+      "path": "docs/phases/Fase_08_Prompt.md",
+      "bytes": 2226,
+      "sha256": "bf174a025600f54a4dd3c316b92ff0381d21d60e1b328b5ca19068a049db4e8c"
+    },
+    {
+      "path": "docs/phases/Fase_09_Prompt.md",
+      "bytes": 2222,
+      "sha256": "b98d75f15eabcf53a510b8c89f484e96a3a706d0836809f599d549b4448f8bfd"
+    },
+    {
+      "path": "docs/security/Matriz_Rastreabilidade_v3.csv",
+      "bytes": 9276,
+      "sha256": "276bb294e51572c1bfa36bb4a7b4d71dccde226a4c5be6a908e8da1da0fd55d2"
+    }
+  ]
+}

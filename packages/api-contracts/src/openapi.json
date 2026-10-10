@@ -1,0 +1,164 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CONDC Core API",
+    "version": "1.0.0",
+    "description": "API REST do sistema CONDC — Gestão de Documentos Normativos Condominiais.\n\nAVISO DE ESCOPO: Esta API não provê métodos para votação, apuração eleitoral ou cálculo de quórum deliberativo."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "Ambiente Local de Desenvolvimento"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check do Core",
+        "responses": {
+          "200": {
+            "description": "Serviço operacional",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "database": { "type": "string", "example": "connected" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/session": {
+      "get": {
+        "summary": "Verifica sessão ativa (BFF)",
+        "responses": {
+          "200": {
+            "description": "Sessão válida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          }
+        }
+      }
+    },
+    "/condominiums": {
+      "get": {
+        "summary": "Lista condomínios associados ao usuário autenticado",
+        "responses": {
+          "200": {
+            "description": "Lista de condomínios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Condominium" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/campaigns/{campaign_id}/suggestions": {
+      "post": {
+        "summary": "Submete sugestão privada em campanha de consulta",
+        "parameters": [
+          { "name": "condominium_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "campaign_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["provision_id", "suggested_text"],
+                "properties": {
+                  "provision_id": { "type": "string", "format": "uuid" },
+                  "suggested_text": { "type": "string" },
+                  "justification": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sugestão protocolada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionProtocol"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/campaigns/{campaign_id}/agreements": {
+      "put": {
+        "summary": "Registra manifestação consultiva ('Concordo') em versão de texto",
+        "responses": {
+          "200": {
+            "description": "Concordância registrada com sucesso"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Retira manifestação consultiva de versão de texto",
+        "responses": {
+          "204": {
+            "description": "Concordância retirada com sucesso"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SessionInfo": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string", "format": "uuid" },
+          "full_name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "active_roles": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "Condominium": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "cnpj": { "type": "string" }
+        }
+      },
+      "SuggestionProtocol": {
+        "type": "object",
+        "properties": {
+          "public_id": { "type": "string", "example": "SUG-2026-0042" },
+          "protocol_number": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "message": { "type": "string", "example": "Sugestão recebida de forma privada e enviada para análise editorial." }
+        }
+      }
+    }
+  }
+}
