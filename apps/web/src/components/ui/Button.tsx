@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'destructive' | 'ghost' | 'link';
+  variant?: 'primary' | 'secondary' | 'outline' | 'outline-white' | 'white' | 'destructive' | 'ghost' | 'link';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
 }
@@ -23,6 +23,8 @@ export const Button: React.FC<ButtonProps> = ({
     primary: 'bg-brand-600 text-white hover:bg-brand-700 shadow-sm focus-visible:ring-brand-500',
     secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 focus-visible:ring-slate-400',
     outline: 'border border-slate-300 text-slate-700 hover:bg-slate-50 focus-visible:ring-brand-500 bg-white shadow-2xs',
+    'outline-white': 'border border-white/50 text-white hover:bg-white/15 hover:border-white bg-transparent focus-visible:ring-white',
+    white: 'bg-white text-slate-900 hover:bg-slate-100 shadow-sm focus-visible:ring-white',
     destructive: 'bg-rose-600 text-white hover:bg-rose-700 shadow-sm focus-visible:ring-rose-500',
     ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-400',
     link: 'text-brand-600 hover:underline p-0 h-auto focus-visible:ring-0',

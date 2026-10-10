@@ -26,27 +26,27 @@ export const ResidentDashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Banner de Boas-Vindas */}
-      <div className="bg-gradient-to-r from-brand-700 to-indigo-800 text-white rounded-2xl p-6 sm:p-8 shadow-md">
-        <div className="max-w-3xl space-y-3">
-          <Badge variant="outline" className="text-white border-white/40 text-[11px] uppercase tracking-wider">
+      <div className="bg-gradient-to-br from-brand-700 via-brand-800 to-indigo-900 text-white rounded-2xl p-6 sm:p-8 shadow-lg shadow-brand-950/20 relative overflow-hidden border border-brand-600/30">
+        <div className="max-w-3xl space-y-3.5 relative z-10">
+          <Badge variant="outline" className="text-white border-white/30 bg-white/10 text-[11px] uppercase tracking-wider backdrop-blur-sm">
             Consulta Pública Ativa
           </Badge>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
             Participe da Modernização das Normas do Seu Condomínio
           </h1>
-          <p className="text-xs sm:text-sm text-brand-100 leading-relaxed">
+          <p className="text-xs sm:text-sm text-brand-100 leading-relaxed max-w-2xl">
             Leia a minuta em discussão, envie sugestões privadas de aprimoramento e apoie propostas de interesse coletivo.
           </p>
           <div className="pt-2 flex flex-wrap gap-3">
             <Link to="/portal/documento">
-              <Button className="bg-white text-brand-900 hover:bg-brand-50 border-0 shadow-sm">
-                <BookOpen className="w-4 h-4 mr-1.5 text-brand-700" />
+              <Button variant="white" className="font-semibold text-brand-950 hover:bg-slate-100 shadow-md">
+                <BookOpen className="w-4 h-4 mr-2 text-brand-700" />
                 <span>Ler Minuta em Consulta</span>
               </Button>
             </Link>
             <Link to="/portal/sugerir">
-              <Button variant="outline" className="text-white border-white/30 hover:bg-white/10">
-                <Send className="w-4 h-4 mr-1.5" />
+              <Button variant="outline-white" className="font-semibold">
+                <Send className="w-4 h-4 mr-2 text-white" />
                 <span>Enviar Sugestão</span>
               </Button>
             </Link>
@@ -59,61 +59,73 @@ export const ResidentDashboardPage: React.FC = () => {
 
       {/* Cards de Atalhos e Recursos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <Card className="hover:border-slate-300 transition-colors">
+        <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <CardHeader>
-            <div className="p-2.5 w-fit rounded-xl bg-blue-50 text-blue-700 mb-2">
+            <div className="p-2.5 w-fit rounded-xl bg-blue-100 text-blue-800 border border-blue-200/60 mb-2">
               <BookOpen className="w-5 h-5" />
             </div>
-            <CardTitle className="text-base">Documento Normativo</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base text-slate-900">Documento Normativo</CardTitle>
+            <CardDescription className="text-xs text-slate-600 leading-relaxed">
               Acesse os artigos congelados na versão oficial de consulta pública (snapshot imutável).
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <Link to="/portal/documento">
-              <Button variant="ghost" size="sm" className="w-full justify-between text-brand-600">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between text-slate-800 font-semibold group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-300 transition-colors"
+              >
                 <span>Explorar Artigos</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-slate-300 transition-colors">
+        <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <CardHeader>
-            <div className="p-2.5 w-fit rounded-xl bg-indigo-50 text-indigo-700 mb-2">
+            <div className="p-2.5 w-fit rounded-xl bg-indigo-100 text-indigo-800 border border-indigo-200/60 mb-2">
               <MessageSquare className="w-5 h-5" />
             </div>
-            <CardTitle className="text-base">Mural de Sugestões</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base text-slate-900">Mural de Sugestões</CardTitle>
+            <CardDescription className="text-xs text-slate-600 leading-relaxed">
               Veja as contribuições autorizadas pela gestão, 100% anônimas e livres de identificação pessoal.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <Link to="/portal/mural">
-              <Button variant="ghost" size="sm" className="w-full justify-between text-brand-600">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between text-slate-800 font-semibold group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-300 transition-colors"
+              >
                 <span>Ver Propostas Públicas</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-slate-300 transition-colors">
+        <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <CardHeader>
-            <div className="p-2.5 w-fit rounded-xl bg-emerald-50 text-emerald-700 mb-2">
+            <div className="p-2.5 w-fit rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200/60 mb-2">
               <BookmarkCheck className="w-5 h-5" />
             </div>
-            <CardTitle className="text-base">Minhas Concordâncias</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base text-slate-900">Minhas Concordâncias</CardTitle>
+            <CardDescription className="text-xs text-slate-600 leading-relaxed">
               Acompanhe as propostas com as quais você manifestou apoio consultivo ou retire-as quando desejar.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <Link to="/portal/minhas-concordancias">
-              <Button variant="ghost" size="sm" className="w-full justify-between text-brand-600">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between text-slate-800 font-semibold group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-300 transition-colors"
+              >
                 <span>Minhas Manifestações</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </Link>
           </CardContent>
