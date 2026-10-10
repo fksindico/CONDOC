@@ -17,10 +17,10 @@ CA-15,Confirmar e-mail não valida vínculo declarado,core/application/identity/
 CA-16,Mudança de unidade preserva referência das interações anteriores,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_16_mudanca_de_unidade_preserva_historico,14 passed,aprovado
 CA-17,Original documental preservado com conferência humana,core/application/documents/services.py:TranscriptionService.confirm_transcription,core/tests/test_phase3_documents_provisions.py::test_ca_17_original_documental_preservado_com_conferencia_humana,11 passed,aprovado
 CA-18,Corrigir transcrição gera versão e não simula alteração normativa,core/application/documents/services.py:TranscriptionService.correct_transcription,core/tests/test_phase3_documents_provisions.py::test_ca_18_corrigir_transcricao_gera_versao_sem_simular_alteracao_normativa,11 passed,aprovado
-CA-19,Dispositivo incluído não inventa origem,,,,nao_executado
-CA-20,Excluído sai do limpo e permanece em histórico e DePara,,,,nao_executado
-CA-21,Desmembrar/consolidar preserva relação muitos-para-muitos,,,,nao_executado
-CA-22,Renumerar preserva referência e comentários,,,,nao_executado
+CA-19,Dispositivo incluído não inventa origem,core/domain/comparison/invariants.py:assert_new_provision_has_no_fictitious_origin,core/tests/test_phase4_comparison_export.py::test_ca_19_dispositivo_incluido_nao_inventa_origem,7 passed,aprovado
+CA-20,Excluído sai do limpo e permanece em histórico e DePara,core/domain/comparison/invariants.py:assert_excluded_provision_not_in_clean_document,core/tests/test_phase4_comparison_export.py::test_ca_20_dispositivo_excluido_sai_do_limpo_e_permanece_em_historico_e_depara,7 passed,aprovado
+CA-21,Desmembrar/consolidar preserva relação muitos-para-muitos,core/domain/comparison/invariants.py:validate_origin_mapping_relationship,core/tests/test_phase4_comparison_export.py::test_ca_21_desmembrar_e_consolidar_preservam_relacao_muitos_para_muitos,7 passed,aprovado
+CA-22,Renumerar preserva referência e comentários,core/application/comparison/services.py:RenumberingService.apply_renumbering,core/tests/test_phase4_comparison_export.py::test_ca_22_renumerar_preserva_referencias_comentarios_e_uuids,7 passed,aprovado
 CA-23,Edição concorrente gera conflito sem sobrescrita,core/domain/documents/invariants.py:assert_optimistic_concurrency,core/tests/test_phase3_documents_provisions.py::test_ca_23_edicao_concorrente_gera_conflito_sem_sobrescrita,11 passed,aprovado
 CA-24,Nota interna ausente em API e export público,core/domain/documents/invariants.py:sanitize_public_provision_dto,core/tests/test_phase3_documents_provisions.py::test_ca_24_nota_interna_ausente_em_api_publica_e_restrita_a_gestao,11 passed,aprovado
 CA-25,Sugestão privada recebe protocolo e versão consultada,,,,nao_executado
@@ -40,7 +40,7 @@ CA-38,Contagem oculta ausente no payload,,,,nao_executado
 CA-39,Estatística explicita texto versão corte denominador e ressalva,,,,nao_executado
 CA-40,Incorporação liga revisão e contribuição atomicamente,,,,nao_executado
 CA-41,Snapshot imutável e reproduzível,core/application/documents/services.py:SnapshotService.create_snapshot,core/tests/test_phase3_documents_provisions.py::test_ca_41_snapshot_imutavel_e_reproduzivel,11 passed,aprovado
-CA-42,Documento limpo sem identidade notas ou referência antiga indevida,,,,nao_executado
+CA-42,Documento limpo sem identidade notas ou referência antiga indevida,core/domain/comparison/invariants.py:sanitize_clean_export_payload,core/tests/test_phase4_comparison_export.py::test_ca_42_documento_limpo_sem_identidade_notas_ou_referencia_antiga,7 passed,aprovado
 CA-43,Distribuição restrita e envio real confirmado,core/infrastructure/models/import_invitations.py:DeliveryAttempt,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
 CA-44,Banco e objetos restaurados consistentemente,,,,nao_executado
 CA-45,Nenhuma votação apuração ou cálculo de quórum,core/domain/identity/invariants.py:assert_no_electoral_intent,core/tests/test_phase1_identity.py::test_ca_45_proibicao_terminante_de_recursos_eleitorais,14 passed,aprovado

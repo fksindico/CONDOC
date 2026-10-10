@@ -23,6 +23,8 @@ from infrastructure.models import (
     InternalNote,
     DocumentSnapshot,
     SnapshotItem,
+    OriginMapping,
+    CrossReference,
 )
 from domain.documents.exceptions import (
     CircularReferenceError,
@@ -202,6 +204,7 @@ class ProvisionService:
         parent_provision_id: Optional[Any] = None,
         position: int = 0,
         theme: Optional[str] = None,
+        change_type: str = 'mantido',
         author_account_id: Optional[Any] = None
     ) -> Provision:
         """Cria dispositivo com UUID permanente e primeira revisão (v1)."""
@@ -229,7 +232,7 @@ class ProvisionService:
             label=label.strip(),
             text=text.strip(),
             theme=theme.strip() if theme else None,
-            change_type='incluido',
+            change_type=change_type,
             status='draft',
             author_account_id=author_account_id,
             etag=etag
@@ -303,6 +306,29 @@ class ProvisionService:
             author_account_id=author_account_id,
             etag=new_etag
         )
+
+        # Propaga mapeamentos de origem (CA-19 / CA-21) caso não seja dispositivo novo incluído
+        if change_type != 'incluido':
+            for m in OriginMapping.objects.filter(revision=latest_rev):
+                OriginMapping.objects.create(
+                    condominium_id=latest_rev.condominium_id,
+                    revision=new_rev,
+                    source_provision=m.source_provision,
+                    relation_type=m.relation_type,
+                    excerpt=m.excerpt,
+                    reason=m.reason
+                )
+
+        # Propaga referências cruzadas que partem deste dispositivo (CA-22)
+        for xr in CrossReference.objects.filter(revision=latest_rev):
+            CrossReference.objects.create(
+                condominium_id=latest_rev.condominium_id,
+                revision=new_rev,
+                target_provision=xr.target_provision,
+                label_template=xr.label_template,
+                status=xr.status
+            )
+
         return new_rev
 
     @staticmethod

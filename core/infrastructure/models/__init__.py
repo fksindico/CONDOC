@@ -31,6 +31,8 @@ from .documents import (
     InternalNote,
     DocumentSnapshot,
     SnapshotItem,
+    OriginMapping,
+    CrossReference,
 )
 
 __all__ = [
@@ -62,4 +64,6 @@ __all__ = [
     "InternalNote",
     "DocumentSnapshot",
     "SnapshotItem",
+    "OriginMapping",
+    "CrossReference",
 ]

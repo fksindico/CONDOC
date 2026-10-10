@@ -26,6 +26,8 @@ from infrastructure.models import (
     InternalNote,
     DocumentSnapshot,
     SnapshotItem,
+    OriginMapping,
+    CrossReference,
 )
 
 # ============================================================================
@@ -260,6 +262,10 @@ class ProvisionCreateSerializer(serializers.Serializer):
     parent_provision_id = serializers.UUIDField(required=False, allow_null=True)
     position = serializers.IntegerField(default=0)
     theme = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    change_type = serializers.ChoiceField(choices=[
+        'mantido', 'alterado', 'incluido', 'excluido',
+        'movido', 'renumerado', 'desmembrado', 'consolidado', 'reestruturado'
+    ], default='mantido')
 
 
 class ProvisionUpdateSerializer(serializers.Serializer):
@@ -290,4 +296,51 @@ class DocumentSnapshotCreateSerializer(serializers.Serializer):
     purpose = serializers.ChoiceField(choices=[
         'consulta_publica', 'marco_revisao', 'versao_final'
     ], default='consulta_publica')
+
+
+# ============================================================================
+# FASE 4: Comparação, Mapeamento de Origens, Renumeração e Exportação
+# ============================================================================
+
+class OriginMappingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OriginMapping
+        fields = [
+            'id', 'condominium_id', 'revision_id', 'source_provision_id',
+            'relation_type', 'excerpt', 'reason', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class OriginMappingCreateSerializer(serializers.Serializer):
+    source_provision_id = serializers.UUIDField(required=True)
+    relation_type = serializers.ChoiceField(
+        choices=['mantido', 'alterado', 'desmembrado', 'consolidado'],
+        default='mantido'
+    )
+    excerpt = serializers.CharField(required=False, allow_blank=True)
+    reason = serializers.CharField(required=False, allow_blank=True)
+
+
+class CrossReferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CrossReference
+        fields = [
+            'id', 'condominium_id', 'revision_id', 'target_provision_id',
+            'label_template', 'status', 'created_at'
+        ]
+        read_only_fields = ['id', 'status', 'created_at']
+
+
+class CrossReferenceCreateSerializer(serializers.Serializer):
+    target_provision_id = serializers.UUIDField(required=True)
+    label_template = serializers.CharField(max_length=100, default='art. {target_label}')
+
+
+class RenumberingApplySerializer(serializers.Serializer):
+    strategy = serializers.ChoiceField(
+        choices=['preservar_original', 'renumeracao_automatica'],
+        default='renumeracao_automatica'
+    )
+
 

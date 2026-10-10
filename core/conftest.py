@@ -380,6 +380,27 @@ CREATE TABLE IF NOT EXISTS app.snapshot_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (snapshot_id, provision_id)
 );
+
+CREATE TABLE IF NOT EXISTS app.origin_mappings (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    revision_id TEXT NOT NULL REFERENCES provision_revisions(id) ON DELETE CASCADE,
+    source_provision_id TEXT NOT NULL REFERENCES source_provisions(id) ON DELETE CASCADE,
+    relation_type TEXT NOT NULL DEFAULT 'mantido',
+    excerpt TEXT,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.cross_references (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    revision_id TEXT NOT NULL REFERENCES provision_revisions(id) ON DELETE CASCADE,
+    target_provision_id TEXT NOT NULL REFERENCES provisions(id) ON DELETE CASCADE,
+    label_template TEXT NOT NULL DEFAULT 'art. {target_label}',
+    status TEXT NOT NULL DEFAULT 'valido',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 @pytest.fixture(autouse=True)

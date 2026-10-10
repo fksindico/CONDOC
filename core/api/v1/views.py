@@ -29,11 +29,14 @@ from infrastructure.models import (
     Document,
     SourceFile,
     SourceTranscription,
+    SourceProvision,
     Provision,
     ProvisionRevision,
     InternalNote,
     DocumentSnapshot,
     SnapshotItem,
+    OriginMapping,
+    CrossReference,
 )
 from application.identity.services import (
     CondominiumService,
@@ -52,6 +55,13 @@ from application.documents.services import (
     ProvisionService,
     InternalNoteService,
     SnapshotService,
+)
+from application.comparison.services import (
+    OriginMappingService,
+    ComparisonService,
+    CrossReferenceService,
+    RenumberingService,
+    ExportService,
 )
 from application.common.idempotency import IdempotencyService
 from domain.imports.exceptions import (
@@ -73,6 +83,14 @@ from domain.documents.exceptions import (
     ConcurrencyConflictError,
     SnapshotImmutableError,
     PrivateNoteAccessForbiddenError,
+)
+from domain.comparison.exceptions import (
+    FictitiousOriginError,
+    ExcludedProvisionInCleanExportError,
+    InvalidOriginMappingError,
+    BrokenCrossReferenceError,
+    RenumberingError,
+    CleanExportIntegrityError,
 )
 from .serializers import (
     CondominiumSerializer,
@@ -100,6 +118,11 @@ from .serializers import (
     ProvisionUpdateSerializer,
     InternalNoteSerializer,
     DocumentSnapshotCreateSerializer,
+    OriginMappingSerializer,
+    OriginMappingCreateSerializer,
+    CrossReferenceSerializer,
+    CrossReferenceCreateSerializer,
+    RenumberingApplySerializer,
 )
 
 # ============================================================================
@@ -802,6 +825,7 @@ class ProvisionListCreateView(APIView):
             parent_provision_id=data.get('parent_provision_id'),
             position=data.get('position', 0),
             theme=data.get('theme'),
+            change_type=data.get('change_type', 'mantido'),
             author_account_id=actor_id
         )
 
@@ -996,4 +1020,206 @@ class DocumentSnapshotDetailView(APIView):
             return Response(tree, status=status.HTTP_200_OK)
         except DocumentSnapshot.DoesNotExist:
             return Response({"error": "Snapshot não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============================================================================
+# FASE 4: COMPARAÇÃO, MAPEAMENTO DE ORIGENS, RENUMERAÇÃO E EXPORTAÇÃO
+# ============================================================================
+
+class ProvisionOriginMappingListCreateView(APIView):
+    """
+    Mapeamento explícito de origens N:M (CA-21).
+    CA-19: Dispositivo incluído (novo) não pode inventar origem fictícia.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, provision_id):
+        latest_rev = ProvisionService.get_latest_revision(provision_id)
+        if not latest_rev:
+            return Response({"error": "Revisão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        mappings = OriginMappingService.list_mappings_for_revision(
+            condominium_id=condominium_id,
+            revision_id=latest_rev.id
+        )
+        return Response(OriginMappingSerializer(mappings, many=True).data)
+
+    def post(self, request, condominium_id, provision_id):
+        serializer = OriginMappingCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        latest_rev = ProvisionService.get_latest_revision(provision_id)
+        if not latest_rev:
+            return Response({"error": "Revisão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        data = serializer.validated_data
+        try:
+            mapping = OriginMappingService.create_mapping(
+                condominium_id=condominium_id,
+                revision_id=latest_rev.id,
+                source_provision_id=data['source_provision_id'],
+                relation_type=data.get('relation_type', 'mantido'),
+                excerpt=data.get('excerpt'),
+                reason=data.get('reason')
+            )
+            return Response(OriginMappingSerializer(mapping).data, status=status.HTTP_201_CREATED)
+        except FictitiousOriginError as e:
+            # CA-19: Dispositivo incluído não inventa origem
+            return Response({"error": str(e), "code": "FICTITIOUS_ORIGIN_PROHIBITED"}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidOriginMappingError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DocumentCompareView(APIView):
+    """Comparação lado a lado entre minuta e fonte original com diff granular."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        revision_id = request.query_params.get('revision_id')
+        source_provision_id = request.query_params.get('source_provision_id')
+
+        if not revision_id:
+            return Response({"error": "Parâmetro 'revision_id' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            rev_uuid = uuid.UUID(revision_id)
+            source_uuid = uuid.UUID(source_provision_id) if source_provision_id else None
+            result = ComparisonService.compare_revision_with_source(
+                condominium_id=condominium_id,
+                revision_id=rev_uuid,
+                source_provision_id=source_uuid
+            )
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DocumentDeParaReportView(APIView):
+    """
+    Relatório DePara estruturado (CA-19, CA-20, CA-21).
+    Demonstra dispositivos incluídos sem origem, excluídos mantidos e relações N:M.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        try:
+            report = ComparisonService.generate_depara_report(
+                condominium_id=condominium_id,
+                document_id=document_id
+            )
+            return Response(report, status=status.HTTP_200_OK)
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DocumentCrossReferenceListCreateView(APIView):
+    """Gerenciamento de referências cruzadas vinculadas a UUIDs estáveis (CA-22)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        provision_id = request.query_params.get('provision_id')
+        if provision_id:
+            latest_rev = ProvisionService.get_latest_revision(uuid.UUID(provision_id))
+            if not latest_rev:
+                return Response({"error": "Revisão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+            resolved = CrossReferenceService.resolve_references_for_revision(
+                condominium_id=condominium_id,
+                revision_id=latest_rev.id
+            )
+            return Response(resolved)
+
+        xrefs = CrossReference.objects.filter(condominium_id=condominium_id)
+        return Response(CrossReferenceSerializer(xrefs, many=True).data)
+
+    def post(self, request, condominium_id, document_id):
+        provision_id = request.data.get('provision_id')
+        if not provision_id:
+            return Response({"error": "Campo 'provision_id' de origem é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = CrossReferenceCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        latest_rev = ProvisionService.get_latest_revision(uuid.UUID(provision_id))
+        if not latest_rev:
+            return Response({"error": "Revisão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        data = serializer.validated_data
+        xref = CrossReferenceService.create_cross_reference(
+            condominium_id=condominium_id,
+            revision_id=latest_rev.id,
+            target_provision_id=data['target_provision_id'],
+            label_template=data.get('label_template', 'art. {target_label}')
+        )
+        return Response(CrossReferenceSerializer(xref).data, status=status.HTTP_201_CREATED)
+
+
+class DocumentRenumberingView(APIView):
+    """
+    Renumeração estruturada com preservação de UUIDs e integridade de referências (CA-22).
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        strategy = request.query_params.get('strategy', 'renumeracao_automatica')
+        preview = RenumberingService.preview_renumbering(
+            condominium_id=condominium_id,
+            document_id=document_id,
+            strategy=strategy
+        )
+        return Response(preview, status=status.HTTP_200_OK)
+
+    def post(self, request, condominium_id, document_id):
+        serializer = RenumberingApplySerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        strategy = serializer.validated_data.get('strategy', 'renumeracao_automatica')
+
+        result = RenumberingService.apply_renumbering(
+            condominium_id=condominium_id,
+            document_id=document_id,
+            author_account_id=actor_id,
+            strategy=strategy
+        )
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class DocumentExportCleanView(APIView):
+    """
+    Exportação limpa preliminar do documento normativo (CA-42).
+    Exclui itens excluídos (CA-20), omite autoria e notas internas (CA-24).
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        export_format = request.query_params.get('format', 'json').lower()
+
+        if export_format == 'text':
+            clean_text = ExportService.export_clean_text(
+                condominium_id=condominium_id,
+                document_id=document_id
+            )
+            return HttpResponse(clean_text, content_type='text/plain; charset=utf-8')
+
+        clean_data = ExportService.export_clean_document(
+            condominium_id=condominium_id,
+            document_id=document_id
+        )
+        return Response(clean_data, status=status.HTTP_200_OK)
+
+
+class DocumentExportDeParaView(APIView):
+    """Exportação do relatório DePara em formato estruturado (CA-20, CA-21)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        report = ComparisonService.generate_depara_report(
+            condominium_id=condominium_id,
+            document_id=document_id
+        )
+        return Response(report, status=status.HTTP_200_OK)
+
 

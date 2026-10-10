@@ -539,3 +539,86 @@ class SnapshotItem(models.Model):
         db_table = 'app"."snapshot_items'
         verbose_name = 'Item de Snapshot'
         verbose_name_plural = 'Itens de Snapshot'
+
+
+class OriginMapping(models.Model):
+    """Mapeamento explícito de origem entre a revisão da minuta e a fonte original (CA-21)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condominium = models.ForeignKey(
+        'infrastructure.Condominium',
+        on_delete=models.CASCADE,
+        related_name='origin_mappings',
+        db_column='condominium_id'
+    )
+    revision = models.ForeignKey(
+        ProvisionRevision,
+        on_delete=models.CASCADE,
+        related_name='origin_mappings',
+        db_column='revision_id'
+    )
+    source_provision = models.ForeignKey(
+        SourceProvision,
+        on_delete=models.CASCADE,
+        related_name='target_mappings',
+        db_column='source_provision_id'
+    )
+    relation_type = models.CharField(
+        max_length=50,
+        default='mantido',
+        choices=[
+            ('mantido', 'Mantido'),
+            ('alterado', 'Alterado'),
+            ('desmembrado', 'Desmembrado'),
+            ('consolidado', 'Consolidado'),
+        ]
+    )
+    excerpt = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app"."origin_mappings'
+        verbose_name = 'Mapeamento de Origem'
+        verbose_name_plural = 'Mapeamentos de Origem'
+
+
+class CrossReference(models.Model):
+    """Referência cruzada entre dispositivos baseada em UUID permanente (CA-22)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condominium = models.ForeignKey(
+        'infrastructure.Condominium',
+        on_delete=models.CASCADE,
+        related_name='cross_references',
+        db_column='condominium_id'
+    )
+    revision = models.ForeignKey(
+        ProvisionRevision,
+        on_delete=models.CASCADE,
+        related_name='outgoing_cross_references',
+        db_column='revision_id'
+    )
+    target_provision = models.ForeignKey(
+        Provision,
+        on_delete=models.CASCADE,
+        related_name='incoming_cross_references',
+        db_column='target_provision_id'
+    )
+    label_template = models.CharField(max_length=100, default='art. {target_label}')
+    status = models.CharField(
+        max_length=50,
+        default='valido',
+        choices=[
+            ('valido', 'Válido'),
+            ('quebrado', 'Quebrado / Alvo Excluído'),
+            ('pendente', 'Pendente de Conferência'),
+        ]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app"."cross_references'
+        verbose_name = 'Referência Cruzada'
+        verbose_name_plural = 'Referências Cruzadas'
+

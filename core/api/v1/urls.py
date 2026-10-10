@@ -36,6 +36,14 @@ from .views import (
     ProvisionInternalNoteListCreateView,
     DocumentSnapshotListCreateView,
     DocumentSnapshotDetailView,
+    # Fase 4
+    ProvisionOriginMappingListCreateView,
+    DocumentCompareView,
+    DocumentDeParaReportView,
+    DocumentCrossReferenceListCreateView,
+    DocumentRenumberingView,
+    DocumentExportCleanView,
+    DocumentExportDeParaView,
 )
 
 urlpatterns = [
@@ -97,4 +105,15 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/provisions/<uuid:provision_id>/notes', ProvisionInternalNoteListCreateView.as_view(), name='api_v1_provision_notes'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/snapshots', DocumentSnapshotListCreateView.as_view(), name='api_v1_document_snapshots'),
     path('condominiums/<uuid:condominium_id>/snapshots/<uuid:snapshot_id>', DocumentSnapshotDetailView.as_view(), name='api_v1_snapshot_detail'),
+
+    # =========================================================================
+    # FASE 4: COMPARAÇÃO, MAPEAMENTO DE ORIGENS, RENUMERAÇÃO E EXPORTAÇÃO
+    # =========================================================================
+    path('condominiums/<uuid:condominium_id>/provisions/<uuid:provision_id>/origin-mappings', ProvisionOriginMappingListCreateView.as_view(), name='api_v1_provision_origin_mappings'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/compare', DocumentCompareView.as_view(), name='api_v1_document_compare'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/depara', DocumentDeParaReportView.as_view(), name='api_v1_document_depara'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/cross-references', DocumentCrossReferenceListCreateView.as_view(), name='api_v1_document_cross_references'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/renumber', DocumentRenumberingView.as_view(), name='api_v1_document_renumber'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/clean', DocumentExportCleanView.as_view(), name='api_v1_document_export_clean'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/depara', DocumentExportDeParaView.as_view(), name='api_v1_document_export_depara'),
 ]
