@@ -15,7 +15,18 @@ load_dotenv(ROOT_DIR / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-dev-key-condc-2026-replace-in-prod")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1")
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,condoc.fk.adm.br,192.168.10.200").split(",")
+
+# Reconhecimento de cabeçalho HTTPS vindo do Proxy Reverso (NPM / Caddy / Cloudflare)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# Configurações de Origens Confiáveis para Proteção CSRF
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://condoc.fk.adm.br,http://localhost:5173,http://localhost:3000"
+).split(",")
 
 # Aplicações instaladas
 INSTALLED_APPS = [

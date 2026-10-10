@@ -1,0 +1,43 @@
+# Configuração de Proxy Reverso Local para a LXC 1 — CONDC
+# Roteamento Same-Origin unificado sob https://condoc.fk.adm.br
+
+:80 {
+    # Logs estruturados
+    log {
+        output stdout
+        format console
+    }
+
+    # Cabeçalhos de segurança (PRD Mestre v3.0)
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # 1. Rota de API e Health Check do Core Django
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 2. Arquivos estáticos do Django Admin / Framework
+    handle /static/* {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    # 3. Frontend React SPA (Vite / Build estático)
+    handle {
+        reverse_proxy 127.0.0.1:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}
