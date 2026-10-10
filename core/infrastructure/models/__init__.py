@@ -34,6 +34,15 @@ from .documents import (
     OriginMapping,
     CrossReference,
 )
+from .participation import (
+    ConsultationCampaign,
+    CampaignParticipant,
+    Suggestion,
+    SuggestionRevision,
+    PublishedSuggestionRevision,
+    SuggestionEditorialDecision,
+    SuggestionAttachment,
+)
 
 __all__ = [
     "Condominium",
@@ -66,4 +75,11 @@ __all__ = [
     "SnapshotItem",
     "OriginMapping",
     "CrossReference",
+    "ConsultationCampaign",
+    "CampaignParticipant",
+    "Suggestion",
+    "SuggestionRevision",
+    "PublishedSuggestionRevision",
+    "SuggestionEditorialDecision",
+    "SuggestionAttachment",
 ]

@@ -37,6 +37,13 @@ from infrastructure.models import (
     SnapshotItem,
     OriginMapping,
     CrossReference,
+    ConsultationCampaign,
+    CampaignParticipant,
+    Suggestion,
+    SuggestionRevision,
+    PublishedSuggestionRevision,
+    SuggestionEditorialDecision,
+    SuggestionAttachment,
 )
 from application.identity.services import (
     CondominiumService,
@@ -62,6 +69,11 @@ from application.comparison.services import (
     CrossReferenceService,
     RenumberingService,
     ExportService,
+)
+from application.moderation.services import (
+    CampaignService,
+    SuggestionService,
+    ModerationService,
 )
 from application.common.idempotency import IdempotencyService
 from domain.imports.exceptions import (
@@ -91,6 +103,17 @@ from domain.comparison.exceptions import (
     BrokenCrossReferenceError,
     RenumberingError,
     CleanExportIntegrityError,
+)
+from domain.moderation.exceptions import (
+    CampaignNotOpenError,
+    ParticipantNotEligibleError,
+    UnauthorizedPublicationError,
+    AutoPublicationForbiddenError,
+    HiddenSuggestionAccessError,
+    IdentityAccessWithoutJustificationError,
+    PrivateNoteExposureError,
+    AttachmentNotApprovedError,
+    ComplementWithoutParentError,
 )
 from .serializers import (
     CondominiumSerializer,
@@ -123,6 +146,18 @@ from .serializers import (
     CrossReferenceSerializer,
     CrossReferenceCreateSerializer,
     RenumberingApplySerializer,
+    ConsultationCampaignSerializer,
+    ConsultationCampaignCreateSerializer,
+    CampaignParticipantSerializer,
+    CampaignParticipantCreateSerializer,
+    SuggestionCreateSerializer,
+    SuggestionComplementCreateSerializer,
+    SuggestionUpdateSerializer,
+    TechnicalAnalysisActionSerializer,
+    EditorialDecisionActionSerializer,
+    PublicationAuthorizeActionSerializer,
+    PublicationHideActionSerializer,
+    IdentityAccessActionSerializer,
 )
 
 # ============================================================================
@@ -1221,5 +1256,409 @@ class DocumentExportDeParaView(APIView):
             document_id=document_id
         )
         return Response(report, status=status.HTTP_200_OK)
+
+
+# ============================================================================
+# FASE 5: CONSULTA PÚBLICA, PARTICIPAÇÃO E MODERAÇÃO EDITORIAL
+# ============================================================================
+
+class ConsultationCampaignListCreateView(APIView):
+    """Listagem e criação de campanhas de consulta pública vinculadas a snapshots imutáveis."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        campaigns = ConsultationCampaign.objects.filter(condominium_id=condominium_id).order_by('-created_at')
+        return Response(ConsultationCampaignSerializer(campaigns, many=True).data)
+
+    def post(self, request, condominium_id):
+        serializer = ConsultationCampaignCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        campaign = CampaignService.create_campaign(
+            condominium_id=condominium_id,
+            project_id=data['project_id'],
+            snapshot_id=data['snapshot_id'],
+            name=data['name'],
+            description=data.get('description'),
+            settings=data.get('settings')
+        )
+        return Response(ConsultationCampaignSerializer(campaign).data, status=status.HTTP_201_CREATED)
+
+
+class ConsultationCampaignDetailView(APIView):
+    """Detalhe e transição de estado da campanha de consulta pública."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, campaign_id):
+        try:
+            campaign = ConsultationCampaign.objects.get(id=campaign_id, condominium_id=condominium_id)
+            return Response(ConsultationCampaignSerializer(campaign).data)
+        except ConsultationCampaign.DoesNotExist:
+            return Response({"error": "Campanha não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, condominium_id, campaign_id, action=None):
+        action = action or request.data.get('action')
+        try:
+            if action == 'open':
+                campaign = CampaignService.open_campaign(campaign_id, condominium_id)
+            elif action == 'close':
+                campaign = CampaignService.close_campaign(campaign_id, condominium_id)
+            else:
+                return Response({"error": "Ação inválida. Use 'open' ou 'close'."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(ConsultationCampaignSerializer(campaign).data)
+        except ConsultationCampaign.DoesNotExist:
+            return Response({"error": "Campanha não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CampaignParticipantListCreateView(APIView):
+    """Listagem e habilitação de participantes da campanha."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, campaign_id):
+        participants = CampaignParticipant.objects.filter(
+            campaign_id=campaign_id,
+            condominium_id=condominium_id
+        ).select_related('resident', 'reference_membership', 'reference_membership__unit')
+        return Response(CampaignParticipantSerializer(participants, many=True).data)
+
+    def post(self, request, condominium_id, campaign_id):
+        serializer = CampaignParticipantCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+        participant = CampaignService.register_participant(
+            condominium_id=condominium_id,
+            campaign_id=campaign_id,
+            resident_id=data['resident_id'],
+            reference_membership_id=data['reference_membership_id'],
+            authorized_by_id=actor_id
+        )
+        return Response(CampaignParticipantSerializer(participant).data, status=status.HTTP_201_CREATED)
+
+
+class CampaignDocumentSnapshotView(APIView):
+    """M05: Retorna a árvore de dispositivos do snapshot imutável congelado na campanha."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, campaign_id):
+        try:
+            tree = CampaignService.get_campaign_snapshot_tree(campaign_id, condominium_id)
+            return Response(tree, status=status.HTTP_200_OK)
+        except ConsultationCampaign.DoesNotExist:
+            return Response({"error": "Campanha não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CampaignSuggestionListCreateView(APIView):
+    """
+    CA-25: Envio de sugestão privada recebendo protocolo e versão consultada.
+    CA-29 / UI-25: Listagem de sugestões públicas sanitizadas sem dados de autoria.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, campaign_id):
+        target_provision_id = request.query_params.get('target_provision_id')
+        target_uuid = uuid.UUID(target_provision_id) if target_provision_id else None
+        public_sugs = SuggestionService.list_public_suggestions(
+            condominium_id=condominium_id,
+            campaign_id=campaign_id,
+            target_provision_id=target_uuid
+        )
+        return Response(public_sugs, status=status.HTTP_200_OK)
+
+    def post(self, request, condominium_id, campaign_id):
+        serializer = SuggestionCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+        try:
+            suggestion = SuggestionService.create_suggestion(
+                condominium_id=condominium_id,
+                campaign_id=campaign_id,
+                participant_id=data['participant_id'],
+                text=data['text'],
+                justification=data['justification'],
+                category=data.get('category', 'redacao'),
+                target_provision_id=data.get('target_provision_id'),
+                alternative_text=data.get('alternative_text'),
+                author_account_id=actor_id
+            )
+            return Response({
+                "id": str(suggestion.id),
+                "public_protocol": suggestion.public_protocol,
+                "category": suggestion.category,
+                "analysis_status": suggestion.analysis_status,
+                "editorial_decision": suggestion.editorial_decision,
+                "publication_status": suggestion.publication_status,
+                "created_at": suggestion.created_at.isoformat()
+            }, status=status.HTTP_201_CREATED)
+        except (CampaignNotOpenError, ParticipantNotEligibleError) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SuggestionDetailView(APIView):
+    """
+    CA-32: Consulta de sugestão pública sanitizada (bloqueia se oculta).
+    CA-31: Edição da sugestão gerando nova versão pendente de nova moderação.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, suggestion_id):
+        try:
+            sug = SuggestionService.get_public_suggestion(condominium_id, suggestion_id)
+            return Response(sug, status=status.HTTP_200_OK)
+        except HiddenSuggestionAccessError as e:
+            return Response({"error": str(e), "code": "SUGGESTION_HIDDEN"}, status=status.HTTP_404_NOT_FOUND)
+        except Suggestion.DoesNotExist:
+            return Response({"error": "Sugestão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, condominium_id, suggestion_id):
+        serializer = SuggestionUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+        try:
+            new_rev = SuggestionService.update_suggestion(
+                suggestion_id=suggestion_id,
+                condominium_id=condominium_id,
+                author_account_id=actor_id,
+                new_text=data['text'],
+                new_justification=data['justification'],
+                alternative_text=data.get('alternative_text')
+            )
+            return Response({
+                "suggestion_id": str(suggestion_id),
+                "version_number": new_rev.version_number,
+                "status": "pending_moderation"
+            }, status=status.HTTP_200_OK)
+        except Suggestion.DoesNotExist:
+            return Response({"error": "Sugestão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SuggestionComplementCreateView(APIView):
+    """CA-30: Envio de complemento sobre sugestão pública existente (moderado independentemente)."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = SuggestionComplementCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+        try:
+            complement = SuggestionService.create_complement_suggestion(
+                condominium_id=condominium_id,
+                parent_published_suggestion_id=suggestion_id,
+                participant_id=data['participant_id'],
+                text=data['text'],
+                justification=data['justification'],
+                category=data.get('category', 'redacao'),
+                author_account_id=actor_id
+            )
+            return Response({
+                "id": str(complement.id),
+                "public_protocol": complement.public_protocol,
+                "parent_published_suggestion_id": str(suggestion_id),
+                "publication_status": complement.publication_status,
+                "created_at": complement.created_at.isoformat()
+            }, status=status.HTTP_201_CREATED)
+        except ComplementWithoutParentError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except (CampaignNotOpenError, ParticipantNotEligibleError) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MySuggestionListView(APIView):
+    """M09 / M10 / V21-32: Acompanhamento de sugestões próprias do morador (sem notas internas)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        participant_id = request.query_params.get('participant_id')
+        if not participant_id:
+            return Response({"error": "Parâmetro 'participant_id' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sugs = SuggestionService.list_my_suggestions(condominium_id, uuid.UUID(participant_id))
+            return Response(sugs, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ModerationQueueListView(APIView):
+    """S16 / CA-26: Fila de moderação com 4 dimensões (sem expor identidade por padrão)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        campaign_id = request.query_params.get('campaign_id')
+        analysis_status = request.query_params.get('analysis_status')
+        publication_status = request.query_params.get('publication_status')
+
+        camp_uuid = uuid.UUID(campaign_id) if campaign_id else None
+        queue = ModerationService.list_moderation_queue(
+            condominium_id=condominium_id,
+            campaign_id=camp_uuid,
+            analysis_status=analysis_status,
+            publication_status=publication_status
+        )
+        return Response(queue, status=status.HTTP_200_OK)
+
+
+class ModerationTechnicalAnalysisView(APIView):
+    """CA-27: Realiza análise técnica da sugestão sem publicar automaticamente."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = TechnicalAnalysisActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+        try:
+            sug = ModerationService.perform_technical_analysis(
+                suggestion_id=suggestion_id,
+                condominium_id=condominium_id,
+                analyst_account_id=actor_id,
+                new_status=data['new_status']
+            )
+            return Response({
+                "id": str(sug.id),
+                "analysis_status": sug.analysis_status,
+                "publication_status": sug.publication_status
+            }, status=status.HTTP_200_OK)
+        except AutoPublicationForbiddenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ModerationEditorialDecisionView(APIView):
+    """CA-27: Registra decisão editorial (acolhida/parcial/rejeitada/duplicada) sem publicar automaticamente."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = EditorialDecisionActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+        try:
+            dec = ModerationService.register_editorial_decision(
+                suggestion_id=suggestion_id,
+                condominium_id=condominium_id,
+                decider_account_id=actor_id,
+                decision=data['decision'],
+                public_shared_reason=data['public_shared_reason'],
+                internal_note=data.get('internal_note')
+            )
+            return Response({
+                "id": str(dec.id),
+                "decision": dec.decision,
+                "public_shared_reason": dec.public_shared_reason,
+                "decided_at": dec.decided_at.isoformat()
+            }, status=status.HTTP_200_OK)
+        except AutoPublicationForbiddenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ModerationPublicationAuthorizeView(APIView):
+    """
+    S18 / CA-28: Mesa de publicação do síndico.
+    Apenas o síndico ativo com mandato pode autorizar a publicação pública sanitizada.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = PublicationAuthorizeActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        user_role = request.headers.get('X-User-Role', request.query_params.get('role', 'sindico'))
+        data = serializer.validated_data
+
+        try:
+            pub_rev = ModerationService.authorize_publication(
+                suggestion_id=suggestion_id,
+                condominium_id=condominium_id,
+                actor_role=user_role,
+                authorizer_account_id=actor_id,
+                sanitized_text=data.get('sanitized_text'),
+                sanitized_justification=data.get('sanitized_justification')
+            )
+            return Response({
+                "id": str(pub_rev.id),
+                "suggestion_id": str(suggestion_id),
+                "sanitized_public_text": pub_rev.sanitized_public_text,
+                "sanitized_justification": pub_rev.sanitized_justification,
+                "authorized_at": pub_rev.authorized_at.isoformat(),
+                "status": "publicada"
+            }, status=status.HTTP_200_OK)
+        except UnauthorizedPublicationError as e:
+            return Response({"error": str(e), "code": "UNAUTHORIZED_PUBLICATION_SINDICO_ONLY"}, status=status.HTTP_403_FORBIDDEN)
+
+
+class ModerationPublicationHideView(APIView):
+    """CA-32: Ocultação da publicação pelo síndico (bloqueia imediatamente de todas as superfícies)."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = PublicationHideActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        user_role = request.headers.get('X-User-Role', request.query_params.get('role', 'sindico'))
+        data = serializer.validated_data
+
+        try:
+            pub_rev = ModerationService.hide_published_suggestion(
+                suggestion_id=suggestion_id,
+                condominium_id=condominium_id,
+                actor_role=user_role,
+                actor_account_id=actor_id,
+                reason=data['reason']
+            )
+            return Response({
+                "suggestion_id": str(suggestion_id),
+                "status": "oculta",
+                "hidden_at": pub_rev.hidden_at.isoformat() if pub_rev and pub_rev.hidden_at else None
+            }, status=status.HTTP_200_OK)
+        except UnauthorizedPublicationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+
+class ModerationIdentityAccessView(APIView):
+    """CA-33: Consulta justificada e auditada de dados de autoria/identidade da sugestão."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = IdentityAccessActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        user_role = request.headers.get('X-User-Role', request.query_params.get('role', 'sindico'))
+        data = serializer.validated_data
+
+        try:
+            identity_data = ModerationService.access_suggestion_identity(
+                suggestion_id=suggestion_id,
+                condominium_id=condominium_id,
+                actor_role=user_role,
+                actor_account_id=actor_id,
+                justification=data['justification']
+            )
+            return Response(identity_data, status=status.HTTP_200_OK)
+        except IdentityAccessWithoutJustificationError as e:
+            return Response({"error": str(e), "code": "IDENTITY_ACCESS_FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
 
 

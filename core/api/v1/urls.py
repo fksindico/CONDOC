@@ -44,6 +44,21 @@ from .views import (
     DocumentRenumberingView,
     DocumentExportCleanView,
     DocumentExportDeParaView,
+    # Fase 5
+    ConsultationCampaignListCreateView,
+    ConsultationCampaignDetailView,
+    CampaignParticipantListCreateView,
+    CampaignDocumentSnapshotView,
+    CampaignSuggestionListCreateView,
+    SuggestionDetailView,
+    SuggestionComplementCreateView,
+    MySuggestionListView,
+    ModerationQueueListView,
+    ModerationTechnicalAnalysisView,
+    ModerationEditorialDecisionView,
+    ModerationPublicationAuthorizeView,
+    ModerationPublicationHideView,
+    ModerationIdentityAccessView,
 )
 
 urlpatterns = [
@@ -116,4 +131,23 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/renumber', DocumentRenumberingView.as_view(), name='api_v1_document_renumber'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/clean', DocumentExportCleanView.as_view(), name='api_v1_document_export_clean'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/depara', DocumentExportDeParaView.as_view(), name='api_v1_document_export_depara'),
+
+    # =========================================================================
+    # FASE 5: CONSULTA PÚBLICA, PARTICIPAÇÃO E MODERAÇÃO EDITORIAL
+    # =========================================================================
+    path('condominiums/<uuid:condominium_id>/campaigns', ConsultationCampaignListCreateView.as_view(), name='api_v1_campaigns'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>', ConsultationCampaignDetailView.as_view(), name='api_v1_campaign_detail'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/participants', CampaignParticipantListCreateView.as_view(), name='api_v1_campaign_participants'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/document-snapshot', CampaignDocumentSnapshotView.as_view(), name='api_v1_campaign_document_snapshot'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/suggestions', CampaignSuggestionListCreateView.as_view(), name='api_v1_campaign_suggestions'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/<str:action>', ConsultationCampaignDetailView.as_view(), name='api_v1_campaign_action'),
+    path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>', SuggestionDetailView.as_view(), name='api_v1_suggestion_detail'),
+    path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/complements', SuggestionComplementCreateView.as_view(), name='api_v1_suggestion_complements'),
+    path('condominiums/<uuid:condominium_id>/my-suggestions', MySuggestionListView.as_view(), name='api_v1_my_suggestions'),
+    path('condominiums/<uuid:condominium_id>/moderation/queue', ModerationQueueListView.as_view(), name='api_v1_moderation_queue'),
+    path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/analysis', ModerationTechnicalAnalysisView.as_view(), name='api_v1_moderation_analysis'),
+    path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/decision', ModerationEditorialDecisionView.as_view(), name='api_v1_moderation_decision'),
+    path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/publish', ModerationPublicationAuthorizeView.as_view(), name='api_v1_moderation_publish'),
+    path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/hide', ModerationPublicationHideView.as_view(), name='api_v1_moderation_hide'),
+    path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/identity', ModerationIdentityAccessView.as_view(), name='api_v1_moderation_identity'),
 ]

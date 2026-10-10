@@ -401,6 +401,103 @@ CREATE TABLE IF NOT EXISTS app.cross_references (
     status TEXT NOT NULL DEFAULT 'valido',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS app.consultation_campaigns (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    snapshot_id TEXT NOT NULL REFERENCES document_snapshots(id) ON DELETE RESTRICT,
+    name TEXT NOT NULL,
+    description TEXT,
+    state TEXT NOT NULL DEFAULT 'rascunho',
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    settings TEXT NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.campaign_participants (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    campaign_id TEXT NOT NULL REFERENCES consultation_campaigns(id) ON DELETE CASCADE,
+    resident_id TEXT NOT NULL REFERENCES residents(id) ON DELETE CASCADE,
+    reference_membership_id TEXT NOT NULL REFERENCES unit_memberships(id) ON DELETE RESTRICT,
+    status TEXT NOT NULL DEFAULT 'habilitado',
+    authorized_by_id TEXT REFERENCES accounts(id),
+    authorized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (campaign_id, resident_id)
+);
+
+CREATE TABLE IF NOT EXISTS app.suggestions (
+    id TEXT PRIMARY KEY,
+    public_protocol TEXT NOT NULL UNIQUE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    campaign_id TEXT NOT NULL REFERENCES consultation_campaigns(id) ON DELETE CASCADE,
+    participant_id TEXT NOT NULL REFERENCES campaign_participants(id) ON DELETE RESTRICT,
+    submitted_membership_id TEXT NOT NULL REFERENCES unit_memberships(id) ON DELETE RESTRICT,
+    target_provision_id TEXT REFERENCES provisions(id) ON DELETE SET NULL,
+    target_snapshot_revision_id TEXT REFERENCES provision_revisions(id) ON DELETE SET NULL,
+    category TEXT NOT NULL DEFAULT 'redacao',
+    analysis_status TEXT NOT NULL DEFAULT 'pendente',
+    editorial_decision TEXT NOT NULL DEFAULT 'pendente',
+    publication_status TEXT NOT NULL DEFAULT 'nao_publicada',
+    incorporation_status TEXT NOT NULL DEFAULT 'nao_incorporada',
+    parent_published_suggestion_id TEXT REFERENCES suggestions(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.suggestion_revisions (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    version_number INTEGER NOT NULL DEFAULT 1,
+    text TEXT NOT NULL,
+    justification TEXT NOT NULL,
+    alternative_text TEXT,
+    author_account_id TEXT REFERENCES accounts(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (suggestion_id, version_number)
+);
+
+CREATE TABLE IF NOT EXISTS app.published_suggestion_revisions (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    suggestion_revision_id TEXT NOT NULL REFERENCES suggestion_revisions(id) ON DELETE CASCADE,
+    sanitized_public_text TEXT NOT NULL,
+    sanitized_justification TEXT NOT NULL,
+    authorized_by_id TEXT NOT NULL REFERENCES accounts(id),
+    authorized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    hidden_at TIMESTAMP,
+    hidden_by_id TEXT REFERENCES accounts(id),
+    hide_reason TEXT,
+    is_active_publication INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.suggestion_editorial_decisions (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    decision TEXT NOT NULL,
+    public_shared_reason TEXT NOT NULL,
+    internal_note TEXT,
+    decided_by_id TEXT NOT NULL REFERENCES accounts(id),
+    decided_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.suggestion_attachments (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    source_file_id TEXT NOT NULL REFERENCES source_files(id) ON DELETE CASCADE,
+    is_publicly_approved INTEGER NOT NULL DEFAULT 0,
+    approved_by_id TEXT REFERENCES accounts(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 @pytest.fixture(autouse=True)

@@ -23,16 +23,16 @@ CA-21,Desmembrar/consolidar preserva relação muitos-para-muitos,core/domain/co
 CA-22,Renumerar preserva referência e comentários,core/application/comparison/services.py:RenumberingService.apply_renumbering,core/tests/test_phase4_comparison_export.py::test_ca_22_renumerar_preserva_referencias_comentarios_e_uuids,7 passed,aprovado
 CA-23,Edição concorrente gera conflito sem sobrescrita,core/domain/documents/invariants.py:assert_optimistic_concurrency,core/tests/test_phase3_documents_provisions.py::test_ca_23_edicao_concorrente_gera_conflito_sem_sobrescrita,11 passed,aprovado
 CA-24,Nota interna ausente em API e export público,core/domain/documents/invariants.py:sanitize_public_provision_dto,core/tests/test_phase3_documents_provisions.py::test_ca_24_nota_interna_ausente_em_api_publica_e_restrita_a_gestao,11 passed,aprovado
-CA-25,Sugestão privada recebe protocolo e versão consultada,,,,nao_executado
-CA-26,Conselho analisa conteúdo sem identidade,,,,nao_executado
-CA-27,Análise não publica automaticamente,,,,nao_executado
-CA-28,Admin sem papel de síndico não publica,core/domain/identity/invariants.py:assert_sindico_publication_authority,core/tests/test_phase1_identity.py::test_ca_28_autoridade_exclusiva_de_publicacao_do_sindico,14 passed,aprovado
-CA-29,Toggle global mostra apenas versões autorizadas,,,,nao_executado
-CA-30,Complemento privado e moderado independentemente,,,,nao_executado
-CA-31,Edição publicada cria versão pendente,,,,nao_executado
-CA-32,Ocultação bloqueia API link busca listagem e interação,,,,nao_executado
-CA-33,Identidade exige permissão e auditoria,core/application/identity/services.py:IdentityAuditService,core/tests/test_phase1_identity.py::test_ca_33_auditoria_de_acesso_a_dados_de_identidade,14 passed,aprovado
-CA-34,Anexo não publica automaticamente,,,,nao_executado
+CA-25,Sugestão privada recebe protocolo e versão consultada,core/application/moderation/services.py:SuggestionService.create_suggestion,core/tests/test_phase5_campaigns_moderation.py::test_ca_25_sugestao_privada_recebe_protocolo_e_versao_consultada,12 passed,aprovado
+CA-26,Conselho analisa conteúdo sem identidade,core/domain/moderation/invariants.py:sanitize_public_suggestion_dto,core/tests/test_phase5_campaigns_moderation.py::test_ca_26_revisor_analisa_conteudo_sem_identidade,12 passed,aprovado
+CA-27,Análise não publica automaticamente,core/domain/moderation/invariants.py:assert_analysis_does_not_auto_publish,core/tests/test_phase5_campaigns_moderation.py::test_ca_27_analise_e_decisao_nao_publicam_automaticamente,12 passed,aprovado
+CA-28,Admin sem papel de síndico não publica,core/domain/moderation/invariants.py:assert_can_publish_suggestion,core/tests/test_phase5_campaigns_moderation.py::test_ca_28_admin_sem_papel_de_sindico_nao_publica,12 passed,aprovado
+CA-29,Toggle global mostra apenas versões autorizadas,core/application/moderation/services.py:SuggestionService.list_public_suggestions,core/tests/test_phase5_campaigns_moderation.py::test_ca_29_portal_mostra_apenas_versoes_autorizadas,12 passed,aprovado
+CA-30,Complemento privado e moderado independentemente,core/application/moderation/services.py:SuggestionService.create_complement_suggestion,core/tests/test_phase5_campaigns_moderation.py::test_ca_30_complemento_privado_e_moderado_independentemente,12 passed,aprovado
+CA-31,Edição publicada cria versão pendente,core/application/moderation/services.py:SuggestionService.update_suggestion,core/tests/test_phase5_campaigns_moderation.py::test_ca_31_edicao_publicada_cria_versao_pendente,12 passed,aprovado
+CA-32,Ocultação bloqueia API link busca listagem e interação,core/domain/moderation/invariants.py:assert_suggestion_not_hidden,core/tests/test_phase5_campaigns_moderation.py::test_ca_32_ocultacao_bloqueia_api_link_busca_e_interacao,12 passed,aprovado
+CA-33,Identidade exige permissão e auditoria,core/domain/moderation/invariants.py:assert_identity_access_authorized,core/tests/test_phase5_campaigns_moderation.py::test_ca_33_acesso_a_identidade_exige_autorizacao_e_justificativa_auditada,12 passed,aprovado
+CA-34,Anexo não publica automaticamente,core/application/moderation/services.py:SuggestionService.add_attachment,core/tests/test_phase5_campaigns_moderation.py::test_ca_34_anexos_nascem_privados_e_nao_publicam_automaticamente,12 passed,aprovado
 CA-35,Cliques repetidos produzem uma concordância ativa,,,,nao_executado
 CA-36,Retirada atualiza agregado e preserva evento,,,,nao_executado
 CA-37,Mudança substancial não transfere concordâncias,,,,nao_executado

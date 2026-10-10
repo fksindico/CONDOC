@@ -28,6 +28,13 @@ from infrastructure.models import (
     SnapshotItem,
     OriginMapping,
     CrossReference,
+    ConsultationCampaign,
+    CampaignParticipant,
+    Suggestion,
+    SuggestionRevision,
+    PublishedSuggestionRevision,
+    SuggestionEditorialDecision,
+    SuggestionAttachment,
 )
 
 # ============================================================================
@@ -342,5 +349,103 @@ class RenumberingApplySerializer(serializers.Serializer):
         choices=['preservar_original', 'renumeracao_automatica'],
         default='renumeracao_automatica'
     )
+
+
+# ============================================================================
+# FASE 5: Consulta Pública, Participação e Moderação Editorial
+# ============================================================================
+
+class ConsultationCampaignSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsultationCampaign
+        fields = [
+            'id', 'condominium_id', 'project_id', 'snapshot_id',
+            'name', 'description', 'state', 'start_date', 'end_date',
+            'settings', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class ConsultationCampaignCreateSerializer(serializers.Serializer):
+    project_id = serializers.UUIDField(required=True)
+    snapshot_id = serializers.UUIDField(required=True)
+    name = serializers.CharField(max_length=255, required=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    settings = serializers.DictField(required=False, default=dict)
+
+
+class CampaignParticipantSerializer(serializers.ModelSerializer):
+    resident_name = serializers.CharField(source='resident.full_name', read_only=True)
+    unit_code = serializers.CharField(source='reference_membership.unit.code', read_only=True)
+
+    class Meta:
+        model = CampaignParticipant
+        fields = [
+            'id', 'condominium_id', 'campaign_id', 'resident_id', 'resident_name',
+            'reference_membership_id', 'unit_code', 'status', 'authorized_by_id',
+            'authorized_at', 'created_at'
+        ]
+        read_only_fields = ['id', 'status', 'authorized_at', 'created_at']
+
+
+class CampaignParticipantCreateSerializer(serializers.Serializer):
+    resident_id = serializers.UUIDField(required=True)
+    reference_membership_id = serializers.UUIDField(required=True)
+
+
+class SuggestionCreateSerializer(serializers.Serializer):
+    participant_id = serializers.UUIDField(required=True)
+    text = serializers.CharField(required=True)
+    justification = serializers.CharField(required=True)
+    category = serializers.ChoiceField(
+        choices=['redacao', 'clareza', 'supressao', 'adicao', 'adequacao_legal', 'geral'],
+        default='redacao'
+    )
+    target_provision_id = serializers.UUIDField(required=False, allow_null=True)
+    alternative_text = serializers.CharField(required=False, allow_blank=True)
+
+
+class SuggestionComplementCreateSerializer(serializers.Serializer):
+    participant_id = serializers.UUIDField(required=True)
+    text = serializers.CharField(required=True)
+    justification = serializers.CharField(required=True)
+    category = serializers.ChoiceField(
+        choices=['redacao', 'clareza', 'supressao', 'adicao', 'adequacao_legal', 'geral'],
+        default='redacao'
+    )
+
+
+class SuggestionUpdateSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+    justification = serializers.CharField(required=True)
+    alternative_text = serializers.CharField(required=False, allow_blank=True)
+
+
+class TechnicalAnalysisActionSerializer(serializers.Serializer):
+    new_status = serializers.ChoiceField(choices=['em_analise', 'concluida'], required=True)
+    internal_notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class EditorialDecisionActionSerializer(serializers.Serializer):
+    decision = serializers.ChoiceField(
+        choices=['acolhida', 'acolhida_parcial', 'rejeitada', 'duplicada'],
+        required=True
+    )
+    public_shared_reason = serializers.CharField(required=True, min_length=5)
+    internal_note = serializers.CharField(required=False, allow_blank=True)
+
+
+class PublicationAuthorizeActionSerializer(serializers.Serializer):
+    sanitized_text = serializers.CharField(required=False, allow_blank=True)
+    sanitized_justification = serializers.CharField(required=False, allow_blank=True)
+
+
+class PublicationHideActionSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=True, min_length=5)
+
+
+class IdentityAccessActionSerializer(serializers.Serializer):
+    justification = serializers.CharField(required=True, min_length=5)
+
 
 
