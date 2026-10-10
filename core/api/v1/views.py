@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from django.http import HttpResponse
 from django.utils import timezone
 import uuid
@@ -194,6 +195,20 @@ from .serializers import (
 # FASE 1: SESSÃO E IDENTIDADE
 # ============================================================================
 
+def _get_or_create_actor_id(request):
+    actor_id = getattr(request.user, 'account_id', None) or request.data.get('actor_account_id')
+    if not actor_id:
+        acc = Account.objects.first()
+        if not acc:
+            acc = Account.objects.create(
+                auth_user_id=uuid.uuid4(),
+                email="sistema.auditoria@condc.local",
+                full_name="Sistema Auditoria"
+            )
+        actor_id = acc.id
+    return actor_id
+
+
 class SessionInfoView(APIView):
     permission_classes = [AllowAny]
 
@@ -313,7 +328,7 @@ class VerifyMembershipActionView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        actor_account_id = getattr(request.user, 'account_id', None) or uuid.uuid4()
+        actor_account_id = _get_or_create_actor_id(request)
         membership = MembershipVerificationService.verify_membership(
             condominium_id=condominium_id,
             membership_id=membership_id,
@@ -349,20 +364,6 @@ class RoleAssignmentListCreateView(APIView):
 # ============================================================================
 # FASE 2: IMPORTAÇÃO CADASTRAL
 # ============================================================================
-
-def _get_or_create_actor_id(request):
-    actor_id = getattr(request.user, 'account_id', None) or request.data.get('actor_account_id')
-    if not actor_id:
-        acc = Account.objects.first()
-        if not acc:
-            acc = Account.objects.create(
-                auth_user_id=uuid.uuid4(),
-                email="sistema.auditoria@condc.local",
-                full_name="Sistema Auditoria"
-            )
-        actor_id = acc.id
-    return actor_id
-
 
 class ResidentImportTemplateView(APIView):
     """Retorna o modelo de planilha fictícia sem fórmulas (CSV)."""
@@ -476,7 +477,7 @@ class ResidentImportRowDetailView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        actor_id = getattr(request.user, 'account_id', None) or uuid.uuid4()
+        actor_id = _get_or_create_actor_id(request)
         try:
             row = ImportService.update_row_resolution(
                 condominium_id=condominium_id,
@@ -616,7 +617,7 @@ class AccessInvitationRevokeView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        actor_id = getattr(request.user, 'account_id', None) or uuid.uuid4()
+        actor_id = _get_or_create_actor_id(request)
         try:
             invitation = InvitationService.revoke_invitation(
                 condominium_id=condominium_id,
@@ -985,6 +986,7 @@ class ProvisionDetailUpdateView(APIView):
                 {
                     "code": "CONCURRENCY_CONFLICT",
                     "message": str(e),
+                    "error": str(e),
                 },
                 status=status.HTTP_412_PRECONDITION_FAILED
             )
@@ -1252,22 +1254,33 @@ class DocumentRenumberingView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
+class PlainTextRenderer(BaseRenderer):
+    media_type = 'text/plain'
+    format = 'text'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        if isinstance(data, str):
+            return data.encode('utf-8')
+        return str(data).encode('utf-8')
+
+
 class DocumentExportCleanView(APIView):
     """
     Exportação limpa preliminar do documento normativo (CA-42).
     Exclui itens excluídos (CA-20), omite autoria e notas internas (CA-24).
     """
     permission_classes = [AllowAny]
+    renderer_classes = [JSONRenderer, PlainTextRenderer]
 
     def get(self, request, condominium_id, document_id):
         export_format = request.query_params.get('format', 'json').lower()
 
-        if export_format == 'text':
+        if export_format == 'text' or getattr(request.accepted_renderer, 'format', None) == 'text':
             clean_text = ExportService.export_clean_text(
                 condominium_id=condominium_id,
                 document_id=document_id
             )
-            return HttpResponse(clean_text, content_type='text/plain; charset=utf-8')
+            return Response(clean_text, content_type='text/plain; charset=utf-8')
 
         clean_data = ExportService.export_clean_document(
             condominium_id=condominium_id,
