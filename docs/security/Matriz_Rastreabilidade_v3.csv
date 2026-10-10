@@ -15,14 +15,14 @@ CA-13,Vários moradores podem ter vínculos na mesma unidade,infrastructure/mode
 CA-14,Pessoa com várias unidades não ganha concordâncias extras,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_14_pessoa_com_multiplas_unidades_tem_vinculos_separados,14 passed,aprovado
 CA-15,Confirmar e-mail não valida vínculo declarado,core/application/identity/services.py:verify_membership,core/tests/test_phase1_identity.py::test_ca_12_ca_15_validacao_auditada_de_vinculo_documental,14 passed,aprovado
 CA-16,Mudança de unidade preserva referência das interações anteriores,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_16_mudanca_de_unidade_preserva_historico,14 passed,aprovado
-CA-17,Original documental preservado com conferência humana,,,,nao_executado
-CA-18,Corrigir transcrição gera versão e não simula alteração normativa,,,,nao_executado
+CA-17,Original documental preservado com conferência humana,core/application/documents/services.py:TranscriptionService.confirm_transcription,core/tests/test_phase3_documents_provisions.py::test_ca_17_original_documental_preservado_com_conferencia_humana,11 passed,aprovado
+CA-18,Corrigir transcrição gera versão e não simula alteração normativa,core/application/documents/services.py:TranscriptionService.correct_transcription,core/tests/test_phase3_documents_provisions.py::test_ca_18_corrigir_transcricao_gera_versao_sem_simular_alteracao_normativa,11 passed,aprovado
 CA-19,Dispositivo incluído não inventa origem,,,,nao_executado
 CA-20,Excluído sai do limpo e permanece em histórico e DePara,,,,nao_executado
 CA-21,Desmembrar/consolidar preserva relação muitos-para-muitos,,,,nao_executado
 CA-22,Renumerar preserva referência e comentários,,,,nao_executado
-CA-23,Edição concorrente gera conflito sem sobrescrita,,,,nao_executado
-CA-24,Nota interna ausente em API e export público,,,,nao_executado
+CA-23,Edição concorrente gera conflito sem sobrescrita,core/domain/documents/invariants.py:assert_optimistic_concurrency,core/tests/test_phase3_documents_provisions.py::test_ca_23_edicao_concorrente_gera_conflito_sem_sobrescrita,11 passed,aprovado
+CA-24,Nota interna ausente em API e export público,core/domain/documents/invariants.py:sanitize_public_provision_dto,core/tests/test_phase3_documents_provisions.py::test_ca_24_nota_interna_ausente_em_api_publica_e_restrita_a_gestao,11 passed,aprovado
 CA-25,Sugestão privada recebe protocolo e versão consultada,,,,nao_executado
 CA-26,Conselho analisa conteúdo sem identidade,,,,nao_executado
 CA-27,Análise não publica automaticamente,,,,nao_executado
@@ -39,7 +39,7 @@ CA-37,Mudança substancial não transfere concordâncias,,,,nao_executado
 CA-38,Contagem oculta ausente no payload,,,,nao_executado
 CA-39,Estatística explicita texto versão corte denominador e ressalva,,,,nao_executado
 CA-40,Incorporação liga revisão e contribuição atomicamente,,,,nao_executado
-CA-41,Snapshot imutável e reproduzível,,,,nao_executado
+CA-41,Snapshot imutável e reproduzível,core/application/documents/services.py:SnapshotService.create_snapshot,core/tests/test_phase3_documents_provisions.py::test_ca_41_snapshot_imutavel_e_reproduzivel,11 passed,aprovado
 CA-42,Documento limpo sem identidade notas ou referência antiga indevida,,,,nao_executado
 CA-43,Distribuição restrita e envio real confirmado,core/infrastructure/models/import_invitations.py:DeliveryAttempt,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
 CA-44,Banco e objetos restaurados consistentemente,,,,nao_executado
@@ -131,7 +131,7 @@ AR-06,Nenhum segredo em browser logs git,,,,nao_executado
 AR-07,Runtime sem BYPASSRLS superuser ownership,,,,nao_executado
 AR-08,RLS nega contexto ausente ou tenant alheio,,,,nao_executado
 AR-09,Pool não transfere contexto entre usuários tenants,,,,nao_executado
-AR-10,Storage privado e acesso autorizado,,,,nao_executado
+AR-10,Storage privado e acesso autorizado,core/application/documents/services.py:SourceFileService.register_source_file,core/tests/test_phase3_documents_provisions.py::test_ca_17_original_documental_preservado_com_conferencia_humana,11 passed,aprovado
 AR-11,Migrations SQL fonte única,,,,nao_executado
 AR-12,Rerun preserva dados segredos volumes,,,,nao_executado
 AR-13,Credencial inválida falha antes de mudanças parciais,,,,nao_executado

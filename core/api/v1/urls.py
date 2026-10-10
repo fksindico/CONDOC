@@ -1,8 +1,9 @@
 """
-Roteamento da API v1 — CONDC (Fase 1 e Fase 2)
+Roteamento da API v1 — CONDC (Fase 1, Fase 2 e Fase 3)
 """
 from django.urls import path
 from .views import (
+    # Fase 1
     SessionInfoView,
     CondominiumListCreateView,
     BuildingListCreateView,
@@ -11,6 +12,7 @@ from .views import (
     UnitMembershipListView,
     VerifyMembershipActionView,
     RoleAssignmentListCreateView,
+    # Fase 2
     ResidentImportTemplateView,
     ResidentImportListCreateView,
     ResidentImportDetailView,
@@ -23,6 +25,17 @@ from .views import (
     AccessInvitationRevokeView,
     PublicInvitationInspectView,
     PublicInvitationRedeemView,
+    # Fase 3
+    ProjectListCreateView,
+    DocumentListCreateView,
+    DocumentDetailView,
+    SourceFileUploadView,
+    TranscriptionDetailConfirmView,
+    ProvisionListCreateView,
+    ProvisionDetailUpdateView,
+    ProvisionInternalNoteListCreateView,
+    DocumentSnapshotListCreateView,
+    DocumentSnapshotDetailView,
 )
 
 urlpatterns = [
@@ -69,4 +82,19 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/invitations/<uuid:invitation_id>/revoke', AccessInvitationRevokeView.as_view(), name='api_v1_invitation_revoke'),
     path('access/invitations/inspect', PublicInvitationInspectView.as_view(), name='api_v1_public_invitation_inspect'),
     path('access/invitations/redeem', PublicInvitationRedeemView.as_view(), name='api_v1_public_invitation_redeem'),
+
+    # =========================================================================
+    # FASE 3: NÚCLEO DOCUMENTAL, DISPOSITIVOS E SNAPSHOTS
+    # =========================================================================
+    path('condominiums/<uuid:condominium_id>/projects', ProjectListCreateView.as_view(), name='api_v1_projects'),
+    path('condominiums/<uuid:condominium_id>/projects/<uuid:project_id>/documents', DocumentListCreateView.as_view(), name='api_v1_documents'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>', DocumentDetailView.as_view(), name='api_v1_document_detail'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/source-files', SourceFileUploadView.as_view(), name='api_v1_source_files'),
+    path('condominiums/<uuid:condominium_id>/transcriptions/<uuid:transcription_id>', TranscriptionDetailConfirmView.as_view(), name='api_v1_transcription_detail'),
+    path('condominiums/<uuid:condominium_id>/transcriptions/<uuid:transcription_id>/<str:action>', TranscriptionDetailConfirmView.as_view(), name='api_v1_transcription_action'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/provisions', ProvisionListCreateView.as_view(), name='api_v1_provisions'),
+    path('condominiums/<uuid:condominium_id>/provisions/<uuid:provision_id>', ProvisionDetailUpdateView.as_view(), name='api_v1_provision_detail'),
+    path('condominiums/<uuid:condominium_id>/provisions/<uuid:provision_id>/notes', ProvisionInternalNoteListCreateView.as_view(), name='api_v1_provision_notes'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/snapshots', DocumentSnapshotListCreateView.as_view(), name='api_v1_document_snapshots'),
+    path('condominiums/<uuid:condominium_id>/snapshots/<uuid:snapshot_id>', DocumentSnapshotDetailView.as_view(), name='api_v1_snapshot_detail'),
 ]

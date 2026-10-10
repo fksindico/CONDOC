@@ -25,6 +25,15 @@ from infrastructure.models import (
     ImportBatch,
     ImportRow,
     AccessInvitation,
+    Project,
+    Document,
+    SourceFile,
+    SourceTranscription,
+    Provision,
+    ProvisionRevision,
+    InternalNote,
+    DocumentSnapshot,
+    SnapshotItem,
 )
 from application.identity.services import (
     CondominiumService,
@@ -35,6 +44,15 @@ from application.identity.services import (
 )
 from application.imports.services import ImportService
 from application.invitations.services import InvitationService
+from application.documents.services import (
+    ProjectService,
+    DocumentService,
+    SourceFileService,
+    TranscriptionService,
+    ProvisionService,
+    InternalNoteService,
+    SnapshotService,
+)
 from application.common.idempotency import IdempotencyService
 from domain.imports.exceptions import (
     ImportPreviewOutdatedError,
@@ -49,6 +67,12 @@ from domain.invitations.exceptions import (
     InvitationRevokedError,
     InvalidExpectedContactError,
     InvitationRedemptionForbiddenError,
+)
+from domain.documents.exceptions import (
+    CircularReferenceError,
+    ConcurrencyConflictError,
+    SnapshotImmutableError,
+    PrivateNoteAccessForbiddenError,
 )
 from .serializers import (
     CondominiumSerializer,
@@ -66,6 +90,16 @@ from .serializers import (
     AccessInvitationListSerializer,
     InvitationRevokeActionSerializer,
     InvitationRedeemActionSerializer,
+    ProjectSerializer,
+    DocumentSerializer,
+    SourceFileSerializer,
+    SourceTranscriptionSerializer,
+    TranscriptionConfirmActionSerializer,
+    TranscriptionCorrectActionSerializer,
+    ProvisionCreateSerializer,
+    ProvisionUpdateSerializer,
+    InternalNoteSerializer,
+    DocumentSnapshotCreateSerializer,
 )
 
 # ============================================================================
@@ -577,3 +611,389 @@ class PublicInvitationRedeemView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except IdempotencyConflictError as e:
             return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
+
+
+# ============================================================================
+# FASE 3: NÚCLEO DOCUMENTAL, OCR, DISPOSITIVOS E SNAPSHOTS
+# ============================================================================
+
+class ProjectListCreateView(APIView):
+    """Listagem e criação de projetos documentais."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        projects = ProjectService.list_projects(condominium_id)
+        return Response(ProjectSerializer(projects, many=True).data)
+
+    def post(self, request, condominium_id):
+        serializer = ProjectSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        project = ProjectService.create_project(
+            condominium_id=condominium_id,
+            name=data['name'],
+            purpose=data.get('purpose'),
+            kind=data.get('kind', 'revisao'),
+            coordinator_account_id=data.get('coordinator_account_id'),
+            settings=data.get('settings')
+        )
+        return Response(ProjectSerializer(project).data, status=status.HTTP_201_CREATED)
+
+
+class DocumentListCreateView(APIView):
+    """Listagem e criação de documentos vinculados a um projeto."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, project_id):
+        docs = DocumentService.list_documents(project_id)
+        return Response(DocumentSerializer(docs, many=True).data)
+
+    def post(self, request, condominium_id, project_id):
+        serializer = DocumentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        document = DocumentService.create_document(
+            project_id=project_id,
+            condominium_id=condominium_id,
+            title=data['title'],
+            type=data.get('type', 'regimento_interno'),
+            numbering_policy=data.get('numbering_policy', 'preservar_original')
+        )
+        return Response(DocumentSerializer(document).data, status=status.HTTP_201_CREATED)
+
+
+class DocumentDetailView(APIView):
+    """Detalhes de um documento normativo."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        try:
+            doc = Document.objects.get(id=document_id, condominium_id=condominium_id)
+            return Response(DocumentSerializer(doc).data)
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SourceFileUploadView(APIView):
+    """Upload de arquivo original com extração e registro de hash (CA-17, AR-10)."""
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, condominium_id, document_id):
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response({"error": "Nenhum arquivo enviado no campo 'file'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        content_bytes = file_obj.read()
+
+        source_file = SourceFileService.register_source_file(
+            condominium_id=condominium_id,
+            uploaded_by_id=actor_id,
+            filename=file_obj.name,
+            mime_type=getattr(file_obj, 'content_type', 'application/octet-stream'),
+            size_bytes=len(content_bytes),
+            file_content=content_bytes
+        )
+
+        # Transcrição inicial (simulação de extração OCR para teste)
+        raw_text = request.data.get('raw_text') or f"Transcrição inicial do arquivo {file_obj.name}"
+        transcription = TranscriptionService.create_initial_transcription(
+            document_id=document_id,
+            condominium_id=condominium_id,
+            source_file_id=source_file.id,
+            raw_text=raw_text
+        )
+
+        return Response({
+            "source_file": SourceFileSerializer(source_file).data,
+            "transcription": SourceTranscriptionSerializer(transcription).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class TranscriptionDetailConfirmView(APIView):
+    """Conferência humana e correção de transcrição original (CA-17, CA-18)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, transcription_id):
+        try:
+            trans = SourceTranscription.objects.get(id=transcription_id, condominium_id=condominium_id)
+            return Response(SourceTranscriptionSerializer(trans).data)
+        except SourceTranscription.DoesNotExist:
+            return Response({"error": "Transcrição não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, condominium_id, transcription_id, action):
+        actor_id = _get_or_create_actor_id(request)
+
+        if action == 'confirm':
+            # CA-17: Conferência humana do original
+            serializer = TranscriptionConfirmActionSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            trans = TranscriptionService.confirm_transcription(
+                transcription_id=transcription_id,
+                checked_by_id=actor_id,
+                corrected_text=serializer.validated_data.get('corrected_text')
+            )
+            return Response(SourceTranscriptionSerializer(trans).data, status=status.HTTP_200_OK)
+
+        elif action == 'correct':
+            # CA-18: Correção humana gera nova versão de transcrição
+            serializer = TranscriptionCorrectActionSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            new_trans = TranscriptionService.correct_transcription(
+                transcription_id=transcription_id,
+                checked_by_id=actor_id,
+                corrected_text=serializer.validated_data['corrected_text']
+            )
+            return Response(SourceTranscriptionSerializer(new_trans).data, status=status.HTTP_201_CREATED)
+
+        return Response({"error": "Ação inválida. Use 'confirm' ou 'correct'."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProvisionListCreateView(APIView):
+    """
+    Listagem em árvore e criação de dispositivos normativos.
+    CA-24: Por padrão omite notas internas, garantindo privacidade em superfícies públicas.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        include_notes = request.query_params.get('include_notes', 'false').lower() == 'true'
+        actor_id = getattr(request.user, 'account_id', None) or request.query_params.get('actor_account_id')
+
+        if include_notes:
+            # CA-24: Apenas gestão/equipe autorizada pode ver notas internas
+            has_role = RoleAssignment.objects.filter(
+                condominium_id=condominium_id,
+                account_id=actor_id,
+                role__in=['sindico', 'admin', 'juridico', 'comissao'],
+                status='active'
+            ).exists() if actor_id else False
+
+            if not has_role:
+                return Response(
+                    {"error": "Acesso a notas internas restrito a equipe administrativa autorizada (CA-24)."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        tree = ProvisionService.get_document_tree(document_id=document_id, include_notes=include_notes)
+        return Response(tree, status=status.HTTP_200_OK)
+
+    def post(self, request, condominium_id, document_id):
+        serializer = ProvisionCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+
+        provision = ProvisionService.create_provision(
+            document_id=document_id,
+            condominium_id=condominium_id,
+            kind=data.get('kind', 'artigo'),
+            label=data['label'],
+            text=data['text'],
+            parent_provision_id=data.get('parent_provision_id'),
+            position=data.get('position', 0),
+            theme=data.get('theme'),
+            author_account_id=actor_id
+        )
+
+        latest_rev = ProvisionService.get_latest_revision(provision.id)
+        response_data = {
+            "id": str(provision.id),
+            "kind": provision.kind,
+            "revision_number": latest_rev.revision_number,
+            "label": latest_rev.label,
+            "text": latest_rev.text,
+            "position": latest_rev.position,
+            "parent_provision_id": str(latest_rev.parent_provision_id) if latest_rev.parent_provision_id else None,
+            "etag": latest_rev.etag,
+        }
+        res = Response(response_data, status=status.HTTP_201_CREATED)
+        res['ETag'] = f'"{latest_rev.etag}"'
+        return res
+
+
+class ProvisionDetailUpdateView(APIView):
+    """
+    Consulta e atualização de dispositivo com concorrência otimista (CA-23)
+    e detecção de ciclos na hierarquia.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, provision_id):
+        try:
+            prov = Provision.objects.get(id=provision_id, condominium_id=condominium_id)
+            latest_rev = ProvisionService.get_latest_revision(prov.id)
+            if not latest_rev:
+                return Response({"error": "Revisão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+            data = {
+                "id": str(prov.id),
+                "kind": prov.kind,
+                "revision_number": latest_rev.revision_number,
+                "label": latest_rev.label,
+                "text": latest_rev.text,
+                "theme": latest_rev.theme,
+                "position": latest_rev.position,
+                "parent_provision_id": str(latest_rev.parent_provision_id) if latest_rev.parent_provision_id else None,
+                "etag": latest_rev.etag,
+            }
+            res = Response(data)
+            res['ETag'] = f'"{latest_rev.etag}"'
+            return res
+        except Provision.DoesNotExist:
+            return Response({"error": "Dispositivo não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, condominium_id, provision_id):
+        serializer = ProvisionUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # CA-23: ETag no header If-Match ou payload
+        expected_etag = (
+            request.headers.get('If-Match')
+            or request.META.get('HTTP_IF_MATCH')
+            or request.data.get('expected_etag')
+        )
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+
+        try:
+            new_rev = ProvisionService.update_provision(
+                provision_id=provision_id,
+                expected_etag=expected_etag,
+                text=data['text'],
+                label=data.get('label'),
+                parent_provision_id=data.get('parent_provision_id'),
+                position=data.get('position'),
+                theme=data.get('theme'),
+                change_type=data.get('change_type', 'alterado'),
+                author_account_id=actor_id
+            )
+            response_data = {
+                "id": str(provision_id),
+                "revision_number": new_rev.revision_number,
+                "label": new_rev.label,
+                "text": new_rev.text,
+                "etag": new_rev.etag,
+                "change_type": new_rev.change_type,
+            }
+            res = Response(response_data, status=status.HTTP_200_OK)
+            res['ETag'] = f'"{new_rev.etag}"'
+            return res
+        except ConcurrencyConflictError as e:
+            # CA-23: Conflito de concorrência otimista (HTTP 412)
+            return Response(
+                {
+                    "code": "CONCURRENCY_CONFLICT",
+                    "message": str(e),
+                },
+                status=status.HTTP_412_PRECONDITION_FAILED
+            )
+        except CircularReferenceError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProvisionInternalNoteListCreateView(APIView):
+    """Criação e listagem de notas internas privadas (CA-24)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, provision_id):
+        actor_id = getattr(request.user, 'account_id', None) or request.query_params.get('actor_account_id')
+        role_obj = RoleAssignment.objects.filter(
+            condominium_id=condominium_id,
+            account_id=actor_id,
+            status='active'
+        ).first() if actor_id else None
+
+        user_role = role_obj.role if role_obj else 'morador'
+
+        try:
+            notes = InternalNoteService.list_notes_for_provision(provision_id=provision_id, user_role=user_role)
+            return Response(InternalNoteSerializer(notes, many=True).data)
+        except PrivateNoteAccessForbiddenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    def post(self, request, condominium_id, provision_id):
+        actor_id = _get_or_create_actor_id(request)
+        serializer = InternalNoteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        note = InternalNoteService.create_note(
+            condominium_id=condominium_id,
+            provision_id=provision_id,
+            author_account_id=actor_id,
+            content=data['content'],
+            visibility=data.get('visibility', 'equipe'),
+            category=data.get('category', 'redacao'),
+            revision_id=data.get('revision_id')
+        )
+        return Response(InternalNoteSerializer(note).data, status=status.HTTP_201_CREATED)
+
+
+class DocumentSnapshotListCreateView(APIView):
+    """Criação e listagem de snapshots imutáveis (CA-41)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        snaps = DocumentSnapshot.objects.filter(document_id=document_id, condominium_id=condominium_id).order_by('-frozen_at')
+        return Response([
+            {
+                "id": str(s.id),
+                "version_label": s.version_label,
+                "purpose": s.purpose,
+                "frozen_at": s.frozen_at.isoformat(),
+                "content_hash": s.content_hash,
+                "is_immutable": s.is_immutable,
+            }
+            for s in snaps
+        ])
+
+    def post(self, request, condominium_id, document_id):
+        serializer = DocumentSnapshotCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+
+        snapshot = SnapshotService.create_snapshot(
+            document_id=document_id,
+            condominium_id=condominium_id,
+            version_label=data['version_label'],
+            frozen_by_id=actor_id,
+            purpose=data.get('purpose', 'consulta_publica')
+        )
+
+        return Response({
+            "id": str(snapshot.id),
+            "version_label": snapshot.version_label,
+            "purpose": snapshot.purpose,
+            "content_hash": snapshot.content_hash,
+            "is_immutable": snapshot.is_immutable,
+            "frozen_at": snapshot.frozen_at.isoformat()
+        }, status=status.HTTP_201_CREATED)
+
+
+class DocumentSnapshotDetailView(APIView):
+    """Recuperação da árvore congelada imutável a partir do snapshot (CA-41)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, snapshot_id):
+        try:
+            tree = SnapshotService.get_snapshot_tree(snapshot_id)
+            return Response(tree, status=status.HTTP_200_OK)
+        except DocumentSnapshot.DoesNotExist:
+            return Response({"error": "Snapshot não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+

@@ -20,6 +20,18 @@ from .import_invitations import (
     DeliveryAttempt,
     IdempotencyRecord,
 )
+from .documents import (
+    Project,
+    Document,
+    SourceFile,
+    SourceTranscription,
+    SourceProvision,
+    Provision,
+    ProvisionRevision,
+    InternalNote,
+    DocumentSnapshot,
+    SnapshotItem,
+)
 
 __all__ = [
     "Condominium",
@@ -40,4 +52,14 @@ __all__ = [
     "InvitationRedemption",
     "DeliveryAttempt",
     "IdempotencyRecord",
+    "Project",
+    "Document",
+    "SourceFile",
+    "SourceTranscription",
+    "SourceProvision",
+    "Provision",
+    "ProvisionRevision",
+    "InternalNote",
+    "DocumentSnapshot",
+    "SnapshotItem",
 ]

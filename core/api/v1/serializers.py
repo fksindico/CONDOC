@@ -17,6 +17,15 @@ from infrastructure.models import (
     ImportRow,
     AccessInvitation,
     InvitationRedemption,
+    Project,
+    Document,
+    SourceFile,
+    SourceTranscription,
+    Provision,
+    ProvisionRevision,
+    InternalNote,
+    DocumentSnapshot,
+    SnapshotItem,
 )
 
 # ============================================================================
@@ -186,3 +195,99 @@ class InvitationInspectResponseSerializer(serializers.Serializer):
 class InvitationRedeemActionSerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
     provided_contact = serializers.CharField(required=False, allow_blank=True)
+
+
+# ============================================================================
+# FASE 3: Núcleo Documental, Dispositivos e Snapshots
+# ============================================================================
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            'id', 'condominium_id', 'name', 'purpose', 'kind',
+            'coordinator_account_id', 'status', 'settings', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = [
+            'id', 'project_id', 'condominium_id', 'type', 'title',
+            'editorial_status', 'numbering_policy', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class SourceFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SourceFile
+        fields = [
+            'id', 'condominium_id', 'storage_key', 'filename', 'mime_type',
+            'size_bytes', 'file_hash', 'uploaded_by_id', 'state', 'created_at'
+        ]
+        read_only_fields = ['id', 'file_hash', 'created_at']
+
+
+class SourceTranscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SourceTranscription
+        fields = [
+            'id', 'document_id', 'condominium_id', 'source_file_id',
+            'version', 'status', 'raw_text', 'corrected_text',
+            'checked_by_id', 'checked_at', 'replaces_transcription_id', 'created_at'
+        ]
+        read_only_fields = ['id', 'version', 'status', 'checked_by_id', 'checked_at', 'created_at']
+
+
+class TranscriptionConfirmActionSerializer(serializers.Serializer):
+    corrected_text = serializers.CharField(required=False, allow_blank=True)
+
+
+class TranscriptionCorrectActionSerializer(serializers.Serializer):
+    corrected_text = serializers.CharField(required=True)
+
+
+class ProvisionCreateSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=[
+        'titulo', 'capitulo', 'secao', 'subsecao', 'artigo',
+        'caput', 'paragrafo', 'inciso', 'alinea', 'preambulo', 'anexo'
+    ], default='artigo')
+    label = serializers.CharField(max_length=100)
+    text = serializers.CharField()
+    parent_provision_id = serializers.UUIDField(required=False, allow_null=True)
+    position = serializers.IntegerField(default=0)
+    theme = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
+class ProvisionUpdateSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+    label = serializers.CharField(max_length=100, required=False)
+    parent_provision_id = serializers.UUIDField(required=False, allow_null=True)
+    position = serializers.IntegerField(required=False)
+    theme = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    change_type = serializers.ChoiceField(choices=[
+        'mantido', 'alterado', 'incluido', 'excluido',
+        'movido', 'renumerado', 'desmembrado', 'consolidado', 'reestruturado'
+    ], default='alterado')
+
+
+class InternalNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InternalNote
+        fields = [
+            'id', 'condominium_id', 'provision_id', 'revision_id',
+            'author_account_id', 'content', 'visibility', 'category',
+            'resolved_at', 'resolved_by_id', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class DocumentSnapshotCreateSerializer(serializers.Serializer):
+    version_label = serializers.CharField(max_length=100, required=True)
+    purpose = serializers.ChoiceField(choices=[
+        'consulta_publica', 'marco_revisao', 'versao_final'
+    ], default='consulta_publica')
+

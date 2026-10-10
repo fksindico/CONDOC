@@ -243,6 +243,143 @@ CREATE TABLE IF NOT EXISTS app.idempotency_records (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (tenant_id, operation, key)
 );
+
+CREATE TABLE IF NOT EXISTS app.projects (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    purpose TEXT,
+    kind TEXT NOT NULL DEFAULT 'revisao',
+    coordinator_account_id TEXT REFERENCES accounts(id),
+    status TEXT NOT NULL DEFAULT 'preparacao',
+    settings TEXT NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.documents (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    type TEXT NOT NULL DEFAULT 'regimento_interno',
+    title TEXT NOT NULL,
+    editorial_status TEXT NOT NULL DEFAULT 'rascunho',
+    numbering_policy TEXT NOT NULL DEFAULT 'preservar_original',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.source_files (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    storage_key TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    file_hash TEXT NOT NULL,
+    uploaded_by_id TEXT NOT NULL REFERENCES accounts(id),
+    state TEXT NOT NULL DEFAULT 'ready',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.source_transcriptions (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    source_file_id TEXT NOT NULL REFERENCES source_files(id) ON DELETE CASCADE,
+    version INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'draft',
+    raw_text TEXT NOT NULL,
+    corrected_text TEXT,
+    checked_by_id TEXT REFERENCES accounts(id),
+    checked_at TIMESTAMP,
+    replaces_transcription_id TEXT REFERENCES source_transcriptions(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.source_provisions (
+    id TEXT PRIMARY KEY,
+    transcription_id TEXT NOT NULL REFERENCES source_transcriptions(id) ON DELETE CASCADE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    parent_id TEXT REFERENCES source_provisions(id),
+    kind TEXT NOT NULL DEFAULT 'artigo',
+    label TEXT NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    text TEXT NOT NULL,
+    page_number INTEGER,
+    confidence_score REAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.provisions (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL DEFAULT 'artigo',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.provision_revisions (
+    id TEXT PRIMARY KEY,
+    provision_id TEXT NOT NULL REFERENCES provisions(id) ON DELETE CASCADE,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    revision_number INTEGER NOT NULL DEFAULT 1,
+    parent_provision_id TEXT REFERENCES provisions(id),
+    position INTEGER NOT NULL DEFAULT 0,
+    label TEXT NOT NULL,
+    text TEXT NOT NULL,
+    theme TEXT,
+    change_type TEXT NOT NULL DEFAULT 'mantido',
+    status TEXT NOT NULL DEFAULT 'draft',
+    author_account_id TEXT REFERENCES accounts(id),
+    etag TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (provision_id, revision_number)
+);
+
+CREATE TABLE IF NOT EXISTS app.internal_notes (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    provision_id TEXT NOT NULL REFERENCES provisions(id) ON DELETE CASCADE,
+    revision_id TEXT REFERENCES provision_revisions(id),
+    author_account_id TEXT NOT NULL REFERENCES accounts(id),
+    content TEXT NOT NULL,
+    visibility TEXT NOT NULL DEFAULT 'equipe',
+    category TEXT NOT NULL DEFAULT 'redacao',
+    resolved_at TIMESTAMP,
+    resolved_by_id TEXT REFERENCES accounts(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.document_snapshots (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    version_label TEXT NOT NULL,
+    purpose TEXT NOT NULL DEFAULT 'consulta_publica',
+    frozen_by_id TEXT NOT NULL REFERENCES accounts(id),
+    frozen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    content_hash TEXT NOT NULL,
+    is_immutable INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.snapshot_items (
+    id TEXT PRIMARY KEY,
+    snapshot_id TEXT NOT NULL REFERENCES document_snapshots(id) ON DELETE CASCADE,
+    provision_id TEXT NOT NULL REFERENCES provisions(id) ON DELETE CASCADE,
+    provision_revision_id TEXT NOT NULL REFERENCES provision_revisions(id),
+    rendered_label TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    parent_provision_id TEXT REFERENCES provisions(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (snapshot_id, provision_id)
+);
 """
 
 @pytest.fixture(autouse=True)
