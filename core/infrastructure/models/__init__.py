@@ -47,6 +47,7 @@ from .participation import (
     SuggestionIncorporation,
     ConsultationSnapshot,
 )
+from .export import ExportArtifact
 
 __all__ = [
     "Condominium",
@@ -90,4 +91,5 @@ __all__ = [
     "AgreementEvent",
     "SuggestionIncorporation",
     "ConsultationSnapshot",
+    "ExportArtifact",
 ]

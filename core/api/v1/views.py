@@ -48,6 +48,7 @@ from infrastructure.models import (
     AgreementEvent,
     SuggestionIncorporation,
     ConsultationSnapshot,
+    ExportArtifact,
 )
 from application.identity.services import (
     CondominiumService,
@@ -83,6 +84,7 @@ from application.agreements.services import (
     AgreementService,
     IncorporationService,
 )
+from application.preservation.services import PreservationService
 from application.common.idempotency import IdempotencyService
 from domain.imports.exceptions import (
     ImportPreviewOutdatedError,
@@ -129,6 +131,11 @@ from domain.agreements.exceptions import (
     ElectoralVocabularyForbiddenError,
     SubstantialChangeAgreementTransferForbiddenError,
     IncorporationIntegrityError,
+)
+from domain.preservation.exceptions import (
+    PublicExportExposureError,
+    ManifestIntegrityError,
+    ElectoralDeliberationForbiddenError,
 )
 from .serializers import (
     CondominiumSerializer,
@@ -179,6 +186,8 @@ from .serializers import (
     SuggestionIncorporationCreateSerializer,
     SuggestionIncorporationSerializer,
     ConsultationSnapshotSerializer,
+    ExportArtifactSerializer,
+    ManifestVerificationSerializer,
 )
 
 # ============================================================================
@@ -1825,6 +1834,112 @@ class CampaignConsultationSnapshotView(APIView):
             return Response(ConsultationSnapshotSerializer(snap).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================================
+# FASE 7: PRESERVAÇÃO E PUBLICAÇÃO DE CONTEÚDO
+# ============================================================================
+
+class DocumentFinalPublicPackageView(APIView):
+    """
+    UI-33 / UI-38 / CA-42 / CA-45: Gera o pacote externo público com manifesto de integridade SHA-256.
+    Segrega estritamente o pacote público do relatório interno, omitindo PII e notas confidenciais.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, document_id):
+        actor_id = _get_or_create_actor_id(request)
+        try:
+            package = PreservationService.generate_final_public_package(
+                condominium_id=condominium_id,
+                document_id=document_id,
+                generated_by_id=actor_id
+            )
+            return Response(package, status=status.HTTP_201_CREATED)
+        except PublicExportExposureError as e:
+            return Response({"error": str(e), "code": "PII_OR_INTERNAL_NOTE_EXPOSURE"}, status=status.HTTP_400_BAD_REQUEST)
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DocumentCommissionInternalReportView(APIView):
+    """
+    UI-33: Gera relatório interno completo da comissão e síndico com histórico e notas.
+    is_public = False.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, document_id):
+        actor_id = _get_or_create_actor_id(request)
+        campaign_id = request.data.get('campaign_id')
+        camp_uuid = uuid.UUID(campaign_id) if campaign_id else None
+
+        try:
+            report = PreservationService.generate_internal_commission_report(
+                condominium_id=condominium_id,
+                document_id=document_id,
+                campaign_id=camp_uuid,
+                generated_by_id=actor_id
+            )
+            return Response(report, status=status.HTTP_201_CREATED)
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DocumentAssemblyReadingView(APIView):
+    """
+    CA-45 / UI-38: Modo de leitura pública autorizada para apresentação em assembleia.
+    Somente leitura estruturado, sem controles ou módulos de votação ou aprovação vinculante.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, document_id):
+        try:
+            reading_data = PreservationService.get_assembly_reading_view(
+                condominium_id=condominium_id,
+                document_id=document_id
+            )
+            return Response(reading_data, status=status.HTTP_200_OK)
+        except ElectoralDeliberationForbiddenError as e:
+            return Response({"error": str(e), "code": "ELECTORAL_CONTROLS_FORBIDDEN"}, status=status.HTTP_400_BAD_REQUEST)
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ExportArtifactDetailView(APIView):
+    """Consulta detalhe de um artefato de exportação registrado."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, artifact_id):
+        try:
+            artifact = ExportArtifact.objects.get(id=artifact_id, condominium_id=condominium_id)
+            return Response(ExportArtifactSerializer(artifact).data, status=status.HTTP_200_OK)
+        except ExportArtifact.DoesNotExist:
+            return Response({"error": "Artefato não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ManifestVerifyView(APIView):
+    """Verifica a integridade dos arquivos de um pacote contra o manifesto SHA-256 registrado."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, artifact_id):
+        serializer = ManifestVerificationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        try:
+            result = PreservationService.verify_manifest_integrity(
+                artifact_id=artifact_id,
+                condominium_id=condominium_id,
+                files_content_map=data['files_content_map']
+            )
+            return Response(result, status=status.HTTP_200_OK)
+        except ManifestIntegrityError as e:
+            return Response({"error": str(e), "code": "MANIFEST_INTEGRITY_TAMPERED"}, status=status.HTTP_400_BAD_REQUEST)
+        except ExportArtifact.DoesNotExist:
+            return Response({"error": "Artefato não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 

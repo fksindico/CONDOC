@@ -65,6 +65,12 @@ from .views import (
     MyAgreementListView,
     SuggestionIncorporationView,
     CampaignConsultationSnapshotView,
+    # Fase 7
+    DocumentFinalPublicPackageView,
+    DocumentCommissionInternalReportView,
+    DocumentAssemblyReadingView,
+    ExportArtifactDetailView,
+    ManifestVerifyView,
 )
 
 urlpatterns = [
@@ -166,4 +172,13 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/stats', RevisionAgreementStatsView.as_view(), name='api_v1_suggestion_agreement_stats'),
     path('condominiums/<uuid:condominium_id>/my-agreements', MyAgreementListView.as_view(), name='api_v1_my_agreements'),
     path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/incorporate', SuggestionIncorporationView.as_view(), name='api_v1_suggestion_incorporate'),
+
+    # =========================================================================
+    # FASE 7: PRESERVAÇÃO E PACOTES DE PUBLICAÇÃO FINAL
+    # =========================================================================
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/package', DocumentFinalPublicPackageView.as_view(), name='api_v1_document_export_package'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/commission-report', DocumentCommissionInternalReportView.as_view(), name='api_v1_document_commission_report'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/assembly-reading', DocumentAssemblyReadingView.as_view(), name='api_v1_document_assembly_reading'),
+    path('condominiums/<uuid:condominium_id>/artifacts/<uuid:artifact_id>', ExportArtifactDetailView.as_view(), name='api_v1_artifact_detail'),
+    path('condominiums/<uuid:condominium_id>/artifacts/<uuid:artifact_id>/verify', ManifestVerifyView.as_view(), name='api_v1_artifact_verify'),
 ]

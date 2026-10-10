@@ -39,6 +39,7 @@ from infrastructure.models import (
     AgreementEvent,
     SuggestionIncorporation,
     ConsultationSnapshot,
+    ExportArtifact,
 )
 
 # ============================================================================
@@ -512,6 +513,29 @@ class ConsultationSnapshotSerializer(serializers.ModelSerializer):
             'stats_payload', 'disclaimer', 'created_by_id', 'created_at'
         ]
         read_only_fields = fields
+
+
+# ============================================================================
+# FASE 7: Preservação e Publicação de Conteúdo
+# ============================================================================
+
+class ExportArtifactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExportArtifact
+        fields = [
+            'id', 'condominium_id', 'document_id', 'snapshot_id',
+            'kind', 'status', 'is_public', 'manifest_hash',
+            'files_manifest', 'disclaimer', 'generated_by_id', 'created_at'
+        ]
+        read_only_fields = fields
+
+
+class ManifestVerificationSerializer(serializers.Serializer):
+    files_content_map = serializers.DictField(
+        child=serializers.CharField(trim_whitespace=False, allow_blank=True),
+        required=True
+    )
+
 
 
 

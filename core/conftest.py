@@ -542,6 +542,21 @@ CREATE TABLE IF NOT EXISTS app.consultation_snapshots (
     created_by_id TEXT REFERENCES accounts(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS app.export_artifacts (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    document_id TEXT REFERENCES documents(id) ON DELETE CASCADE,
+    snapshot_id TEXT REFERENCES document_snapshots(id) ON DELETE SET NULL,
+    kind TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'concluido',
+    is_public INTEGER NOT NULL DEFAULT 1,
+    manifest_hash TEXT NOT NULL,
+    files_manifest TEXT NOT NULL DEFAULT '[]',
+    disclaimer TEXT NOT NULL,
+    generated_by_id TEXT REFERENCES accounts(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 @pytest.fixture(autouse=True)

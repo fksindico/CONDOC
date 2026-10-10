@@ -76,12 +76,12 @@ UI-29,Alteração substancial sem transferência,,,,nao_executado
 UI-30,Contagem oculta não enviada,,,,nao_executado
 UI-31,Estatística corte versão denominador,,,,nao_executado
 UI-32,Ausência de tela eleitoral,,,,nao_executado
-UI-33,Exports distinguem restrito e público,,,,nao_executado
+UI-33,Exports distinguem restrito e público,core/domain/preservation/invariants.py:assert_public_export_contains_no_pii_or_internal_notes,core/tests/test_phase7_preservation_publication.py::test_ui_33_segregacao_estrita_entre_pacote_publico_e_relatorio_interno,6 passed,aprovado
 UI-34,Consulta identidade e export pessoal auditadas,,,,nao_executado
 UI-35,Mobile e teclado completos,,,,nao_executado
 UI-36,Ocultação bloqueia todas as superfícies,,,,nao_executado
 UI-37,Falha recuperável sem duplicação,,,,nao_executado
-UI-38,Publicação não é aprovação normativa,,,,nao_executado
+UI-38,Publicação não é aprovação normativa,core/domain/preservation/invariants.py:assert_assembly_reading_view_has_no_voting_controls,core/tests/test_phase7_preservation_publication.py::test_ca_45_ui_38_modo_leitura_assembleia_sem_controles_eleitorais,6 passed,aprovado
 V21-01,Acesso fora do tenant negado inclusive arquivo,,,,nao_executado
 V21-02,Revisor privado sem autoria,,,,nao_executado
 V21-03,Admin prepara mas não autoriza publicação,,,,nao_executado
