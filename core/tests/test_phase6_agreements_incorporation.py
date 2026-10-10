@@ -1,5 +1,5 @@
 """
-Testes Automatizados para a Fase 6 — Concordâncias Consultivas e Consolidação na Minuta — CONDC
+Testes Automatizados para a Fase 6 — Concordâncias Consultivas e Consolidação na Minuta — CONDOC
 Cobre integralmente os critérios de aceite:
 - CA-35: Cliques repetidos produzem exatamente uma concordância ativa (idempotência)
 - CA-36: Retirada de concordância atualiza agregado e preserva evento no histórico

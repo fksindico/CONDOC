@@ -1,5 +1,5 @@
 """
-Testes Automatizados para a Fase 5 — Consulta Pública, Participação e Moderação Editorial — CONDC
+Testes Automatizados para a Fase 5 — Consulta Pública, Participação e Moderação Editorial — CONDOC
 Cobre integralmente os critérios de aceite:
 - CA-25: Sugestão privada recebe protocolo e versão consultada
 - CA-26: Conselho/revisor analisa conteúdo sem identidade (sanitização de DTO)

@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Tipos TypeScript Canônicos — CONDC API v1
+ * Tipos TypeScript Canônicos — CONDOC API v1
  * Baseados no PRD Mestre v3.0 e Contrato_API_v3.md
  *
  * ATENÇÃO: É estritamente vedada a inclusão de modelos, campos ou enumerações

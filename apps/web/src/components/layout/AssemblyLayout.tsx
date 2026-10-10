@@ -37,7 +37,7 @@ export const AssemblyLayout: React.FC = () => {
           </Link>
           <div className="flex items-center gap-2 font-bold text-white tracking-tight">
             <Building2 className="w-5 h-5 text-brand-400" />
-            <span className="text-base">CONDC</span>
+            <span className="text-base">CONDOC</span>
           </div>
           <span className="text-xs px-2.5 py-0.5 rounded-full bg-brand-900/80 text-brand-300 border border-brand-700 font-mono uppercase tracking-wider">
             Projeção em Assembleia — Somente Leitura

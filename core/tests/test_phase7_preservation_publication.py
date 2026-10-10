@@ -1,5 +1,5 @@
 """
-Testes Automatizados para a Fase 7 — Preservação e Publicação de Conteúdo — CONDC
+Testes Automatizados para a Fase 7 — Preservação e Publicação de Conteúdo — CONDOC
 Cobre integralmente os critérios de aceite:
 - CA-41: Snapshot imutável e reproduzível
 - CA-42: Documento limpo sem identidade, notas internas ou referência antiga indevida

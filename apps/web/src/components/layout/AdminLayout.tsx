@@ -92,7 +92,7 @@ export const AdminLayout: React.FC = () => {
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <Link to="/painel" className="flex items-center gap-2.5 text-white font-bold text-base tracking-tight">
             <Building2 className="w-6 h-6 text-brand-400" />
-            <span>CONDC</span>
+            <span>CONDOC</span>
             <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-brand-900/60 text-brand-300 border border-brand-700">
               Gestão
             </span>
@@ -183,7 +183,7 @@ export const AdminLayout: React.FC = () => {
             <Menu className="w-6 h-6" />
           </button>
           <span className="font-semibold text-sm text-slate-900 truncate">
-            {activeCondominium?.name || 'CONDC'}
+            {activeCondominium?.name || 'CONDOC'}
           </span>
           <div className="w-6" />
         </header>

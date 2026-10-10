@@ -13,7 +13,7 @@ from .exceptions import (
 )
 
 DISCLAIMER_FINAL_PUBLICATION = (
-    "Minuta consolidada para subsidiar deliberação assemblear. A plataforma CONDC apoia a gestão "
+    "Minuta consolidada para subsidiar deliberação assemblear. A plataforma CONDOC apoia a gestão "
     "e a redação prévia e NÃO realiza votação, apuração de votos, cálculo de quórum de assembleia, "
     "aprovação vinculante ou registro cartorial."
 )

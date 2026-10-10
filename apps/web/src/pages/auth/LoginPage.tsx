@@ -49,7 +49,7 @@ export const LoginPage: React.FC = () => {
           <div className="inline-flex items-center justify-center p-3 bg-brand-600 rounded-2xl shadow-lg shadow-brand-500/30 text-white mb-2">
             <Building2 className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">CONDC Gestão</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">CONDOC Gestão</h1>
           <p className="text-xs text-slate-400">
             Acesso administrativo restrito a síndicos, comissões e gestão condominial.
           </p>

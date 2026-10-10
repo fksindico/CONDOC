@@ -1,5 +1,5 @@
 """
-Testes Automatizados da Fase 3 — Núcleo Documental, OCR, Dispositivos e Snapshots (CONDC)
+Testes Automatizados da Fase 3 — Núcleo Documental, OCR, Dispositivos e Snapshots (CONDOC)
 Cobre os Critérios de Aceite:
 - CA-17: Original documental preservado com conferência humana
 - CA-18: Corrigir transcrição gera versão e não simula alteração normativa

@@ -1,5 +1,5 @@
 """
-Testes Automatizados da Fase 4 — Comparação, Mapeamento de Origens, Renumeração e Exportação Preliminar (CONDC)
+Testes Automatizados da Fase 4 — Comparação, Mapeamento de Origens, Renumeração e Exportação Preliminar (CONDOC)
 Cobre os Critérios de Aceite:
 - CA-19: Dispositivo incluído não inventa origem
 - CA-20: Excluído sai do limpo e permanece em histórico e DePara

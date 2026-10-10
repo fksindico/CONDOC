@@ -119,7 +119,7 @@ export const InvitationRedeemPage: React.FC = () => {
                     type="text"
                     required
                     className="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none uppercase font-mono"
-                    placeholder="Ex: CONDC-INV-XXXX-YYYY"
+                    placeholder="Ex: CONDOC-INV-XXXX-YYYY"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                   />

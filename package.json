@@ -2,7 +2,7 @@
   "name": "condc-monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "CONDC — Sistema de Gestão de Documentos Normativos Condominiais",
+  "description": "CONDOC — Sistema de Gestão de Documentos Normativos Condominiais",
   "workspaces": [
     "apps/*",
     "packages/*"

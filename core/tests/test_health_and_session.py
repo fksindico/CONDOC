@@ -1,5 +1,5 @@
 """
-Testes de Integridade da API e Sessão — CONDC (Fase 0)
+Testes de Integridade da API e Sessão — CONDOC (Fase 0)
 """
 import pytest
 from django.test import Client

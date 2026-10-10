@@ -1,5 +1,5 @@
 """
-Testes Automatizados para a Fase 8 — Hardening, Operações e Restauração Consistente — CONDC
+Testes Automatizados para a Fase 8 — Hardening, Operações e Restauração Consistente — CONDOC
 Cobre integralmente os critérios de aceite:
 - CA-44: Banco e objetos restaurados consistentemente com validação SHA-256
 - Scripts operacionais: doctor.sh, migrate.sh, backup.sh e restore.sh

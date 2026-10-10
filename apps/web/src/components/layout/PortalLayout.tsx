@@ -38,7 +38,7 @@ export const PortalLayout: React.FC = () => {
             <div className="flex items-center gap-3">
               <Link to="/portal" className="flex items-center gap-2 text-brand-700 font-bold text-lg tracking-tight">
                 <Building2 className="w-6 h-6 text-brand-600" />
-                <span>CONDC</span>
+                <span>CONDOC</span>
               </Link>
               <div className="h-4 w-px bg-slate-200 hidden sm:block" />
               <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px] sm:max-w-xs">
@@ -96,7 +96,7 @@ export const PortalLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <LegalDisclaimerBanner compact className="w-full sm:w-auto" />
           <p className="text-center sm:text-right shrink-0">
-            CONDC — Plataforma de Gestão Normativa Condominial
+            CONDOC — Plataforma de Gestão Normativa Condominial
           </p>
         </div>
       </footer>

@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "CONDC Core API",
+    "title": "CONDOC Core API",
     "version": "1.0.0",
-    "description": "API REST do sistema CONDC — Gestão de Documentos Normativos Condominiais.\n\nAVISO DE ESCOPO: Esta API não provê métodos para votação, apuração eleitoral ou cálculo de quórum deliberativo."
+    "description": "API REST do sistema CONDOC — Gestão de Documentos Normativos Condominiais.\n\nAVISO DE ESCOPO: Esta API não provê métodos para votação, apuração eleitoral ou cálculo de quórum deliberativo."
   },
   "servers": [
     {
