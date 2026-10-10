@@ -13,14 +13,17 @@ Ambiente: Servidor Proxmox VE (Kernel `7.0.14-19-pve`, Arquitetura `x86_64`)
 * **Endereço IP:** `192.168.10.200` (Porta SSH: `22`)
 * **Usuário:** `condoc`
 * **Privilégios Sudo:** **SUCESSO** (acesso administrativo verificado via `sudo`)
-* **Sistema Operacional:** Ubuntu 24.04.1 LTS (Noble Numbat)
+* **Sistema Operacional:** Ubuntu 24.04.1 LTS / 26.04.1
 * **Processador:** 4 vCPUs alocadas
-* **Memória RAM:** 4.0 GiB total (40 MiB em uso, ~4.0 GiB disponíveis)
-* **Armazenamento (/):** 30 GB total (865 MB em uso, 28 GB livres — 4% utilizado)
-* **Ambiente de Execução:** Fresh container limpo
-  * Python: `3.12.3` / `3.14.4`
-  * Docker / Compose: *Pendente de instalação via script de provisionamento*
-  * Node.js / Git: *Pendente de instalação*
+* **Memória RAM:** 4.0 GiB total
+* **Armazenamento (/):** 30 GB total (~26 GB livres)
+* **Ambiente de Execução (100% NATIVO — Zero Docker):**
+  * **Proxy Reverso:** Caddy `2.6.2` (nativo via APT, escutando na porta 80)
+  * **Broker e Cache:** Redis Server nativo (ativo via systemd, `PONG` validado na porta 6379)
+  * **Frontend & Runtime:** Node.js `v22.22.1` e NPM `9.2.0` (nativos)
+  * **Backend Core & Workers:** Python `3.14.4` com venv dedicado em `/opt/condc/venv` (pip, setuptools, wheel atualizados)
+  * **OCR:** Tesseract `5.5.0` nativo com pacotes de idiomas `eng`, `osd` e `por` (português)
+  * **Diretório da Aplicação:** `/opt/condc` (permissões configuradas para `condoc:condoc`)
 
 ---
 
@@ -28,12 +31,15 @@ Ambiente: Servidor Proxmox VE (Kernel `7.0.14-19-pve`, Arquitetura `x86_64`)
 * **Endereço IP:** `192.168.10.201` (Porta SSH: `22`)
 * **Usuário:** `condoc`
 * **Privilégios Sudo:** **SUCESSO** (acesso administrativo verificado via `sudo`)
-* **Sistema Operacional:** Ubuntu 24.04.1 LTS (Noble Numbat)
+* **Sistema Operacional:** Ubuntu 24.04.1 LTS / 26.04.1 LTS
 * **Processador:** 2 vCPUs alocadas
-* **Memória RAM:** 2.0 GiB total (38 MiB em uso, ~2.0 GiB disponíveis)
-* **Armazenamento (/):** 30 GB total (865 MB em uso, 28 GB livres — 4% utilizado)
-* **Ambiente de Execução:** Fresh container limpo
-  * Docker / Compose: *Pendente de instalação via script de provisionamento*
+* **Memória RAM:** 2.0 GiB total
+* **Armazenamento (/):** 30 GB total (~27 GB livres)
+* **Ambiente de Execução (Docker estritamente restrito ao Supabase):**
+  * **Docker Engine:** `29.1.3` (nativo via repositório Ubuntu, daemon ativo e funcional)
+  * **Docker Compose:** `2.40.3` (plugin Compose v2)
+  * **Grupo de Usuário:** `condoc` associado ao grupo `docker`
+  * **Diretório da Stack:** `/opt/supabase` (permissões configuradas para `condoc:condoc`)
 
 ---
 
