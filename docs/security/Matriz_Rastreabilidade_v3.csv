@@ -42,7 +42,7 @@ CA-40,Incorporação liga revisão e contribuição atomicamente,core/applicatio
 CA-41,Snapshot imutável e reproduzível,core/application/documents/services.py:SnapshotService.create_snapshot,core/tests/test_phase3_documents_provisions.py::test_ca_41_snapshot_imutavel_e_reproduzivel,11 passed,aprovado
 CA-42,Documento limpo sem identidade notas ou referência antiga indevida,core/domain/comparison/invariants.py:sanitize_clean_export_payload,core/tests/test_phase4_comparison_export.py::test_ca_42_documento_limpo_sem_identidade_notas_ou_referencia_antiga,7 passed,aprovado
 CA-43,Distribuição restrita e envio real confirmado,core/infrastructure/models/import_invitations.py:DeliveryAttempt,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
-CA-44,Banco e objetos restaurados consistentemente,,,,nao_executado
+CA-44,Banco e objetos restaurados consistentemente,core/application/hardening/services.py:BackupConsistencyService.restore_and_verify_consistency,core/tests/test_phase8_hardening_and_operations.py::test_ca_44_restauracao_consistente_de_banco_e_objetos,3 passed,aprovado
 CA-45,Nenhuma votação apuração ou cálculo de quórum,core/domain/identity/invariants.py:assert_no_electoral_intent,core/tests/test_phase1_identity.py::test_ca_45_proibicao_terminante_de_recursos_eleitorais,14 passed,aprovado
 UI-01,Troca de condomínio limpa contexto,,,,nao_executado
 UI-02,Menu e backend respeitam permissões,,,,nao_executado
