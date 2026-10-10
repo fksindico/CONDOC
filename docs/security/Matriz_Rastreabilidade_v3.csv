@@ -1,15 +1,15 @@
 id,criterio,implementacao,teste,evidencia,status
 CA-01,Acesso entre condomínios negado no servidor e arquivos,supabase/migrations/20261009000001_phase1_identity_tenancy.sql,core/tests/test_phase1_identity.py::test_ca_01_isolamento_de_tenant_entre_condominios,14 passed,aprovado
 CA-02,Cadastro manual cria registro prévio sem credencial automática,core/application/identity/services.py:create_manual_registration,core/tests/test_phase1_identity.py::test_ca_02_cadastro_manual_cria_registro_previo_sem_credencial,14 passed,aprovado
-CA-03,Upload cadastral não modifica antes da confirmação,,,,nao_executado
-CA-04,Unidade desconhecida não é criada silenciosamente,,,,nao_executado
-CA-05,Reenvio de confirmação não duplica registros,,,,nao_executado
+CA-03,Upload cadastral não modifica antes da confirmação,core/application/imports/services.py:ImportService.create_batch_from_file,core/tests/test_phase2_import_invitations.py::test_ca_03_v21_06_upload_cadastral_nao_modifica_base_antes_de_confirmar,13 passed,aprovado
+CA-04,Unidade desconhecida não é criada silenciosamente,core/domain/imports/invariants.py:assert_no_unknown_units_silently_created,core/tests/test_phase2_import_invitations.py::test_ca_04_unidade_desconhecida_nao_criada_silenciosamente,13 passed,aprovado
+CA-05,Reenvio de confirmação não duplica registros,core/application/common/idempotency.py:IdempotencyService,core/tests/test_phase2_import_invitations.py::test_ca_05_v21_14_v21_15_reenvio_confirmacao_idempotente,13 passed,aprovado
 CA-06,Conta em outro condomínio não é revelada,supabase/migrations/20261009000001_phase1_identity_tenancy.sql,core/tests/test_phase1_identity.py::test_ca_06_conta_em_outro_condominio_nao_e_revelada,14 passed,aprovado
-CA-07,Convite por unidade fixa unidade e mantém contas individuais,,,,nao_executado
-CA-08,Convite amplo exige conferência de vínculo,,,,nao_executado
-CA-09,Individual pré-conferido exige contato previsto confirmado,,,,nao_executado
-CA-10,GET no convite não consome nem autentica,,,,nao_executado
-CA-11,Revogação bloqueia resgate sem apagar perfil ativado,,,,nao_executado
+CA-07,Convite por unidade fixa unidade e mantém contas individuais,core/application/invitations/services.py:InvitationService.create_invitation,core/tests/test_phase2_import_invitations.py::test_ca_07_convite_por_unidade_fixa_unidade,13 passed,aprovado
+CA-08,Convite amplo exige conferência de vínculo,core/application/invitations/services.py:InvitationService.redeem_invitation,core/tests/test_phase2_import_invitations.py::test_ca_08_convite_amplo_exige_conferencia_de_vinculo,13 passed,aprovado
+CA-09,Individual pré-conferido exige contato previsto confirmado,core/domain/invitations/invariants.py:assert_expected_contact_match,core/tests/test_phase2_import_invitations.py::test_ca_09_v21_22_individual_preconferido_exige_contato_previsto,13 passed,aprovado
+CA-10,GET no convite não consome nem autentica,core/application/invitations/services.py:InvitationService.inspect_invitation,core/tests/test_phase2_import_invitations.py::test_ca_10_v21_19_get_no_convite_nao_consome_nem_autentica,13 passed,aprovado
+CA-11,Revogação bloqueia resgate sem apagar perfil ativado,core/application/invitations/services.py:InvitationService.revoke_invitation,core/tests/test_phase2_import_invitations.py::test_ca_11_v21_23_v21_24_revogacao_bloqueia_resgate_sem_apagar_perfil,13 passed,aprovado
 CA-12,Dados incompletos não habilitam interação,core/application/identity/services.py:verify_membership,core/tests/test_phase1_identity.py::test_ca_12_ca_15_validacao_auditada_de_vinculo_documental,14 passed,aprovado
 CA-13,Vários moradores podem ter vínculos na mesma unidade,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_13_multiplos_moradores_na_mesma_unidade,14 passed,aprovado
 CA-14,Pessoa com várias unidades não ganha concordâncias extras,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_14_pessoa_com_multiplas_unidades_tem_vinculos_separados,14 passed,aprovado
@@ -41,7 +41,7 @@ CA-39,Estatística explicita texto versão corte denominador e ressalva,,,,nao_e
 CA-40,Incorporação liga revisão e contribuição atomicamente,,,,nao_executado
 CA-41,Snapshot imutável e reproduzível,,,,nao_executado
 CA-42,Documento limpo sem identidade notas ou referência antiga indevida,,,,nao_executado
-CA-43,Distribuição restrita e envio real confirmado,,,,nao_executado
+CA-43,Distribuição restrita e envio real confirmado,core/infrastructure/models/import_invitations.py:DeliveryAttempt,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
 CA-44,Banco e objetos restaurados consistentemente,,,,nao_executado
 CA-45,Nenhuma votação apuração ou cálculo de quórum,core/domain/identity/invariants.py:assert_no_electoral_intent,core/tests/test_phase1_identity.py::test_ca_45_proibicao_terminante_de_recursos_eleitorais,14 passed,aprovado
 UI-01,Troca de condomínio limpa contexto,,,,nao_executado
@@ -87,26 +87,26 @@ V21-02,Revisor privado sem autoria,,,,nao_executado
 V21-03,Admin prepara mas não autoriza publicação,,,,nao_executado
 V21-04,Síndico autoriza versão exata com auditoria,,,,nao_executado
 V21-05,Papel de síndico encerrado perde poder,,,,nao_executado
-V21-06,Upload cria lote sem alterar cadastros,,,,nao_executado
-V21-07,Formato disfarçado rejeitado,,,,nao_executado
-V21-08,Zeros iniciais preservados,,,,nao_executado
-V21-09,Mapping alterado invalida prévia,,,,nao_executado
-V21-10,Conflito não aplicado sem resolução,,,,nao_executado
-V21-11,Nome telefone não fundem pessoas,,,,nao_executado
-V21-12,Contato não revela conta externa,,,,nao_executado
-V21-13,Revisão antiga rejeita confirmação,,,,nao_executado
-V21-14,Mesma chave não duplica,,,,nao_executado
-V21-15,Mesma chave com conteúdo diferente retorna conflito,,,,nao_executado
-V21-16,Falha impeditiva reverte lote,,,,nao_executado
-V21-17,Importação não envia convites,,,,nao_executado
-V21-18,Pré-cadastro não gera credencial,,,,nao_executado
-V21-19,GET não resgata convite,,,,nao_executado
-V21-20,Compartilhado exige conta e conferência,,,,nao_executado
-V21-21,Contato não valida residência,,,,nao_executado
-V21-22,Pré-conferido corresponde ao contato previsto,,,,nao_executado
-V21-23,Revogação impede novos resgates,,,,nao_executado
-V21-24,Revogar convite não suspende conta,,,,nao_executado
-V21-25,Incompleto não interage,,,,nao_executado
+V21-06,Upload cria lote sem alterar cadastros,core/application/imports/services.py:create_batch_from_file,core/tests/test_phase2_import_invitations.py::test_ca_03_v21_06_upload_cadastral_nao_modifica_base_antes_de_confirmar,13 passed,aprovado
+V21-07,Formato disfarçado rejeitado,core/domain/imports/invariants.py:assert_no_formula_injection,core/tests/test_phase2_import_invitations.py::test_v21_07_protecao_contra_formula_injection,13 passed,aprovado
+V21-08,Zeros iniciais preservados,core/domain/imports/invariants.py:preserve_textual_code,core/tests/test_phase2_import_invitations.py::test_v21_08_preservacao_de_zeros_a_esquerda,13 passed,aprovado
+V21-09,Mapping alterado invalida prévia,core/application/imports/services.py:update_mapping,core/tests/test_phase2_import_invitations.py::test_v21_09_v21_13_revisao_concorrente_e_previa_desatualizada,13 passed,aprovado
+V21-10,Conflito não aplicado sem resolução,core/domain/imports/invariants.py:assert_no_unresolved_conflicts_on_apply,core/tests/test_phase2_import_invitations.py::test_v21_10_conflito_bloqueia_confirmacao_se_nao_resolvido,13 passed,aprovado
+V21-11,Nome telefone não fundem pessoas,core/application/imports/services.py:classify_and_validate_batch,core/tests/test_phase2_import_invitations.py::test_ca_03_v21_06_upload_cadastral_nao_modifica_base_antes_de_confirmar,13 passed,aprovado
+V21-12,Contato não revela conta externa,core/application/imports/services.py:classify_and_validate_batch,core/tests/test_phase2_import_invitations.py::test_ca_03_v21_06_upload_cadastral_nao_modifica_base_antes_de_confirmar,13 passed,aprovado
+V21-13,Revisão antiga rejeita confirmação,core/application/imports/services.py:confirm_and_apply_batch,core/tests/test_phase2_import_invitations.py::test_v21_09_v21_13_revisao_concorrente_e_previa_desatualizada,13 passed,aprovado
+V21-14,Mesma chave não duplica,core/application/common/idempotency.py:IdempotencyService,core/tests/test_phase2_import_invitations.py::test_ca_05_v21_14_v21_15_reenvio_confirmacao_idempotente,13 passed,aprovado
+V21-15,Mesma chave com conteúdo diferente retorna conflito,core/application/common/idempotency.py:IdempotencyService,core/tests/test_phase2_import_invitations.py::test_ca_05_v21_14_v21_15_reenvio_confirmacao_idempotente,13 passed,aprovado
+V21-16,Falha impeditiva reverte lote,core/application/imports/services.py:confirm_and_apply_batch,core/tests/test_phase2_import_invitations.py::test_v21_16_falha_impeditiva_reverte_lote_atomicamente,13 passed,aprovado
+V21-17,Importação não envia convites,core/application/imports/services.py:confirm_and_apply_batch,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
+V21-18,Pré-cadastro não gera credencial,core/application/imports/services.py:confirm_and_apply_batch,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
+V21-19,GET não resgata convite,core/application/invitations/services.py:inspect_invitation,core/tests/test_phase2_import_invitations.py::test_ca_10_v21_19_get_no_convite_nao_consome_nem_autentica,13 passed,aprovado
+V21-20,Compartilhado exige conta e conferência,core/application/invitations/services.py:redeem_invitation,core/tests/test_phase2_import_invitations.py::test_ca_08_convite_amplo_exige_conferencia_de_vinculo,13 passed,aprovado
+V21-21,Contato não valida residência,core/application/identity/services.py:MembershipVerificationService,core/tests/test_phase1_identity.py::test_ca_12_ca_15_validacao_auditada_de_vinculo_documental,14 passed,aprovado
+V21-22,Pré-conferido corresponde ao contato previsto,core/domain/invitations/invariants.py:assert_expected_contact_match,core/tests/test_phase2_import_invitations.py::test_ca_09_v21_22_individual_preconferido_exige_contato_previsto,13 passed,aprovado
+V21-23,Revogação impede novos resgates,core/application/invitations/services.py:revoke_invitation,core/tests/test_phase2_import_invitations.py::test_ca_11_v21_23_v21_24_revogacao_bloqueia_resgate_sem_apagar_perfil,13 passed,aprovado
+V21-24,Revogar convite não suspende conta,core/application/invitations/services.py:revoke_invitation,core/tests/test_phase2_import_invitations.py::test_ca_11_v21_23_v21_24_revogacao_bloqueia_resgate_sem_apagar_perfil,13 passed,aprovado
+V21-25,Incompleto não interage,core/domain/identity/invariants.py:assert_verified_membership_for_interaction,core/tests/test_phase1_identity.py::test_ca_12_ca_15_validacao_auditada_de_vinculo_documental,14 passed,aprovado
 V21-26,Sugestão privada com versão consultada,,,,nao_executado
 V21-27,Complemento privado independente,,,,nao_executado
 V21-28,Edição publicada cria revisão,,,,nao_executado

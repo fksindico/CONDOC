@@ -12,6 +12,14 @@ from .identity import (
     CoreSession,
     IdentityAccessEvent,
 )
+from .import_invitations import (
+    ImportBatch,
+    ImportRow,
+    AccessInvitation,
+    InvitationRedemption,
+    DeliveryAttempt,
+    IdempotencyRecord,
+)
 
 __all__ = [
     "Condominium",
@@ -26,4 +34,10 @@ __all__ = [
     "PermissionGrant",
     "CoreSession",
     "IdentityAccessEvent",
+    "ImportBatch",
+    "ImportRow",
+    "AccessInvitation",
+    "InvitationRedemption",
+    "DeliveryAttempt",
+    "IdempotencyRecord",
 ]

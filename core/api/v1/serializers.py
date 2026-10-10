@@ -1,6 +1,6 @@
 """
-Serializers REST API v1 — CONDC (Fase 1: Identidade e Multi-tenancy)
-Compatíveis com os contratos definidos em packages/api-contracts
+Serializers REST API v1 — CONDC (Fase 1 e Fase 2)
+Compatíveis com os contratos definidos em packages/api-contracts e PRD Mestre v3.0
 """
 from rest_framework import serializers
 from infrastructure.models import (
@@ -13,7 +13,15 @@ from infrastructure.models import (
     UnitMembership,
     MembershipVerificationEvent,
     RoleAssignment,
+    ImportBatch,
+    ImportRow,
+    AccessInvitation,
+    InvitationRedemption,
 )
+
+# ============================================================================
+# FASE 1: Identidade e Estrutura Física
+# ============================================================================
 
 class CondominiumSerializer(serializers.ModelSerializer):
     class Meta:
@@ -91,3 +99,90 @@ class RoleAssignmentSerializer(serializers.ModelSerializer):
             'account_email', 'role', 'valid_from', 'valid_until', 'status'
         ]
         read_only_fields = ['id', 'condominium_id', 'valid_from']
+
+
+# ============================================================================
+# FASE 2: Importação Cadastral e Convites
+# ============================================================================
+
+class ImportBatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportBatch
+        fields = [
+            'id', 'condominium_id', 'file_name', 'file_hash', 'source_label',
+            'status', 'revision', 'mapping', 'totals', 'error_message',
+            'created_by_id', 'confirmed_by_id', 'confirmed_at', 'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
+
+
+class ImportRowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportRow
+        fields = [
+            'id', 'batch_id', 'row_number', 'classification',
+            'issues', 'selected', 'action', 'normalized_data',
+            'target_registration_id', 'target_version', 'result_id', 'created_at'
+        ]
+        read_only_fields = ['id', 'batch_id', 'row_number', 'classification', 'issues', 'result_id', 'created_at']
+
+
+class ImportRowActionSerializer(serializers.Serializer):
+    selected = serializers.BooleanField(required=True)
+    action = serializers.ChoiceField(choices=[
+        'create_registration', 'update_registration',
+        'add_registration_for_unit', 'skip', 'request_manual_review'
+    ], required=True)
+    target_registration_id = serializers.UUIDField(required=False, allow_null=True)
+
+
+class ImportConfirmActionSerializer(serializers.Serializer):
+    expected_revision = serializers.IntegerField(required=True)
+    acknowledge_selected_operations = serializers.BooleanField(required=True)
+
+
+class AccessInvitationCreateSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=[
+        'individual_preconferido', 'individual_padrao',
+        'unidade_fixa', 'torre_bloco', 'amplo', 'leitura'
+    ])
+    target_registration_id = serializers.UUIDField(required=False, allow_null=True)
+    target_unit_id = serializers.UUIDField(required=False, allow_null=True)
+    target_building_id = serializers.UUIDField(required=False, allow_null=True)
+    expected_contact = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    expires_in_days = serializers.IntegerField(default=7, min_value=1, max_value=90)
+    max_redemptions = serializers.IntegerField(default=1, min_value=1, max_value=5000)
+
+
+class AccessInvitationListSerializer(serializers.ModelSerializer):
+    unit_code = serializers.CharField(source='target_unit.code', read_only=True)
+
+    class Meta:
+        model = AccessInvitation
+        fields = [
+            'id', 'condominium_id', 'kind', 'target_registration_id',
+            'target_unit_id', 'unit_code', 'target_building_id', 'expected_contact',
+            'expires_at', 'max_redemptions', 'redemption_count', 'status',
+            'created_at', 'revoked_at', 'revoke_reason'
+        ]
+        read_only_fields = fields
+
+
+class InvitationRevokeActionSerializer(serializers.Serializer):
+    reason = serializers.CharField(min_length=5, max_length=1000, required=True)
+
+
+class InvitationInspectResponseSerializer(serializers.Serializer):
+    valid = serializers.BooleanField()
+    status = serializers.CharField()
+    kind = serializers.CharField()
+    condominium_id = serializers.CharField()
+    condominium_name = serializers.CharField()
+    unit_label = serializers.CharField(allow_null=True)
+    expires_at = serializers.CharField()
+    requires_contact_confirmation = serializers.BooleanField()
+
+
+class InvitationRedeemActionSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    provided_contact = serializers.CharField(required=False, allow_blank=True)
