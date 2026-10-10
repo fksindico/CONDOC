@@ -44,6 +44,10 @@ from infrastructure.models import (
     PublishedSuggestionRevision,
     SuggestionEditorialDecision,
     SuggestionAttachment,
+    ConsultativeAgreement,
+    AgreementEvent,
+    SuggestionIncorporation,
+    ConsultationSnapshot,
 )
 from application.identity.services import (
     CondominiumService,
@@ -74,6 +78,10 @@ from application.moderation.services import (
     CampaignService,
     SuggestionService,
     ModerationService,
+)
+from application.agreements.services import (
+    AgreementService,
+    IncorporationService,
 )
 from application.common.idempotency import IdempotencyService
 from domain.imports.exceptions import (
@@ -114,6 +122,13 @@ from domain.moderation.exceptions import (
     PrivateNoteExposureError,
     AttachmentNotApprovedError,
     ComplementWithoutParentError,
+)
+from domain.agreements.exceptions import (
+    CampaignClosedForAgreementsError,
+    AuthorCannotAgreeWithOwnSuggestionError,
+    ElectoralVocabularyForbiddenError,
+    SubstantialChangeAgreementTransferForbiddenError,
+    IncorporationIntegrityError,
 )
 from .serializers import (
     CondominiumSerializer,
@@ -158,6 +173,12 @@ from .serializers import (
     PublicationAuthorizeActionSerializer,
     PublicationHideActionSerializer,
     IdentityAccessActionSerializer,
+    ConsultativeAgreementCreateSerializer,
+    ConsultativeAgreementSerializer,
+    AgreementWithdrawSerializer,
+    SuggestionIncorporationCreateSerializer,
+    SuggestionIncorporationSerializer,
+    ConsultationSnapshotSerializer,
 )
 
 # ============================================================================
@@ -1659,6 +1680,152 @@ class ModerationIdentityAccessView(APIView):
             return Response(identity_data, status=status.HTTP_200_OK)
         except IdentityAccessWithoutJustificationError as e:
             return Response({"error": str(e), "code": "IDENTITY_ACCESS_FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+
+# ============================================================================
+# FASE 6: CONCORDÂNCIAS CONSULTIVAS E CONSOLIDAÇÃO NA MINUTA
+# ============================================================================
+
+class AgreementRegisterView(APIView):
+    """
+    CA-35: Registro consultivo de concordância sobre versão publicada exata (idempotente).
+    CA-36: Retirada da manifestação de concordância com preservação de evento.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = ConsultativeAgreementCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        try:
+            sug = Suggestion.objects.get(id=suggestion_id, condominium_id=condominium_id)
+            agreement = AgreementService.register_agreement(
+                condominium_id=condominium_id,
+                campaign_id=sug.campaign_id,
+                participant_id=data['participant_id'],
+                published_suggestion_revision_id=data['published_suggestion_revision_id'],
+                reason=data.get('reason')
+            )
+            return Response(ConsultativeAgreementSerializer(agreement).data, status=status.HTTP_200_OK)
+        except (CampaignClosedForAgreementsError, AuthorCannotAgreeWithOwnSuggestionError, ParticipantNotEligibleError) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ElectoralVocabularyForbiddenError as e:
+            return Response({"error": str(e), "code": "ELECTORAL_TERMS_FORBIDDEN"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, condominium_id, suggestion_id):
+        serializer = AgreementWithdrawSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        try:
+            sug = Suggestion.objects.get(id=suggestion_id, condominium_id=condominium_id)
+            agreement = AgreementService.withdraw_agreement(
+                condominium_id=condominium_id,
+                campaign_id=sug.campaign_id,
+                participant_id=data['participant_id'],
+                published_suggestion_revision_id=data['published_suggestion_revision_id'],
+                reason=data.get('reason')
+            )
+            return Response(ConsultativeAgreementSerializer(agreement).data, status=status.HTTP_200_OK)
+        except CampaignClosedForAgreementsError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RevisionAgreementStatsView(APIView):
+    """
+    CA-39: Métricas agregadas por indivíduo e por unidade.
+    CA-38 / UI-30: Se hide_counts for True e viewer for morador/público, suprime contagens.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, suggestion_id):
+        pub_rev_id = request.query_params.get('published_suggestion_revision_id')
+        if not pub_rev_id:
+            # Obtém a publicação ativa
+            pub_rev = PublishedSuggestionRevision.objects.filter(
+                suggestion_id=suggestion_id,
+                is_active_publication=True
+            ).first()
+            if not pub_rev:
+                return Response({"error": "Revisão publicada não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+            pub_rev_uuid = pub_rev.id
+        else:
+            pub_rev_uuid = uuid.UUID(pub_rev_id)
+
+        is_public = request.query_params.get('viewer', 'public').lower() == 'public'
+        try:
+            stats = AgreementService.get_revision_agreement_stats(
+                condominium_id=condominium_id,
+                published_suggestion_revision_id=pub_rev_uuid,
+                is_public_viewer=is_public
+            )
+            return Response(stats, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MyAgreementListView(APIView):
+    """M11: Lista as concordâncias consultivas do morador."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        participant_id = request.query_params.get('participant_id')
+        if not participant_id:
+            return Response({"error": "Parâmetro 'participant_id' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            agrs = AgreementService.list_my_agreements(condominium_id, uuid.UUID(participant_id))
+            return Response(agrs, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SuggestionIncorporationView(APIView):
+    """CA-40: Transação atômica que consolida a sugestão acolhida na minuta normativa."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, suggestion_id):
+        serializer = SuggestionIncorporationCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        actor_id = _get_or_create_actor_id(request)
+        data = serializer.validated_data
+
+        try:
+            inc = IncorporationService.incorporate_suggestion(
+                condominium_id=condominium_id,
+                suggestion_id=suggestion_id,
+                target_provision_id=data['target_provision_id'],
+                incorporated_by_id=actor_id,
+                new_text=data['new_text'],
+                description=data.get('description'),
+                new_label=data.get('new_label')
+            )
+            return Response(SuggestionIncorporationSerializer(inc).data, status=status.HTTP_201_CREATED)
+        except IncorporationIntegrityError as e:
+            return Response({"error": str(e), "code": "INCORPORATION_INTEGRITY_ERROR"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CampaignConsultationSnapshotView(APIView):
+    """CA-39: Gera fotografia estatística imutável e substitutiva da campanha."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, campaign_id):
+        actor_id = _get_or_create_actor_id(request)
+        try:
+            snap = AgreementService.create_consultation_snapshot(
+                condominium_id=condominium_id,
+                campaign_id=campaign_id,
+                created_by_id=actor_id
+            )
+            return Response(ConsultationSnapshotSerializer(snap).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 

@@ -33,12 +33,12 @@ CA-31,Edição publicada cria versão pendente,core/application/moderation/servi
 CA-32,Ocultação bloqueia API link busca listagem e interação,core/domain/moderation/invariants.py:assert_suggestion_not_hidden,core/tests/test_phase5_campaigns_moderation.py::test_ca_32_ocultacao_bloqueia_api_link_busca_e_interacao,12 passed,aprovado
 CA-33,Identidade exige permissão e auditoria,core/domain/moderation/invariants.py:assert_identity_access_authorized,core/tests/test_phase5_campaigns_moderation.py::test_ca_33_acesso_a_identidade_exige_autorizacao_e_justificativa_auditada,12 passed,aprovado
 CA-34,Anexo não publica automaticamente,core/application/moderation/services.py:SuggestionService.add_attachment,core/tests/test_phase5_campaigns_moderation.py::test_ca_34_anexos_nascem_privados_e_nao_publicam_automaticamente,12 passed,aprovado
-CA-35,Cliques repetidos produzem uma concordância ativa,,,,nao_executado
-CA-36,Retirada atualiza agregado e preserva evento,,,,nao_executado
-CA-37,Mudança substancial não transfere concordâncias,,,,nao_executado
-CA-38,Contagem oculta ausente no payload,,,,nao_executado
-CA-39,Estatística explicita texto versão corte denominador e ressalva,,,,nao_executado
-CA-40,Incorporação liga revisão e contribuição atomicamente,,,,nao_executado
+CA-35,Cliques repetidos produzem uma concordância ativa,core/application/agreements/services.py:AgreementService.register_agreement,core/tests/test_phase6_agreements_incorporation.py::test_ca_35_cliques_repetidos_produzem_uma_concordancia_ativa,10 passed,aprovado
+CA-36,Retirada atualiza agregado e preserva evento,core/application/agreements/services.py:AgreementService.withdraw_agreement,core/tests/test_phase6_agreements_incorporation.py::test_ca_36_retirada_atualiza_agregado_e_preserva_evento,10 passed,aprovado
+CA-37,Mudança substancial não transfere concordâncias,core/domain/agreements/invariants.py:calculate_agreement_metrics,core/tests/test_phase6_agreements_incorporation.py::test_ca_37_mudanca_substancial_nao_transfere_concordancias,10 passed,aprovado
+CA-38,Contagem oculta ausente no payload,core/domain/agreements/invariants.py:sanitize_public_metrics_payload,core/tests/test_phase6_agreements_incorporation.py::test_ca_38_contagem_oculta_ausente_no_payload,10 passed,aprovado
+CA-39,Estatística explicita texto versão corte denominador e ressalva,core/application/agreements/services.py:AgreementService.get_revision_agreement_stats,core/tests/test_phase6_agreements_incorporation.py::test_ca_39_estatistica_explicita_individuo_unidade_corte_e_ressalva,10 passed,aprovado
+CA-40,Incorporação liga revisão e contribuição atomicamente,core/application/agreements/services.py:IncorporationService.incorporate_suggestion,core/tests/test_phase6_agreements_incorporation.py::test_ca_40_incorporacao_liga_revisao_e_contribuicao_atomicamente,10 passed,aprovado
 CA-41,Snapshot imutável e reproduzível,core/application/documents/services.py:SnapshotService.create_snapshot,core/tests/test_phase3_documents_provisions.py::test_ca_41_snapshot_imutavel_e_reproduzivel,11 passed,aprovado
 CA-42,Documento limpo sem identidade notas ou referência antiga indevida,core/domain/comparison/invariants.py:sanitize_clean_export_payload,core/tests/test_phase4_comparison_export.py::test_ca_42_documento_limpo_sem_identidade_notas_ou_referencia_antiga,7 passed,aprovado
 CA-43,Distribuição restrita e envio real confirmado,core/infrastructure/models/import_invitations.py:DeliveryAttempt,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado

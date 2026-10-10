@@ -35,6 +35,10 @@ from infrastructure.models import (
     PublishedSuggestionRevision,
     SuggestionEditorialDecision,
     SuggestionAttachment,
+    ConsultativeAgreement,
+    AgreementEvent,
+    SuggestionIncorporation,
+    ConsultationSnapshot,
 )
 
 # ============================================================================
@@ -446,6 +450,69 @@ class PublicationHideActionSerializer(serializers.Serializer):
 
 class IdentityAccessActionSerializer(serializers.Serializer):
     justification = serializers.CharField(required=True, min_length=5)
+
+
+# ============================================================================
+# FASE 6: Concordâncias Consultivas e Consolidação na Minuta
+# ============================================================================
+
+class ConsultativeAgreementCreateSerializer(serializers.Serializer):
+    participant_id = serializers.UUIDField(required=True)
+    published_suggestion_revision_id = serializers.UUIDField(required=True)
+    reason = serializers.CharField(required=False, allow_blank=True)
+
+
+class ConsultativeAgreementSerializer(serializers.ModelSerializer):
+    public_protocol = serializers.CharField(
+        source='published_suggestion_revision.suggestion.public_protocol',
+        read_only=True
+    )
+
+    class Meta:
+        model = ConsultativeAgreement
+        fields = [
+            'id', 'condominium_id', 'participant_id', 'published_suggestion_revision_id',
+            'public_protocol', 'active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
+
+
+class AgreementWithdrawSerializer(serializers.Serializer):
+    participant_id = serializers.UUIDField(required=True)
+    published_suggestion_revision_id = serializers.UUIDField(required=True)
+    reason = serializers.CharField(required=False, allow_blank=True)
+
+
+class SuggestionIncorporationCreateSerializer(serializers.Serializer):
+    target_provision_id = serializers.UUIDField(required=True)
+    new_text = serializers.CharField(required=True)
+    new_label = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+
+
+class SuggestionIncorporationSerializer(serializers.ModelSerializer):
+    public_protocol = serializers.CharField(source='suggestion.public_protocol', read_only=True)
+
+    class Meta:
+        model = SuggestionIncorporation
+        fields = [
+            'id', 'condominium_id', 'suggestion_id', 'public_protocol',
+            'provision_revision_id', 'description', 'incorporated_by_id',
+            'incorporated_at'
+        ]
+        read_only_fields = fields
+
+
+class ConsultationSnapshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsultationSnapshot
+        fields = [
+            'id', 'condominium_id', 'campaign_id', 'cut_timestamp',
+            'total_eligible_participants', 'total_eligible_units',
+            'stats_payload', 'disclaimer', 'created_by_id', 'created_at'
+        ]
+        read_only_fields = fields
+
 
 
 

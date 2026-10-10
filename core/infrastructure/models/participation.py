@@ -151,3 +151,72 @@ class SuggestionAttachment(models.Model):
         db_table = 'app"."suggestion_attachments'
         verbose_name = 'Anexo de Sugestão'
         verbose_name_plural = 'Anexos de Sugestão'
+
+
+class ConsultativeAgreement(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condominium = models.ForeignKey(Condominium, on_delete=models.CASCADE, db_column='condominium_id')
+    participant = models.ForeignKey(CampaignParticipant, on_delete=models.RESTRICT, db_column='participant_id')
+    published_suggestion_revision = models.ForeignKey(PublishedSuggestionRevision, on_delete=models.CASCADE, db_column='published_suggestion_revision_id')
+    membership_at_action = models.ForeignKey(UnitMembership, on_delete=models.RESTRICT, db_column='membership_at_action_id')
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app"."consultative_agreements'
+        unique_together = (('participant', 'published_suggestion_revision'),)
+        verbose_name = 'Concordância Consultiva'
+        verbose_name_plural = 'Concordâncias Consultivas'
+
+
+class AgreementEvent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condominium = models.ForeignKey(Condominium, on_delete=models.CASCADE, db_column='condominium_id')
+    agreement = models.ForeignKey(ConsultativeAgreement, on_delete=models.CASCADE, db_column='agreement_id')
+    action = models.CharField(max_length=50)  # agree, withdraw, reaffirm, invalidate
+    reason = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app"."agreement_events'
+        verbose_name = 'Evento de Concordância'
+        verbose_name_plural = 'Eventos de Concordância'
+
+
+class SuggestionIncorporation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condominium = models.ForeignKey(Condominium, on_delete=models.CASCADE, db_column='condominium_id')
+    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE, db_column='suggestion_id')
+    provision_revision = models.ForeignKey(ProvisionRevision, on_delete=models.CASCADE, db_column='provision_revision_id')
+    description = models.TextField(null=True, blank=True)
+    incorporated_by = models.ForeignKey(Account, on_delete=models.RESTRICT, db_column='incorporated_by_id')
+    incorporated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app"."suggestion_incorporations'
+        verbose_name = 'Incorporação de Sugestão'
+        verbose_name_plural = 'Incorporações de Sugestões'
+
+
+class ConsultationSnapshot(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condominium = models.ForeignKey(Condominium, on_delete=models.CASCADE, db_column='condominium_id')
+    campaign = models.ForeignKey(ConsultationCampaign, on_delete=models.CASCADE, db_column='campaign_id')
+    cut_timestamp = models.DateTimeField(auto_now_add=True)
+    total_eligible_participants = models.IntegerField(default=0)
+    total_eligible_units = models.IntegerField(default=0)
+    stats_payload = models.JSONField(default=dict)
+    disclaimer = models.TextField()
+    created_by = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, db_column='created_by_id')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app"."consultation_snapshots'
+        verbose_name = 'Fotografia de Consulta Pública'
+        verbose_name_plural = 'Fotografias de Consulta Pública'
+

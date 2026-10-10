@@ -42,6 +42,10 @@ from .participation import (
     PublishedSuggestionRevision,
     SuggestionEditorialDecision,
     SuggestionAttachment,
+    ConsultativeAgreement,
+    AgreementEvent,
+    SuggestionIncorporation,
+    ConsultationSnapshot,
 )
 
 __all__ = [
@@ -82,4 +86,8 @@ __all__ = [
     "PublishedSuggestionRevision",
     "SuggestionEditorialDecision",
     "SuggestionAttachment",
+    "ConsultativeAgreement",
+    "AgreementEvent",
+    "SuggestionIncorporation",
+    "ConsultationSnapshot",
 ]

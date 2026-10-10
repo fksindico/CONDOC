@@ -59,6 +59,12 @@ from .views import (
     ModerationPublicationAuthorizeView,
     ModerationPublicationHideView,
     ModerationIdentityAccessView,
+    # Fase 6
+    AgreementRegisterView,
+    RevisionAgreementStatsView,
+    MyAgreementListView,
+    SuggestionIncorporationView,
+    CampaignConsultationSnapshotView,
 )
 
 urlpatterns = [
@@ -137,10 +143,12 @@ urlpatterns = [
     # =========================================================================
     path('condominiums/<uuid:condominium_id>/campaigns', ConsultationCampaignListCreateView.as_view(), name='api_v1_campaigns'),
     path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>', ConsultationCampaignDetailView.as_view(), name='api_v1_campaign_detail'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/open', ConsultationCampaignDetailView.as_view(), {'action': 'open'}, name='api_v1_campaign_open'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/close', ConsultationCampaignDetailView.as_view(), {'action': 'close'}, name='api_v1_campaign_close'),
     path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/participants', CampaignParticipantListCreateView.as_view(), name='api_v1_campaign_participants'),
     path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/document-snapshot', CampaignDocumentSnapshotView.as_view(), name='api_v1_campaign_document_snapshot'),
     path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/suggestions', CampaignSuggestionListCreateView.as_view(), name='api_v1_campaign_suggestions'),
-    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/<str:action>', ConsultationCampaignDetailView.as_view(), name='api_v1_campaign_action'),
+    path('condominiums/<uuid:condominium_id>/campaigns/<uuid:campaign_id>/snapshots', CampaignConsultationSnapshotView.as_view(), name='api_v1_campaign_snapshots'),
     path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>', SuggestionDetailView.as_view(), name='api_v1_suggestion_detail'),
     path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/complements', SuggestionComplementCreateView.as_view(), name='api_v1_suggestion_complements'),
     path('condominiums/<uuid:condominium_id>/my-suggestions', MySuggestionListView.as_view(), name='api_v1_my_suggestions'),
@@ -150,4 +158,12 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/publish', ModerationPublicationAuthorizeView.as_view(), name='api_v1_moderation_publish'),
     path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/hide', ModerationPublicationHideView.as_view(), name='api_v1_moderation_hide'),
     path('condominiums/<uuid:condominium_id>/moderation/suggestions/<uuid:suggestion_id>/identity', ModerationIdentityAccessView.as_view(), name='api_v1_moderation_identity'),
+
+    # =========================================================================
+    # FASE 6: CONCORDÂNCIAS CONSULTIVAS E CONSOLIDAÇÃO NA MINUTA
+    # =========================================================================
+    path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/agreements', AgreementRegisterView.as_view(), name='api_v1_agreements'),
+    path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/stats', RevisionAgreementStatsView.as_view(), name='api_v1_suggestion_agreement_stats'),
+    path('condominiums/<uuid:condominium_id>/my-agreements', MyAgreementListView.as_view(), name='api_v1_my_agreements'),
+    path('condominiums/<uuid:condominium_id>/suggestions/<uuid:suggestion_id>/incorporate', SuggestionIncorporationView.as_view(), name='api_v1_suggestion_incorporate'),
 ]

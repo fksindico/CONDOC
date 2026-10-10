@@ -498,6 +498,50 @@ CREATE TABLE IF NOT EXISTS app.suggestion_attachments (
     approved_by_id TEXT REFERENCES accounts(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS app.consultative_agreements (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    participant_id TEXT NOT NULL REFERENCES campaign_participants(id) ON DELETE RESTRICT,
+    published_suggestion_revision_id TEXT NOT NULL REFERENCES published_suggestion_revisions(id) ON DELETE CASCADE,
+    membership_at_action_id TEXT NOT NULL REFERENCES unit_memberships(id) ON DELETE RESTRICT,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (participant_id, published_suggestion_revision_id)
+);
+
+CREATE TABLE IF NOT EXISTS app.agreement_events (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    agreement_id TEXT NOT NULL REFERENCES consultative_agreements(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.suggestion_incorporations (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    provision_revision_id TEXT NOT NULL REFERENCES provision_revisions(id) ON DELETE CASCADE,
+    description TEXT,
+    incorporated_by_id TEXT NOT NULL REFERENCES accounts(id),
+    incorporated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.consultation_snapshots (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    campaign_id TEXT NOT NULL REFERENCES consultation_campaigns(id) ON DELETE CASCADE,
+    cut_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_eligible_participants INTEGER NOT NULL DEFAULT 0,
+    total_eligible_units INTEGER NOT NULL DEFAULT 0,
+    stats_payload TEXT NOT NULL DEFAULT '{}',
+    disclaimer TEXT NOT NULL,
+    created_by_id TEXT REFERENCES accounts(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 @pytest.fixture(autouse=True)
