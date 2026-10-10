@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { Building, Unit } from '@condc/api-contracts';
 import { Layers, Plus, Building2, Check, AlertCircle } from 'lucide-react';
@@ -8,9 +9,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 
 export const UnitsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,9 +65,10 @@ export const UnitsPage: React.FC = () => {
       setIsBuildingModalOpen(false);
       setNewBuildingName('');
       setNewBuildingCode('');
+      toast.success('Torre/Bloco cadastrado com sucesso!');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar torre/bloco.');
+      toast.error(err.message || 'Erro ao criar torre/bloco.');
     }
   };
 
@@ -76,9 +83,10 @@ export const UnitsPage: React.FC = () => {
       });
       setIsUnitModalOpen(false);
       setNewUnitCode('');
+      toast.success('Unidade autônoma cadastrada com sucesso!');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar unidade.');
+      toast.error(err.message || 'Erro ao criar unidade.');
     }
   };
 
@@ -137,25 +145,31 @@ export const UnitsPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3">Código / Unidade</th>
-                  <th className="px-6 py-3">Torre / Bloco</th>
-                  <th className="px-6 py-3">Fração Ideal</th>
-                  <th className="px-6 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {units.length === 0 ? (
+          {isLoading ? (
+            <TableSkeleton rows={4} />
+          ) : units.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                icon={Layers}
+                title="Nenhuma unidade autônoma cadastrada"
+                description="Cadastre as unidades do condomínio ou utilize o assistente de importação cadastral por planilha."
+                actionLabel="Cadastrar Primeira Unidade"
+                onAction={() => setIsUnitModalOpen(true)}
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                      Nenhuma unidade cadastrada. Crie uma unidade ou use o assistente de importação.
-                    </td>
+                    <th className="px-6 py-3">Código / Unidade</th>
+                    <th className="px-6 py-3">Torre / Bloco</th>
+                    <th className="px-6 py-3">Fração Ideal</th>
+                    <th className="px-6 py-3">Status</th>
                   </tr>
-                ) : (
-                  units.map((u) => {
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {units.map((u) => {
                     const b = buildings.find((x) => x.id === u.building_id);
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
@@ -171,11 +185,11 @@ export const UnitsPage: React.FC = () => {
                         </td>
                       </tr>
                     );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

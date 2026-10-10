@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { Project } from '@condc/api-contracts';
 import { Link } from 'react-router-dom';
@@ -9,10 +10,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const ProjectsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,9 +60,10 @@ export const ProjectsPage: React.FC = () => {
       setIsModalOpen(false);
       setName('');
       setPurpose('');
+      toast.success('Projeto normativo criado com sucesso!');
       fetchProjects();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar projeto.');
+      toast.error(err.message || 'Erro ao criar projeto.');
     } finally {
       setIsCreating(false);
     }
@@ -82,13 +87,21 @@ export const ProjectsPage: React.FC = () => {
       {error && <Alert variant="error">{error}</Alert>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {projects.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
-            <FolderGit2 className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-            <p className="text-sm font-semibold text-slate-700">Nenhum projeto normativo iniciado.</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Crie um projeto para elaborar ou revisar o Regimento Interno ou Convenção.
-            </p>
+        {isLoading ? (
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
+        ) : projects.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState
+              icon={FolderGit2}
+              title="Nenhum projeto normativo iniciado"
+              description="Crie um projeto para elaborar ou revisar o Regimento Interno ou Convenção do condomínio."
+              actionLabel="Criar Primeiro Projeto"
+              onAction={() => setIsModalOpen(true)}
+            />
           </div>
         ) : (
           projects.map((p) => (

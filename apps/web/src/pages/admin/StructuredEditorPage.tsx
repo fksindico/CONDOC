@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api, ApiClientError } from '@/lib/api';
 import { TiptapEditor } from '@/components/editor/TiptapEditor';
 import {
@@ -26,6 +27,7 @@ import { Alert } from '@/components/ui/Alert';
 export const StructuredEditorPage: React.FC = () => {
   const { docId } = useParams<{ docId: string }>();
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
 
   const [provisions, setProvisions] = useState<any[]>([]);
   const [selectedProvision, setSelectedProvision] = useState<any | null>(null);
@@ -120,7 +122,7 @@ export const StructuredEditorPage: React.FC = () => {
         setConflictModalOpen(true);
       } else {
         setSaveStatus('error');
-        alert(err.message || 'Erro ao salvar dispositivo.');
+        toast.error(err.message || 'Erro ao salvar dispositivo.');
       }
     }
   };
@@ -138,9 +140,10 @@ export const StructuredEditorPage: React.FC = () => {
       });
       setIsNewModalOpen(false);
       setNewText('');
+      toast.success('Dispositivo normativo adicionado com sucesso!');
       fetchProvisions();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar dispositivo.');
+      toast.error(err.message || 'Erro ao criar dispositivo.');
     }
   };
 
@@ -155,11 +158,12 @@ export const StructuredEditorPage: React.FC = () => {
         category: 'redacao',
       });
       setNewNoteContent('');
+      toast.success('Nota interna confidencial registrada!');
       // Recarrega notas
       const resNotes = await api.get<any[]>(`/condominiums/${activeCondominiumId}/provisions/${selectedProvision.id}/notes`);
       setNotes(resNotes.data || []);
     } catch (err: any) {
-      alert(err.message || 'Erro ao adicionar nota interna.');
+      toast.error(err.message || 'Erro ao adicionar nota interna.');
     }
   };
 

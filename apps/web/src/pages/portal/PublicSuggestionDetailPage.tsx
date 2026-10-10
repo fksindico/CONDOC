@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import {
   ArrowLeft,
@@ -16,11 +17,13 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 import { LegalDisclaimerBanner, LEGAL_DISCLAIMER_TEXT } from '@/components/ui/LegalDisclaimerBanner';
 
 export const PublicSuggestionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
 
   const [suggestion, setSuggestion] = useState<any | null>(null);
   const [stats, setStats] = useState<any | null>(null);
@@ -64,7 +67,7 @@ export const PublicSuggestionDetailPage: React.FC = () => {
 
   const handleAgree = async () => {
     if (!activeCondominiumId || !id || !participantId) {
-      alert('Você precisa ter seu vínculo de morador habilitado para registrar concordância.');
+      toast.error('Você precisa ter seu vínculo de morador habilitado para registrar concordância.');
       return;
     }
     setIsSubmittingAgreement(true);
@@ -76,9 +79,10 @@ export const PublicSuggestionDetailPage: React.FC = () => {
         reason: 'Concordância consultiva registrada pelo morador.',
       });
       setHasAgreed(true);
+      toast.success('Concordância consultiva registrada com sucesso!');
       fetchDetail();
     } catch (err: any) {
-      alert(err.message || 'Erro ao registrar concordância.');
+      toast.error(err.message || 'Erro ao registrar concordância.');
     } finally {
       setIsSubmittingAgreement(false);
     }
@@ -96,9 +100,10 @@ export const PublicSuggestionDetailPage: React.FC = () => {
         }),
       });
       setHasAgreed(false);
+      toast.info('Manifestação de concordância retirada.');
       fetchDetail();
     } catch (err: any) {
-      alert(err.message || 'Erro ao retirar concordância.');
+      toast.error(err.message || 'Erro ao retirar concordância.');
     } finally {
       setIsSubmittingAgreement(false);
     }
@@ -106,8 +111,8 @@ export const PublicSuggestionDetailPage: React.FC = () => {
 
   if (!suggestion) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        <p>Carregando proposta pública...</p>
+      <div className="max-w-3xl mx-auto space-y-4">
+        <CardSkeleton />
       </div>
     );
   }

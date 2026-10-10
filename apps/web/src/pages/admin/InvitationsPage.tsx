@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import { Send, Plus, KeyRound, Copy, Check, Ban, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -7,9 +8,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export const InvitationsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [invitations, setInvitations] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,9 +75,10 @@ export const InvitationsPage: React.FC = () => {
         setCreatedInviteUrl(invite.invite_url);
       }
       setIsModalOpen(false);
+      toast.success('Convite de acesso gerado com sucesso!');
       fetchInvitations();
     } catch (err: any) {
-      alert(err.message || 'Erro ao emitir convite.');
+      toast.error(err.message || 'Erro ao emitir convite.');
     } finally {
       setIsCreating(false);
     }
@@ -83,7 +88,7 @@ export const InvitationsPage: React.FC = () => {
     e.preventDefault();
     if (!activeCondominiumId || !revokeInviteId) return;
     if (revokeReason.trim().length < 5) {
-      alert('O motivo deve conter no mínimo 5 caracteres.');
+      toast.error('O motivo deve conter no mínimo 5 caracteres.');
       return;
     }
     setIsRevoking(true);
@@ -95,9 +100,10 @@ export const InvitationsPage: React.FC = () => {
       });
       setRevokeInviteId(null);
       setRevokeReason('');
+      toast.success('Convite revogado com sucesso!');
       fetchInvitations();
     } catch (err: any) {
-      alert(err.message || 'Erro ao revogar convite.');
+      toast.error(err.message || 'Erro ao revogar convite.');
     } finally {
       setIsRevoking(false);
     }
@@ -136,7 +142,7 @@ export const InvitationsPage: React.FC = () => {
                 variant="outline"
                 onClick={() => {
                   navigator.clipboard.writeText(createdInviteUrl);
-                  alert('Link copiado para a área de transferência!');
+                  toast.success('Link copiado para a área de transferência!');
                 }}
               >
                 <Copy className="w-3.5 h-3.5 mr-1" />
@@ -155,27 +161,33 @@ export const InvitationsPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3">Modalidade</th>
-                  <th className="px-6 py-3">Unidade Alvo</th>
-                  <th className="px-6 py-3">Contato Esperado</th>
-                  <th className="px-6 py-3">Resgates</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {invitations.length === 0 ? (
+          {isLoading ? (
+            <TableSkeleton rows={4} />
+          ) : invitations.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                icon={Send}
+                title="Nenhum convite emitido"
+                description="Crie convites para permitir que os moradores acessem e participem da consulta pública."
+                actionLabel="Emitir Primeiro Convite"
+                onAction={() => setIsModalOpen(true)}
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                      Nenhum convite emitido até o momento.
-                    </td>
+                    <th className="px-6 py-3">Modalidade</th>
+                    <th className="px-6 py-3">Unidade Alvo</th>
+                    <th className="px-6 py-3">Contato Esperado</th>
+                    <th className="px-6 py-3">Resgates</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3 text-right">Ação</th>
                   </tr>
-                ) : (
-                  invitations.map((inv) => (
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {invitations.map((inv) => (
                     <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-3.5 font-semibold text-slate-800 capitalize">
                         {(inv.kind || 'padrao').replace('_', ' ')}
@@ -205,7 +217,7 @@ export const InvitationsPage: React.FC = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
                             onClick={() => setRevokeInviteId(inv.id)}
                           >
                             <Ban className="w-3.5 h-3.5 mr-1" />
@@ -214,11 +226,11 @@ export const InvitationsPage: React.FC = () => {
                         )}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

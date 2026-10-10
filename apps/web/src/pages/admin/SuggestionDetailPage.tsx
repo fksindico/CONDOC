@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import {
   ArrowLeft,
@@ -18,12 +19,14 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 import { IdentityRevealModal } from '@/components/ui/IdentityRevealModal';
 
 export const SuggestionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { activeCondominiumId } = useTenant();
   const { isSindico } = useAuth();
+  const { toast } = useToast();
 
   const [suggestion, setSuggestion] = useState<any | null>(null);
   const [revealedIdentity, setRevealedIdentity] = useState<any | null>(null);
@@ -78,7 +81,7 @@ export const SuggestionDetailPage: React.FC = () => {
   const handleRegisterDecision = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCondominiumId || !id || publicSharedReason.trim().length < 5) {
-      alert('A resposta compartilhável é obrigatória (mínimo 5 caracteres).');
+      toast.error('A resposta compartilhável é obrigatória (mínimo 5 caracteres).');
       return;
     }
     setIsSubmittingDecision(true);
@@ -89,10 +92,10 @@ export const SuggestionDetailPage: React.FC = () => {
         public_shared_reason: publicSharedReason.trim(),
         internal_note: internalNote.trim() || undefined,
       });
-      alert('Decisão editorial registrada com sucesso!');
+      toast.success('Decisão editorial registrada com sucesso!');
       fetchDetail();
     } catch (err: any) {
-      alert(err.message || 'Erro ao registrar decisão.');
+      toast.error(err.message || 'Erro ao registrar decisão.');
     } finally {
       setIsSubmittingDecision(false);
     }
@@ -101,7 +104,7 @@ export const SuggestionDetailPage: React.FC = () => {
   const handleAuthorizePublication = async () => {
     if (!activeCondominiumId || !id) return;
     if (!isSindico) {
-      alert('Apenas o síndico ativo com mandato pode autorizar a publicação pública (CA-28).');
+      toast.error('Apenas o síndico ativo com mandato pode autorizar a publicação pública (CA-28).');
       return;
     }
     setIsPublishing(true);
@@ -114,10 +117,10 @@ export const SuggestionDetailPage: React.FC = () => {
           sanitized_justification: sanitizedJustification.trim(),
         }
       );
-      alert('Sugestão sanitizada publicada com sucesso no mural público!');
+      toast.success('Sugestão sanitizada publicada com sucesso no mural público!');
       fetchDetail();
     } catch (err: any) {
-      alert(err.message || 'Erro ao publicar sugestão.');
+      toast.error(err.message || 'Erro ao publicar sugestão.');
     } finally {
       setIsPublishing(false);
     }
@@ -125,8 +128,9 @@ export const SuggestionDetailPage: React.FC = () => {
 
   if (!suggestion) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        <p>Carregando detalhes da moderação...</p>
+      <div className="space-y-4 max-w-4xl mx-auto">
+        <CardSkeleton />
+        <CardSkeleton />
       </div>
     );
   }

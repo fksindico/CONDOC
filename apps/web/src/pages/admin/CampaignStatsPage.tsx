@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import { BarChart3, Users, Building, ShieldAlert, Camera, Download, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +10,7 @@ import { Alert } from '@/components/ui/Alert';
 
 export const CampaignStatsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState('');
   const [isCapturing, setIsCapturing] = useState(false);
@@ -32,9 +34,9 @@ export const CampaignStatsPage: React.FC = () => {
       // CA-39: Gera fotografia estatística substitutiva e imutável da consulta
       const res = await api.post(`/condominiums/${activeCondominiumId}/campaigns/${selectedCampaignId}/snapshots`);
       setSnapshotResult(res.data);
-      alert('Fotografia estatística imutável congelada com sucesso!');
+      toast.success('Fotografia estatística imutável congelada com sucesso!');
     } catch (err: any) {
-      alert(err.message || 'Erro ao gerar snapshot estatístico.');
+      toast.error(err.message || 'Erro ao gerar snapshot estatístico.');
     } finally {
       setIsCapturing(false);
     }

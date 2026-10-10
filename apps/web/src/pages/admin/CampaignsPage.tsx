@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { ConsultationCampaign } from '@condc/api-contracts';
 import { Sliders, Plus, Play, Square, Eye, EyeOff, ShieldAlert, Calendar } from 'lucide-react';
@@ -8,10 +9,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const CampaignsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<ConsultationCampaign[]>([]);
   const [snapshots, setSnapshots] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
@@ -68,7 +72,7 @@ export const CampaignsPage: React.FC = () => {
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCondominiumId || !selectedProjectId || !selectedSnapshotId) {
-      alert('Selecione um projeto e um snapshot imutável para a campanha.');
+      toast.error('Selecione um projeto e um snapshot imutável para a campanha.');
       return;
     }
     setIsCreating(true);
@@ -87,9 +91,10 @@ export const CampaignsPage: React.FC = () => {
       });
       setIsModalOpen(false);
       setName('');
+      toast.success('Campanha de consulta criada com sucesso!');
       fetchCampaigns();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar campanha.');
+      toast.error(err.message || 'Erro ao criar campanha.');
     } finally {
       setIsCreating(false);
     }
@@ -99,9 +104,10 @@ export const CampaignsPage: React.FC = () => {
     if (!activeCondominiumId) return;
     try {
       await api.post(`/condominiums/${activeCondominiumId}/campaigns/${campaignId}/${action}`);
+      toast.success(action === 'open' ? 'Consulta pública aberta aos moradores!' : 'Consulta pública encerrada com sucesso.');
       fetchCampaigns();
     } catch (err: any) {
-      alert(err.message || `Erro ao ${action === 'open' ? 'abrir' : 'encerrar'} campanha.`);
+      toast.error(err.message || `Erro ao ${action === 'open' ? 'abrir' : 'encerrar'} campanha.`);
     }
   };
 
@@ -125,14 +131,19 @@ export const CampaignsPage: React.FC = () => {
       {error && <Alert variant="error">{error}</Alert>}
 
       <div className="space-y-4">
-        {campaigns.length === 0 ? (
-          <Card className="text-center py-12 text-slate-500">
-            <Sliders className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-            <p className="text-sm font-semibold text-slate-700">Nenhuma campanha de consulta criada.</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Crie uma campanha vinculando a um snapshot congelado da minuta para abrir a participação aos moradores.
-            </p>
-          </Card>
+        {isLoading ? (
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
+        ) : campaigns.length === 0 ? (
+          <EmptyState
+            icon={Sliders}
+            title="Nenhuma campanha de consulta criada"
+            description="Crie uma campanha vinculando a um snapshot congelado da minuta para abrir a participação aos moradores."
+            actionLabel="Criar Primeira Campanha"
+            onAction={() => setIsModalOpen(true)}
+          />
         ) : (
           campaigns.map((camp: any) => {
             const isOpen = camp.state === 'aberta';

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import { UserCheck, ShieldCheck, CheckCircle2, XCircle, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -7,9 +8,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export const MembershipVerificationPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [pendingMemberships, setPendingMemberships] = useState<any[]>([]);
   const [selectedMembership, setSelectedMembership] = useState<any | null>(null);
   const [actionType, setActionType] = useState<'validado' | 'recusado'>('validado');
@@ -43,7 +47,7 @@ export const MembershipVerificationPage: React.FC = () => {
     e.preventDefault();
     if (!activeCondominiumId || !selectedMembership) return;
     if (reason.trim().length < 5) {
-      alert('A justificativa deve conter pelo menos 5 caracteres.');
+      toast.error('A justificativa deve conter pelo menos 5 caracteres.');
       return;
     }
     setIsSubmitting(true);
@@ -57,9 +61,10 @@ export const MembershipVerificationPage: React.FC = () => {
       });
       setSelectedMembership(null);
       setReason('');
+      toast.success(`Vínculo ${actionType === 'validado' ? 'validado' : 'recusado'} com sucesso!`);
       fetchPending();
     } catch (err: any) {
-      alert(err.message || 'Erro ao processar validação.');
+      toast.error(err.message || 'Erro ao processar validação.');
     } finally {
       setIsSubmitting(false);
     }
@@ -89,26 +94,30 @@ export const MembershipVerificationPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3">Morador</th>
-                  <th className="px-6 py-3">Unidade</th>
-                  <th className="px-6 py-3">Relação Declarada</th>
-                  <th className="px-6 py-3">Status Atual</th>
-                  <th className="px-6 py-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {pendingMemberships.length === 0 ? (
+          {isLoading ? (
+            <TableSkeleton rows={3} />
+          ) : pendingMemberships.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                icon={UserCheck}
+                title="Fila de validação limpa"
+                description="Não há vínculos de residência pendentes de conferência no momento. Todos os cadastros submetidos foram processados."
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                      Nenhum vínculo aguardando verificação no momento.
-                    </td>
+                    <th className="px-6 py-3">Morador</th>
+                    <th className="px-6 py-3">Unidade</th>
+                    <th className="px-6 py-3">Relação Declarada</th>
+                    <th className="px-6 py-3">Status Atual</th>
+                    <th className="px-6 py-3 text-right">Ação</th>
                   </tr>
-                ) : (
-                  pendingMemberships.map((m) => (
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {pendingMemberships.map((m) => (
                     <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-3.5 font-semibold text-slate-900 text-sm">
                         {m.resident_name || 'Morador'}
@@ -138,11 +147,11 @@ export const MembershipVerificationPage: React.FC = () => {
                         </Button>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

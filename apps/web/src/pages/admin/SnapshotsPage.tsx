@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import { History, Plus, ArrowLeft, Lock, CheckCircle2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -8,11 +9,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const SnapshotsPage: React.FC = () => {
   const { docId } = useParams<{ docId: string }>();
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
 
   const [snapshots, setSnapshots] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,9 +59,10 @@ export const SnapshotsPage: React.FC = () => {
       });
       setIsModalOpen(false);
       setVersionLabel('');
+      toast.success('Snapshot imutável congelado com sucesso!');
       fetchSnapshots();
     } catch (err: any) {
-      alert(err.message || 'Erro ao congelar snapshot.');
+      toast.error(err.message || 'Erro ao congelar snapshot.');
     } finally {
       setIsCreating(false);
     }
@@ -90,14 +95,19 @@ export const SnapshotsPage: React.FC = () => {
       {error && <Alert variant="error">{error}</Alert>}
 
       <div className="space-y-4">
-        {snapshots.length === 0 ? (
-          <Card className="text-center py-12 text-slate-500">
-            <History className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-            <p className="text-sm font-semibold text-slate-700">Nenhum snapshot congelado.</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Congele um snapshot para vincular à campanha de consulta pública dos moradores.
-            </p>
-          </Card>
+        {isLoading ? (
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
+        ) : snapshots.length === 0 ? (
+          <EmptyState
+            icon={History}
+            title="Nenhum snapshot congelado"
+            description="Congele um snapshot para vincular à campanha de consulta pública dos moradores."
+            actionLabel="Congelar Primeiro Snapshot"
+            onAction={() => setIsModalOpen(true)}
+          />
         ) : (
           snapshots.map((snap) => (
             <Card key={snap.id} className="hover:border-slate-300 transition-colors">

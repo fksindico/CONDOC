@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { Document } from '@condc/api-contracts';
 import { FileText, Plus, ArrowLeft, ArrowRight, Edit3, Camera, FileDiff, History } from 'lucide-react';
@@ -9,10 +10,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export const DocumentsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,9 +58,10 @@ export const DocumentsPage: React.FC = () => {
       });
       setIsModalOpen(false);
       setTitle('');
+      toast.success('Minuta normativa criada com sucesso!');
       fetchDocuments();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar documento.');
+      toast.error(err.message || 'Erro ao criar documento.');
     } finally {
       setIsCreating(false);
     }
@@ -87,13 +92,20 @@ export const DocumentsPage: React.FC = () => {
       {error && <Alert variant="error">{error}</Alert>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {documents.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
-            <FileText className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-            <p className="text-sm font-semibold text-slate-700">Nenhum documento normativo cadastrado.</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Crie uma minuta de Regimento Interno ou Convenção para iniciar a redação dos dispositivos.
-            </p>
+        {isLoading ? (
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
+        ) : documents.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState
+              icon={FileText}
+              title="Nenhum documento normativo cadastrado"
+              description="Crie uma minuta de Regimento Interno ou Convenção para iniciar a redação dos dispositivos."
+              actionLabel="Criar Primeira Minuta"
+              onAction={() => setIsModalOpen(true)}
+            />
           </div>
         ) : (
           documents.map((d) => (

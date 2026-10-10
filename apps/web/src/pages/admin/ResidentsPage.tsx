@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { UnitMembership } from '@condc/api-contracts';
 import { Users, UserPlus, Search, Phone, Mail, Home, ShieldAlert } from 'lucide-react';
@@ -8,9 +9,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
 import { Modal } from '@/components/ui/Modal';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export const ResidentsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
+  const { toast } = useToast();
   const [memberships, setMemberships] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'todos' | 'validado' | 'pendente' | 'em_analise'>('todos');
   const [search, setSearch] = useState('');
@@ -64,9 +68,10 @@ export const ResidentsPage: React.FC = () => {
       setPhone('');
       setEmail('');
       setUnitId('');
+      toast.success('Pré-cadastro de morador salvo com sucesso!');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar pré-cadastro.');
+      toast.error(err.message || 'Erro ao criar pré-cadastro.');
     }
   };
 
@@ -141,25 +146,31 @@ export const ResidentsPage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3">Morador</th>
-                  <th className="px-6 py-3">Unidade</th>
-                  <th className="px-6 py-3">Relação / Vínculo</th>
-                  <th className="px-6 py-3">Status de Verificação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.length === 0 ? (
+          {isLoading ? (
+            <TableSkeleton rows={4} />
+          ) : filtered.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                icon={Users}
+                title="Nenhum morador encontrado"
+                description={search ? "Nenhum resultado corresponde à sua busca." : "Nenhum morador com este status. Cadastre um novo morador ou importe uma planilha."}
+                actionLabel={search ? undefined : "Novo Pré-cadastro"}
+                onAction={search ? undefined : () => setIsModalOpen(true)}
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                      Nenhum morador encontrado com os filtros selecionados.
-                    </td>
+                    <th className="px-6 py-3">Morador</th>
+                    <th className="px-6 py-3">Unidade</th>
+                    <th className="px-6 py-3">Relação / Vínculo</th>
+                    <th className="px-6 py-3">Status de Verificação</th>
                   </tr>
-                ) : (
-                  filtered.map((m) => (
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.map((m) => (
                     <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-3.5">
                         <span className="font-semibold text-slate-900 text-sm block">
@@ -188,11 +199,11 @@ export const ResidentsPage: React.FC = () => {
                         </Badge>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
