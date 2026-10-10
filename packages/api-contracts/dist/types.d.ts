@@ -33,10 +33,13 @@ export interface Unit {
     id: UUID;
     condominium_id: UUID;
     building_id?: UUID;
-    unit_number: string;
+    code: string;
+    unit_number?: string;
     ideal_fraction?: number;
     block?: string;
     floor?: string;
+    floor_label?: string;
+    status?: string;
     created_at: ISODateString;
 }
 export type RoleType = 'sindico' | 'subsindico' | 'conselheiro' | 'comissao' | 'juridico' | 'administrador' | 'morador';
@@ -56,14 +59,16 @@ export interface UnitMembership {
     id: UUID;
     condominium_id: UUID;
     unit_id: UUID;
-    account_id: UUID;
+    resident_id?: UUID;
+    account_id?: UUID;
     category: ResidentCategory;
     verification_status: VerificationStatus;
-    verification_method?: 'documento' | 'declaracao_sindico' | 'cadastro_legado';
+    verification_method?: 'documento' | 'declaracao_sindico' | 'cadastro_legado' | 'presencial';
     verified_at?: ISODateString;
     verified_by?: UUID;
     valid_from: ISODateString;
     valid_until?: ISODateString;
+    membership_status?: 'active' | 'suspended' | 'ended';
     created_at: ISODateString;
 }
 export type InvitationType = 'individual' | 'por_unidade' | 'amplo';
@@ -91,92 +96,166 @@ export interface ImportBatch {
     conflict_rows: number;
     created_at: ISODateString;
 }
-export type ProjectType = 'convencao' | 'regimento_interno' | 'estatuto' | 'outro';
-export type ProjectStatus = 'em_elaboracao' | 'em_consulta' | 'concluido' | 'arquivado';
-export interface DocumentProject {
+export type ProjectType = 'criacao' | 'revisao' | 'conjunta' | 'convencao' | 'regimento_interno' | 'estatuto' | 'outro';
+export type ProjectStatus = 'preparacao' | 'estruturacao' | 'redacao' | 'consulta' | 'consolidacao' | 'revisao_opcional' | 'final_trabalho' | 'publicado' | 'arquivado' | 'em_elaboracao' | 'em_consulta' | 'concluido';
+export interface Project {
     id: UUID;
     condominium_id: UUID;
-    title: string;
-    project_type: ProjectType;
+    name: string;
+    purpose?: string;
+    kind: ProjectType;
     status: ProjectStatus;
+    coordinator_account_id?: UUID;
     created_at: ISODateString;
     updated_at: ISODateString;
 }
-export type ProvisionType = 'titulo' | 'capitulo' | 'secao' | 'artigo' | 'paragrafo' | 'inciso' | 'alinea' | 'item';
-export interface Provision {
+export type DocumentProject = Project;
+export interface Document {
     id: UUID;
     project_id: UUID;
-    parent_id?: UUID;
-    provision_type: ProvisionType;
-    prefix: string;
-    order_index: number;
-    current_revision_id: UUID;
+    condominium_id: UUID;
+    title: string;
+    type: 'convencao' | 'regimento_interno' | 'anexo_normativo';
+    editorial_status: 'rascunho' | 'em_revisao' | 'aprovado_para_consulta' | 'congelado' | 'consolidado';
+    numbering_policy: string;
     created_at: ISODateString;
+    updated_at: ISODateString;
+}
+export type ProvisionType = 'titulo' | 'capitulo' | 'secao' | 'artigo' | 'caput' | 'paragrafo' | 'inciso' | 'alinea' | 'item';
+export interface Provision {
+    id: UUID;
+    document_id?: UUID;
+    project_id?: UUID;
+    parent_id?: UUID;
+    kind?: ProvisionType;
+    provision_type?: ProvisionType;
+    created_at: ISODateString;
+    updated_at?: ISODateString;
 }
 export interface ProvisionRevision {
     id: UUID;
     provision_id: UUID;
+    document_id?: UUID;
+    condominium_id?: UUID;
     revision_number: number;
-    content_html: string;
-    content_text: string;
+    label?: string;
+    text: string;
+    content_text?: string;
+    content_html?: string;
+    theme?: string;
+    change_type?: 'mantido' | 'alterado' | 'incluido' | 'excluido' | 'renumerado' | 'desmembrado' | 'consolidado';
+    etag?: string;
     justification?: string;
-    created_by: UUID;
+    author_account_id?: UUID;
     created_at: ISODateString;
 }
-export type OriginMappingType = 'inalterado' | 'modificado' | 'novo_sem_origem' | 'desmembrado' | 'consolidado' | 'excluido';
+export type OriginRelationType = 'mantido' | 'alterado' | 'desmembrado' | 'consolidado';
+export type OriginMappingType = OriginRelationType | 'inalterado' | 'modificado' | 'novo_sem_origem' | 'excluido';
 export interface OriginMapping {
     id: UUID;
+    condominium_id?: UUID;
+    revision_id?: UUID;
     new_provision_id?: UUID;
     source_provision_id?: UUID;
-    mapping_type: OriginMappingType;
+    relation_type?: OriginRelationType;
+    mapping_type?: OriginMappingType;
+    excerpt?: string;
+    reason?: string;
     notes?: string;
+    created_at?: ISODateString;
+}
+export interface CrossReference {
+    id: UUID;
+    condominium_id: UUID;
+    revision_id: UUID;
+    target_provision_id: UUID;
+    label_template: string;
+    status: 'valido' | 'quebrado' | 'suspenso';
+    created_at: ISODateString;
 }
 export interface DocumentSnapshot {
     id: UUID;
-    project_id: UUID;
-    snapshot_number: number;
-    label: string;
-    immutable_hash: string;
+    document_id?: UUID;
+    project_id?: UUID;
+    version_label?: string;
+    purpose?: string;
+    snapshot_number?: number;
+    label?: string;
+    content_hash?: string;
+    immutable_hash?: string;
+    is_immutable?: boolean;
+    frozen_at?: ISODateString;
     created_at: ISODateString;
 }
-export type CampaignStatus = 'rascunho' | 'aberta' | 'em_consolidacao' | 'encerrada';
+export type CampaignStatus = 'rascunho' | 'aberta' | 'pausada' | 'encerrada' | 'em_consolidacao';
 export interface ConsultationCampaign {
     id: UUID;
     condominium_id: UUID;
     project_id: UUID;
     snapshot_id: UUID;
-    title: string;
+    name: string;
+    title?: string;
     description?: string;
-    starts_at: ISODateString;
-    ends_at: ISODateString;
-    status: CampaignStatus;
-    hide_counts: boolean;
+    state?: CampaignStatus;
+    status?: CampaignStatus;
+    start_date?: ISODateString;
+    end_date?: ISODateString;
+    starts_at?: ISODateString;
+    ends_at?: ISODateString;
+    settings?: Record<string, unknown>;
+    hide_counts?: boolean;
     created_at: ISODateString;
+    updated_at?: ISODateString;
 }
-export type EditorialDecision = 'pendente' | 'acolhida' | 'acolhida_parcialmente' | 'nao_acolhida' | 'duplicada';
+export type AnalysisStatus = 'pendente' | 'em_analise' | 'concluida';
+export type PublicationStatus = 'nao_publicada' | 'publicada' | 'oculta';
+export type IncorporationStatus = 'nao_incorporada' | 'incorporada';
+export type EditorialDecision = 'pendente' | 'acolhida' | 'acolhida_parcial' | 'acolhida_parcialmente' | 'rejeitada' | 'nao_acolhida' | 'duplicada';
 export interface Suggestion {
     id: UUID;
-    public_id: string;
+    public_protocol: string;
+    public_id?: string;
     campaign_id: UUID;
-    provision_id: UUID;
-    snapshot_id: UUID;
-    suggested_text: string;
-    justification?: string;
+    target_provision_id?: UUID;
+    target_snapshot_revision_id?: UUID;
+    category: 'redacao' | 'clareza' | 'supressao' | 'adicao' | 'adequacao_legal' | 'geral';
+    analysis_status: AnalysisStatus;
     editorial_decision: EditorialDecision;
-    editorial_notes?: string;
-    is_published: boolean;
-    published_at?: ISODateString;
-    published_by?: UUID;
+    publication_status: PublicationStatus;
+    incorporation_status: IncorporationStatus;
+    parent_published_suggestion_id?: UUID;
     created_at: ISODateString;
+    updated_at?: ISODateString;
 }
 export interface ConsultativeAgreement {
     id: UUID;
-    campaign_id: UUID;
-    target_type: 'provision_revision' | 'suggestion_revision';
-    target_id: UUID;
-    account_id: UUID;
-    unit_id: UUID;
-    agreed_at: ISODateString;
+    condominium_id?: UUID;
+    participant_id?: UUID;
+    published_suggestion_revision_id?: UUID;
+    active: boolean;
+    campaign_id?: UUID;
+    account_id?: UUID;
+    unit_id?: UUID;
+    created_at: ISODateString;
+    updated_at?: ISODateString;
+}
+export interface ExportArtifact {
+    id: UUID;
+    condominium_id: UUID;
+    document_id?: UUID;
+    snapshot_id?: UUID;
+    kind: 'pacote_externo_publico' | 'relatorio_interno_comissao' | 'minuta_final_limpa' | 'relatorio_depara_final';
+    status: 'gerando' | 'concluido' | 'falha';
+    is_public: boolean;
+    manifest_hash: string;
+    files_manifest: Array<{
+        path: string;
+        sha256: string;
+        size_bytes: number;
+        mime_type: string;
+    }>;
+    disclaimer: string;
+    created_at: ISODateString;
 }
 export interface ApiError {
     code: string;

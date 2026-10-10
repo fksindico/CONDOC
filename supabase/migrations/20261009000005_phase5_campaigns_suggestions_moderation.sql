@@ -164,21 +164,7 @@ CREATE TABLE IF NOT EXISTS app.suggestion_editorial_decisions (
 
 CREATE INDEX IF NOT EXISTS idx_sug_decisions_suggestion ON app.suggestion_editorial_decisions(suggestion_id);
 
--- 8. Tabela: Auditoria de Acesso a Dados de Identidade (IdentityAccessEvent - CA-33)
-CREATE TABLE IF NOT EXISTS app.identity_access_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    condominium_id UUID NOT NULL REFERENCES app.condominiums(id) ON DELETE CASCADE,
-    actor_account_id UUID NOT NULL REFERENCES app.accounts(id),
-    target_suggestion_id UUID REFERENCES app.suggestions(id) ON DELETE CASCADE,
-    target_resident_id UUID REFERENCES app.residents(id) ON DELETE CASCADE,
-    justification TEXT NOT NULL,
-    accessed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
-);
-
-CREATE INDEX IF NOT EXISTS idx_identity_access_condo ON app.identity_access_events(condominium_id);
-CREATE INDEX IF NOT EXISTS idx_identity_access_sug ON app.identity_access_events(target_suggestion_id);
-
--- 9. Tabela: Anexos de Sugestões (SuggestionAttachment - CA-34)
+-- 8. Tabela: Anexos de Sugestões (SuggestionAttachment - CA-34)
 CREATE TABLE IF NOT EXISTS app.suggestion_attachments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     condominium_id UUID NOT NULL REFERENCES app.condominiums(id) ON DELETE CASCADE,
@@ -191,17 +177,16 @@ CREATE TABLE IF NOT EXISTS app.suggestion_attachments (
 
 CREATE INDEX IF NOT EXISTS idx_sug_attachments_sug ON app.suggestion_attachments(suggestion_id);
 
--- 10. Habilitação de RLS para todas as tabelas
+-- 9. Habilitação de RLS para as novas tabelas
 ALTER TABLE app.consultation_campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.campaign_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_revisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.published_suggestion_revisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_editorial_decisions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE app.identity_access_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_attachments ENABLE ROW LEVEL SECURITY;
 
--- 11. Políticas RLS de Isolamento Multi-Tenancy
+-- 10. Políticas RLS de Isolamento Multi-Tenancy
 DO $$ BEGIN
     CREATE POLICY rls_consultation_campaigns ON app.consultation_campaigns
         FOR ALL USING (condominium_id = app.current_tenant_id());
@@ -229,11 +214,6 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
     CREATE POLICY rls_suggestion_editorial_decisions ON app.suggestion_editorial_decisions
-        FOR ALL USING (condominium_id = app.current_tenant_id());
-EXCEPTION WHEN duplicate_object THEN null; END $$;
-
-DO $$ BEGIN
-    CREATE POLICY rls_identity_access_events ON app.identity_access_events
         FOR ALL USING (condominium_id = app.current_tenant_id());
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 

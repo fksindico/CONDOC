@@ -46,7 +46,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. UNIDADES (Preservação de zeros e identificadores alfanuméricos)
-INSERT INTO app.units (id, condominium_id, building_id, unit_number, block, floor, ideal_fraction)
+INSERT INTO app.units (id, condominium_id, building_id, code, block, floor_label, ideal_fraction)
 VALUES
   -- Torre A
   ('u0000000-0000-0000-0000-000000000101', 'a0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', '101', 'A', '1', 0.0500),
@@ -91,5 +91,60 @@ VALUES
     '(11) 99887-7665',
     true,
     false
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- 5. ATRIBUIÇÃO DE PAPÉIS (Síndico Ativo com Mandato)
+INSERT INTO app.role_assignments (id, condominium_id, account_id, role, status)
+VALUES
+  (
+    'r0000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000001',
+    'sindico',
+    'active'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- 6. MORADORES (Residentes e Vínculos com Unidades)
+INSERT INTO app.residents (id, condominium_id, account_id, full_name, phone_e164, status)
+VALUES
+  (
+    'e0000000-0000-0000-0000-000000000002',
+    'a0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000002',
+    'Mariana Oliveira',
+    '+5511912345678',
+    'active'
+  ),
+  (
+    'e0000000-0000-0000-0000-000000000003',
+    'a0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000003',
+    'Roberto Santos',
+    '+5511998877665',
+    'active'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO app.unit_memberships (id, condominium_id, resident_id, unit_id, category, verification_status, membership_status)
+VALUES
+  (
+    'm0000000-0000-0000-0000-000000000002',
+    'a0000000-0000-0000-0000-000000000001',
+    'e0000000-0000-0000-0000-000000000002',
+    'u0000000-0000-0000-0000-000000000101',
+    'proprietario_residente',
+    'validado',
+    'active'
+  ),
+  (
+    'm0000000-0000-0000-0000-000000000003',
+    'a0000000-0000-0000-0000-000000000001',
+    'e0000000-0000-0000-0000-000000000003',
+    'u0000000-0000-0000-0000-000000000211',
+    'proprietario_nao_residente',
+    'validado',
+    'active'
   )
 ON CONFLICT (id) DO NOTHING;

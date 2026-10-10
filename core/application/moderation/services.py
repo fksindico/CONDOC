@@ -638,7 +638,7 @@ class ModerationService:
         IdentityAccessEvent.objects.create(
             condominium_id=condominium_id,
             actor_account_id=actor_account_id,
-            target_type='suggestion',
+            target_type='suggestion_author',
             target_id=suggestion.id,
             purpose=justification.strip()
         )
