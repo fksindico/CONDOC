@@ -1,0 +1,105 @@
+import React from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTenant } from '@/contexts/TenantContext';
+import { LegalDisclaimerBanner } from '@/components/ui/LegalDisclaimerBanner';
+import {
+  Building2,
+  BookOpen,
+  MessageSquare,
+  BookmarkCheck,
+  User,
+  LogOut,
+  Home,
+  FileText,
+} from 'lucide-react';
+
+export const PortalLayout: React.FC = () => {
+  const { user, logout } = useAuth();
+  const { activeCondominium } = useTenant();
+  const location = useLocation();
+
+  const navLinks = [
+    { label: 'Início', path: '/portal', icon: Home },
+    { label: 'Minuta em Consulta', path: '/portal/documento', icon: BookOpen },
+    { label: 'Mural de Sugestões', path: '/portal/mural', icon: MessageSquare },
+    { label: 'Minhas Sugestões', path: '/portal/minhas-sugestoes', icon: FileText },
+    { label: 'Minhas Concordâncias', path: '/portal/minhas-concordancias', icon: BookmarkCheck },
+    { label: 'Meu Cadastro', path: '/portal/meu-cadastro', icon: User },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Topbar Institucional do Morador */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo / Condomínio */}
+            <div className="flex items-center gap-3">
+              <Link to="/portal" className="flex items-center gap-2 text-brand-700 font-bold text-lg tracking-tight">
+                <Building2 className="w-6 h-6 text-brand-600" />
+                <span>CONDC</span>
+              </Link>
+              <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+              <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px] sm:max-w-xs">
+                {activeCondominium?.name || 'Portal do Morador'}
+              </span>
+            </div>
+
+            {/* Usuário / Sair */}
+            <div className="flex items-center gap-4 text-xs">
+              <span className="text-slate-600 hidden md:inline">
+                Olá, <strong className="text-slate-900">{user?.full_name || 'Morador'}</strong>
+              </span>
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
+                title="Sair do portal"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sair</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Abas Horizontais de Navegação */}
+          <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto border-t border-slate-100 py-1 text-xs sm:text-sm no-scrollbar">
+            {navLinks.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path || (item.path !== '/portal' && location.pathname.startsWith(item.path));
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0 text-current" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </header>
+
+      {/* Conteúdo Central */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+        <Outlet />
+      </main>
+
+      {/* Rodapé Obrigatório Permanente */}
+      <footer className="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <LegalDisclaimerBanner compact className="w-full sm:w-auto" />
+          <p className="text-center sm:text-right shrink-0">
+            CONDC — Plataforma de Gestão Normativa Condominial
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+};

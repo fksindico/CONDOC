@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
+
+/* Customização do Editor Tiptap / ProseMirror */
+.ProseMirror {
+  @apply outline-none min-h-[160px] p-3 text-slate-800 text-sm leading-relaxed;
+}
+
+.ProseMirror p {
+  @apply mb-2;
+}
+
+.ProseMirror p:last-child {
+  @apply mb-0;
+}
+
+.ProseMirror:focus {
+  @apply outline-none ring-0;
+}

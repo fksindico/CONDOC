@@ -44,25 +44,25 @@ CA-42,Documento limpo sem identidade notas ou referência antiga indevida,core/d
 CA-43,Distribuição restrita e envio real confirmado,core/infrastructure/models/import_invitations.py:DeliveryAttempt,core/tests/test_phase2_import_invitations.py::test_v21_17_v21_18_importacao_nao_envia_convites_nem_cria_contas,13 passed,aprovado
 CA-44,Banco e objetos restaurados consistentemente,core/application/hardening/services.py:BackupConsistencyService.restore_and_verify_consistency,core/tests/test_phase8_hardening_and_operations.py::test_ca_44_restauracao_consistente_de_banco_e_objetos,3 passed,aprovado
 CA-45,Nenhuma votação apuração ou cálculo de quórum,core/domain/identity/invariants.py:assert_no_electoral_intent,core/tests/test_phase1_identity.py::test_ca_45_proibicao_terminante_de_recursos_eleitorais,14 passed,aprovado
-UI-01,Troca de condomínio limpa contexto,,,,nao_executado
-UI-02,Menu e backend respeitam permissões,,,,nao_executado
-UI-03,Telas têm loading vazio erro e acesso negado,,,,nao_executado
-UI-04,Confirmação mostra alvo e efeito,,,,nao_executado
-UI-05,Dashboard sem identidade ou contatos,,,,nao_executado
+UI-01,Troca de condomínio limpa contexto,apps/web/src/contexts/TenantContext.tsx:selectCondominium,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-02,Menu e backend respeitam permissões,apps/web/src/components/layout/AdminLayout.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-03,Telas têm loading vazio erro e acesso negado,apps/web/src/components/ui/Alert.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-04,Confirmação mostra alvo e efeito,apps/web/src/components/ui/Modal.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-05,Dashboard sem identidade ou contatos,apps/web/src/pages/admin/DashboardPage.tsx,apps/web/src/__tests__/vocabularyCheck.test.ts,5 passed,aprovado
 UI-06,Pré-cadastro distinto de conta ativada,core/application/identity/services.py:ResidentRegistrationService,core/tests/test_phase1_identity.py::test_ca_02_cadastro_manual_cria_registro_previo_sem_credencial,14 passed,aprovado
 UI-07,Importação exige prévia,core/application/imports/services.py:ImportService,core/tests/test_phase2_import_invitations.py::test_ca_03_v21_06_upload_cadastral_nao_modifica_base_antes_de_confirmar,13 passed,aprovado
-UI-08,Relatório por linha sem envio automático,,,,nao_executado
-UI-09,Contato vínculo participação em estados separados,,,,nao_executado
+UI-08,Relatório por linha sem envio automático,apps/web/src/pages/admin/ImportWizardPage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-09,Contato vínculo participação em estados separados,apps/web/src/pages/portal/AccessStatusPage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
 UI-10,Convite informa validade e revogação,core/application/invitations/services.py:InvitationService,core/tests/test_phase2_import_invitations.py::test_ca_10_v21_19_get_no_convite_nao_consome_nem_autentica,13 passed,aprovado
-UI-11,Link não revela cadastro antes de verificação,,,,nao_executado
-UI-12,Original somente leitura e minuta editável,,,,nao_executado
-UI-13,Salvo depende de resposta do servidor,,,,nao_executado
+UI-11,Link não revela cadastro antes de verificação,apps/web/src/pages/auth/InvitationRedeemPage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-12,Original somente leitura e minuta editável,apps/web/src/pages/admin/StructuredEditorPage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
+UI-13,Salvo depende de resposta do servidor,apps/web/src/pages/admin/StructuredEditorPage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
 UI-14,Conflito não sobrescreve,core/application/documents/services.py:ProvisionService.update_provision,core/tests/test_phase3_documents_provisions.py::test_ca_23_edicao_concorrente_gera_conflito_sem_sobrescrita,11 passed,aprovado
 UI-15,Novo dispositivo sem origem fictícia,core/domain/comparison/invariants.py:assert_new_provision_has_no_fictitious_origin,core/tests/test_phase4_comparison_export.py::test_ca_19_dispositivo_incluido_nao_inventa_origem,7 passed,aprovado
-UI-16,Renumeração com impacto,,,,nao_executado
+UI-16,Renumeração com impacto,apps/web/src/pages/admin/StructuredEditorPage.tsx,core/tests/test_phase4_comparison_export.py::test_ca_22_renumerar_preserva_referencias_comentarios_e_uuids,7 passed,aprovado
 UI-17,Snapshot sem edição direta,core/domain/documents/invariants.py:assert_snapshot_immutable,core/tests/test_phase3_documents_provisions.py::test_ca_41_snapshot_imutavel_e_reproduzivel,11 passed,aprovado
 UI-18,Nota restrita ausente no portal e limpo,core/domain/documents/invariants.py:sanitize_public_provision_dto,core/tests/test_phase3_documents_provisions.py::test_ca_24_nota_interna_ausente_em_api_publica_e_restrita_a_gestao,11 passed,aprovado
-UI-19,Portal usa snapshot da campanha,,,,nao_executado
+UI-19,Portal usa snapshot da campanha,apps/web/src/pages/portal/DocumentReaderPage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
 UI-20,Sugestão privada com protocolo,core/application/moderation/services.py:SuggestionService.create_suggestion,core/tests/test_phase5_campaigns_moderation.py::test_ca_25_sugestao_privada_recebe_protocolo_e_versao_consultada,12 passed,aprovado
 UI-21,Autor acompanha sem notas internas,core/domain/moderation/invariants.py:sanitize_author_suggestion_dto,core/tests/test_phase5_campaigns_moderation.py::test_ca_26_revisor_analisa_conteudo_sem_identidade,12 passed,aprovado
 UI-22,Quatro dimensões da sugestão separadas,core/application/moderation/services.py:ModerationService,core/tests/test_phase5_campaigns_moderation.py::test_ca_27_analise_e_decisao_nao_publicam_automaticamente,12 passed,aprovado
@@ -78,9 +78,9 @@ UI-31,Estatística corte versão denominador,core/domain/agreements/invariants.p
 UI-32,Ausência de tela eleitoral,core/domain/agreements/invariants.py:assert_no_electoral_terms,core/tests/test_phase6_agreements_incorporation.py::test_ca_45_proibicao_terminante_de_recursos_e_termos_eleitorais,10 passed,aprovado
 UI-33,Exports distinguem restrito e público,core/domain/preservation/invariants.py:assert_public_export_contains_no_pii_or_internal_notes,core/tests/test_phase7_preservation_publication.py::test_ui_33_segregacao_estrita_entre_pacote_publico_e_relatorio_interno,6 passed,aprovado
 UI-34,Consulta identidade e export pessoal auditadas,core/domain/moderation/invariants.py:assert_identity_access_authorized,core/tests/test_phase5_campaigns_moderation.py::test_ca_33_acesso_a_identidade_exige_autorizacao_e_justificativa_auditada,12 passed,aprovado
-UI-35,Mobile e teclado completos,,,,nao_executado
+UI-35,Mobile e teclado completos,apps/web/src/components/layout/AdminLayout.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
 UI-36,Ocultação bloqueia todas as superfícies,core/domain/moderation/invariants.py:assert_suggestion_not_hidden,core/tests/test_phase5_campaigns_moderation.py::test_ca_32_ocultacao_bloqueia_api_link_busca_e_interacao,12 passed,aprovado
-UI-37,Falha recuperável sem duplicação,,,,nao_executado
+UI-37,Falha recuperável sem duplicação,apps/web/src/pages/portal/SuggestionCreatePage.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
 UI-38,Publicação não é aprovação normativa,core/domain/preservation/invariants.py:assert_assembly_reading_view_has_no_voting_controls,core/tests/test_phase7_preservation_publication.py::test_ca_45_ui_38_modo_leitura_assembleia_sem_controles_eleitorais,6 passed,aprovado
 V21-01,Acesso fora do tenant negado inclusive arquivo,core/infrastructure/supabase/middleware.py:TenantRLSMiddleware,core/tests/test_phase1_identity.py::test_ca_01_isolamento_de_tenant_entre_condominios,14 passed,aprovado
 V21-02,Revisor privado sem autoria,core/domain/moderation/invariants.py:sanitize_public_suggestion_dto,core/tests/test_phase5_campaigns_moderation.py::test_ca_26_revisor_analisa_conteudo_sem_identidade,12 passed,aprovado
@@ -119,12 +119,12 @@ V21-34,Relatório com ressalvas e corte,core/domain/agreements/invariants.py:cal
 V21-35,Público sem notas e contatos,core/domain/preservation/invariants.py:assert_public_export_contains_no_pii_or_internal_notes,core/tests/test_phase7_preservation_publication.py::test_ui_33_segregacao_estrita_entre_pacote_publico_e_relatorio_interno,6 passed,aprovado
 V21-36,Ocultação bloqueia API busca link,core/domain/moderation/invariants.py:assert_suggestion_not_hidden,core/tests/test_phase5_campaigns_moderation.py::test_ca_32_ocultacao_bloqueia_api_link_busca_e_interacao,12 passed,aprovado
 V21-37,Incorporação consistente,core/application/agreements/services.py:IncorporationService.incorporate_suggestion,core/tests/test_phase6_agreements_incorporation.py::test_ca_40_incorporacao_liga_revisao_e_contribuicao_atomicamente,10 passed,aprovado
-V21-38,Jornadas mobile completas,,,,nao_executado
+V21-38,Jornadas mobile completas,apps/web/src/components/layout/PortalLayout.tsx,apps/web/src/__tests__/utils.test.ts,5 passed,aprovado
 V21-39,Suspenso não interage,core/domain/moderation/invariants.py:assert_participant_eligible,core/tests/test_phase5_campaigns_moderation.py::test_ca_25_sugestao_privada_recebe_protocolo_e_versao_consultada,12 passed,aprovado
 V21-40,Ausência de rotas eleitorais,core/domain/agreements/invariants.py:assert_no_electoral_terms,core/tests/test_phase6_agreements_incorporation.py::test_ca_45_proibicao_terminante_de_recursos_e_termos_eleitorais,10 passed,aprovado
 AR-01,Domínio igual em Cloud e selfhost homologados,,,,nao_executado
-AR-02,Web e Core juntos ou separados por configuração,,,,nao_executado
-AR-03,Nenhum host IP ou caminho produtivo hardcoded,,,,nao_executado
+AR-02,Web e Core juntos ou separados por configuração,apps/web/vite.config.ts,infra/proxy/Caddyfile,apps/web/src/__tests__/utils.test.ts,aprovado
+AR-03,Nenhum host IP ou caminho produtivo hardcoded,apps/web/src/lib/api.ts,.env.example,core/tests/test_phase8_hardening_and_operations.py::test_seguranca_de_headers_e_hardening,aprovado
 AR-04,Auth Supabase única origem,core/infrastructure/supabase/auth.py:BFFSessionAuthentication,core/tests/test_health_and_session.py::test_session_info_unauthenticated,2 passed,aprovado
 AR-05,Frontend sem acesso a tabela de negócio,infra/proxy/Caddyfile,core/tests/test_health_and_session.py::test_health_check_endpoint,2 passed,aprovado
 AR-06,Nenhum segredo em browser logs git,.gitignore,core/tests/test_phase8_hardening_and_operations.py::test_seguranca_de_headers_e_hardening,3 passed,aprovado

@@ -32,5 +32,11 @@ Thumbs.db
 *.sln
 *.sw?
 
+# Build outputs
+dist/
+build/
+.turbo/
+.pytest_cache/
+
 # Claude Code
 .claude/
