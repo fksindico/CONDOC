@@ -3,8 +3,9 @@ Configurações de Teste — CONDC
 """
 from .base import *
 
-DEBUG = False
+DEBUG = True
 TESTING = True
+ALLOWED_HOSTS = ["*"]
 
 DATABASES = {
     "default": {

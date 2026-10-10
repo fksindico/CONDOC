@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     # Terceiros
     "rest_framework",
     "corsheaders",
+    # Módulos CONDC
+    "infrastructure.apps.InfrastructureConfig",
 ]
 
 MIDDLEWARE = [

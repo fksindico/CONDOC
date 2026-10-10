@@ -1,20 +1,20 @@
 id,criterio,implementacao,teste,evidencia,status
-CA-01,Acesso entre condomínios negado no servidor e arquivos,,,,nao_executado
-CA-02,Cadastro manual cria registro prévio sem credencial automática,,,,nao_executado
+CA-01,Acesso entre condomínios negado no servidor e arquivos,supabase/migrations/20261009000001_phase1_identity_tenancy.sql,core/tests/test_phase1_identity.py::test_ca_01_isolamento_de_tenant_entre_condominios,14 passed,aprovado
+CA-02,Cadastro manual cria registro prévio sem credencial automática,core/application/identity/services.py:create_manual_registration,core/tests/test_phase1_identity.py::test_ca_02_cadastro_manual_cria_registro_previo_sem_credencial,14 passed,aprovado
 CA-03,Upload cadastral não modifica antes da confirmação,,,,nao_executado
 CA-04,Unidade desconhecida não é criada silenciosamente,,,,nao_executado
 CA-05,Reenvio de confirmação não duplica registros,,,,nao_executado
-CA-06,Conta em outro condomínio não é revelada,,,,nao_executado
+CA-06,Conta em outro condomínio não é revelada,supabase/migrations/20261009000001_phase1_identity_tenancy.sql,core/tests/test_phase1_identity.py::test_ca_06_conta_em_outro_condominio_nao_e_revelada,14 passed,aprovado
 CA-07,Convite por unidade fixa unidade e mantém contas individuais,,,,nao_executado
 CA-08,Convite amplo exige conferência de vínculo,,,,nao_executado
 CA-09,Individual pré-conferido exige contato previsto confirmado,,,,nao_executado
 CA-10,GET no convite não consome nem autentica,,,,nao_executado
 CA-11,Revogação bloqueia resgate sem apagar perfil ativado,,,,nao_executado
-CA-12,Dados incompletos não habilitam interação,,,,nao_executado
-CA-13,Vários moradores podem ter vínculos na mesma unidade,,,,nao_executado
-CA-14,Pessoa com várias unidades não ganha concordâncias extras,,,,nao_executado
-CA-15,Confirmar e-mail não valida vínculo declarado,,,,nao_executado
-CA-16,Mudança de unidade preserva referência das interações anteriores,,,,nao_executado
+CA-12,Dados incompletos não habilitam interação,core/application/identity/services.py:verify_membership,core/tests/test_phase1_identity.py::test_ca_12_ca_15_validacao_auditada_de_vinculo_documental,14 passed,aprovado
+CA-13,Vários moradores podem ter vínculos na mesma unidade,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_13_multiplos_moradores_na_mesma_unidade,14 passed,aprovado
+CA-14,Pessoa com várias unidades não ganha concordâncias extras,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_14_pessoa_com_multiplas_unidades_tem_vinculos_separados,14 passed,aprovado
+CA-15,Confirmar e-mail não valida vínculo declarado,core/application/identity/services.py:verify_membership,core/tests/test_phase1_identity.py::test_ca_12_ca_15_validacao_auditada_de_vinculo_documental,14 passed,aprovado
+CA-16,Mudança de unidade preserva referência das interações anteriores,infrastructure/models/identity.py:UnitMembership,core/tests/test_phase1_identity.py::test_ca_16_mudanca_de_unidade_preserva_historico,14 passed,aprovado
 CA-17,Original documental preservado com conferência humana,,,,nao_executado
 CA-18,Corrigir transcrição gera versão e não simula alteração normativa,,,,nao_executado
 CA-19,Dispositivo incluído não inventa origem,,,,nao_executado
@@ -26,12 +26,12 @@ CA-24,Nota interna ausente em API e export público,,,,nao_executado
 CA-25,Sugestão privada recebe protocolo e versão consultada,,,,nao_executado
 CA-26,Conselho analisa conteúdo sem identidade,,,,nao_executado
 CA-27,Análise não publica automaticamente,,,,nao_executado
-CA-28,Admin sem papel de síndico não publica,,,,nao_executado
+CA-28,Admin sem papel de síndico não publica,core/domain/identity/invariants.py:assert_sindico_publication_authority,core/tests/test_phase1_identity.py::test_ca_28_autoridade_exclusiva_de_publicacao_do_sindico,14 passed,aprovado
 CA-29,Toggle global mostra apenas versões autorizadas,,,,nao_executado
 CA-30,Complemento privado e moderado independentemente,,,,nao_executado
 CA-31,Edição publicada cria versão pendente,,,,nao_executado
 CA-32,Ocultação bloqueia API link busca listagem e interação,,,,nao_executado
-CA-33,Identidade exige permissão e auditoria,,,,nao_executado
+CA-33,Identidade exige permissão e auditoria,core/application/identity/services.py:IdentityAuditService,core/tests/test_phase1_identity.py::test_ca_33_auditoria_de_acesso_a_dados_de_identidade,14 passed,aprovado
 CA-34,Anexo não publica automaticamente,,,,nao_executado
 CA-35,Cliques repetidos produzem uma concordância ativa,,,,nao_executado
 CA-36,Retirada atualiza agregado e preserva evento,,,,nao_executado
@@ -43,7 +43,7 @@ CA-41,Snapshot imutável e reproduzível,,,,nao_executado
 CA-42,Documento limpo sem identidade notas ou referência antiga indevida,,,,nao_executado
 CA-43,Distribuição restrita e envio real confirmado,,,,nao_executado
 CA-44,Banco e objetos restaurados consistentemente,,,,nao_executado
-CA-45,Nenhuma votação apuração ou cálculo de quórum,,,,nao_executado
+CA-45,Nenhuma votação apuração ou cálculo de quórum,core/domain/identity/invariants.py:assert_no_electoral_intent,core/tests/test_phase1_identity.py::test_ca_45_proibicao_terminante_de_recursos_eleitorais,14 passed,aprovado
 UI-01,Troca de condomínio limpa contexto,,,,nao_executado
 UI-02,Menu e backend respeitam permissões,,,,nao_executado
 UI-03,Telas têm loading vazio erro e acesso negado,,,,nao_executado
