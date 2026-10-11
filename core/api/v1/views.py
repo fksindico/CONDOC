@@ -338,7 +338,13 @@ class CondominiumListCreateView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        condos = Condominium.objects.filter(status='active')
+        status_param = request.query_params.get('status')
+        if status_param == 'all':
+            condos = Condominium.objects.all().order_by('name')
+        elif status_param:
+            condos = Condominium.objects.filter(status=status_param).order_by('name')
+        else:
+            condos = Condominium.objects.all().order_by('name')
         serializer = CondominiumSerializer(condos, many=True)
         return Response(serializer.data)
 
@@ -354,7 +360,13 @@ class BuildingListCreateView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id):
-        buildings = Building.objects.filter(condominium_id=condominium_id, status='active')
+        status_param = request.query_params.get('status')
+        if status_param == 'all':
+            buildings = Building.objects.filter(condominium_id=condominium_id).order_by('display_order', 'name')
+        elif status_param:
+            buildings = Building.objects.filter(condominium_id=condominium_id, status=status_param).order_by('display_order', 'name')
+        else:
+            buildings = Building.objects.filter(condominium_id=condominium_id, status='active').order_by('display_order', 'name')
         return Response(BuildingSerializer(buildings, many=True).data)
 
     def post(self, request, condominium_id):
@@ -467,7 +479,14 @@ class UnitListCreateView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id):
-        units = Unit.objects.filter(condominium_id=condominium_id, status='active').select_related('building')
+        status_param = request.query_params.get('status')
+        qs = Unit.objects.filter(condominium_id=condominium_id).select_related('building')
+        if status_param == 'all':
+            units = qs.order_by('code')
+        elif status_param:
+            units = qs.filter(status=status_param).order_by('code')
+        else:
+            units = qs.filter(status='active').order_by('code')
         return Response(UnitSerializer(units, many=True).data)
 
     def post(self, request, condominium_id):

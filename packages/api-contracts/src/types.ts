@@ -17,13 +17,15 @@ export interface Condominium {
   id: UUID;
   name: string;
   cnpj: string;
-  address_street: string;
-  address_number: string;
+  address_street?: string;
+  address_number?: string;
   address_complement?: string;
-  address_neighborhood: string;
-  address_city: string;
-  address_state: string;
-  address_zip_code: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip_code?: string;
+  status?: string;
+  timezone?: string;
   created_at: ISODateString;
   updated_at: ISODateString;
 }
@@ -33,6 +35,8 @@ export interface Building {
   condominium_id: UUID;
   name: string;
   code?: string;
+  kind?: string;
+  status?: string;
   display_order: number;
   created_at: ISODateString;
 }

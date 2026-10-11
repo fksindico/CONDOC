@@ -43,6 +43,7 @@ export const AdminLayout: React.FC = () => {
     {
       title: 'Estrutura & Moradores',
       items: [
+        { label: 'Condomínios', path: '/painel/condominios', icon: Building2 },
         { label: 'Torres & Unidades', path: '/painel/unidades', icon: Layers },
         { label: 'Moradores', path: '/painel/moradores', icon: Users },
         { label: 'Importação Cadastral', path: '/painel/moradores/importar', icon: FileSpreadsheet },
@@ -110,9 +111,18 @@ export const AdminLayout: React.FC = () => {
 
         {/* Seletor de Condomínio Ativo */}
         <div className="p-3 border-b border-slate-800">
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-            Condomínio Ativo
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Condomínio Ativo
+            </label>
+            <Link
+              to="/painel/condominios"
+              className="text-[10px] text-brand-400 hover:text-brand-300 transition-colors font-medium"
+              title="Gerenciar todos os condomínios"
+            >
+              Gerenciar &rarr;
+            </Link>
+          </div>
           <select
             className="w-full text-xs bg-slate-800 border border-slate-700 text-white rounded-lg p-2 focus:ring-1 focus:ring-brand-400 outline-none truncate"
             value={activeCondominium?.id || ''}

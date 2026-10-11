@@ -103,11 +103,18 @@ class CondominiumService:
     def update_unit(unit_id: uuid.UUID, **fields) -> Unit:
         unit = Unit.objects.get(id=unit_id)
         new_code = fields.get('code', unit.code)
-        new_building_id = fields['building_id'] if 'building_id' in fields else unit.building_id
-
-        if 'building_id' in fields and fields['building_id']:
-            target_building = Building.objects.get(id=fields['building_id'])
-            assert_same_tenant(unit.condominium_id, target_building.condominium_id, "Prédio/Bloco")
+        
+        if 'building_id' in fields:
+            bid = fields['building_id']
+            if bid in ('', 'null', None):
+                fields['building_id'] = None
+                new_building_id = None
+            else:
+                new_building_id = bid
+                target_building = Building.objects.get(id=bid)
+                assert_same_tenant(unit.condominium_id, target_building.condominium_id, "Prédio/Bloco")
+        else:
+            new_building_id = unit.building_id
 
         code_changed = 'code' in fields and fields['code'] != unit.code
         building_changed = 'building_id' in fields and fields['building_id'] != unit.building_id

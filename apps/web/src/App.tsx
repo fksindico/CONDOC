@@ -12,6 +12,7 @@ import { InvitationRedeemPage } from '@/pages/auth/InvitationRedeemPage';
 
 // Páginas Administrativas do Síndico (S02 a S21)
 import { DashboardPage } from '@/pages/admin/DashboardPage';
+import { CondominiumsPage } from '@/pages/admin/CondominiumsPage';
 import { UnitsPage } from '@/pages/admin/UnitsPage';
 import { ResidentsPage } from '@/pages/admin/ResidentsPage';
 import { ImportWizardPage } from '@/pages/admin/ImportWizardPage';
@@ -55,6 +56,7 @@ export const App: React.FC = () => {
       {/* Painel Administrativo da Gestão / Síndico (S01 a S21) */}
       <Route path="/painel" element={<AdminLayout />}>
         <Route index element={<DashboardPage />} />
+        <Route path="condominios" element={<CondominiumsPage />} />
         <Route path="unidades" element={<UnitsPage />} />
         <Route path="moradores" element={<ResidentsPage />} />
         <Route path="moradores/importar" element={<ImportWizardPage />} />
