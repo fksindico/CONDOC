@@ -48,6 +48,7 @@ def main():
         print("Status/Log:", safe_err.strip())
         
     if res.returncode == 0:
+        subprocess.run(["git", "fetch", push_url, "main:refs/remotes/origin/main"], capture_output=True)
         print("[SUCESSO] Código sincronizado com o GitHub com sucesso!")
     else:
         print(f"[ERRO] Falha no git push (código {res.returncode})")
