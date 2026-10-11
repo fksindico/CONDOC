@@ -23,6 +23,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 export const StructuredEditorPage: React.FC = () => {
   const { docId } = useParams<{ docId: string }>();
@@ -168,12 +169,21 @@ export const StructuredEditorPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Projetos Normativos', href: '/painel/projetos' },
+          { label: 'Minuta de Trabalho', href: docId ? `/painel/documentos/${docId}` : undefined },
+          { label: 'Editor Estruturado' },
+        ]}
+        showHome
+      />
+
       {/* Topbar do Editor */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <Link to={`/painel/projetos`} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">
-            <ArrowLeft className="w-4 h-4" />
+          <Link to={`/painel/projetos`} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Voltar aos projetos">
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </Link>
           <div>
             <h1 className="text-base font-bold text-slate-900 tracking-tight">
@@ -187,13 +197,13 @@ export const StructuredEditorPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link to={`/painel/documentos/${docId}/compare`}>
             <Button size="sm" variant="outline">
-              <GitBranch className="w-3.5 h-3.5 mr-1 text-slate-500" />
+              <GitBranch className="w-3.5 h-3.5 mr-1 text-slate-500" aria-hidden="true" />
               <span>DePara</span>
             </Button>
           </Link>
           <Link to={`/painel/documentos/${docId}/versoes`}>
             <Button size="sm" variant="outline">
-              <History className="w-3.5 h-3.5 mr-1 text-slate-500" />
+              <History className="w-3.5 h-3.5 mr-1 text-slate-500" aria-hidden="true" />
               <span>Snapshots</span>
             </Button>
           </Link>
@@ -204,7 +214,7 @@ export const StructuredEditorPage: React.FC = () => {
             {saveStatus === 'error' && <span className="text-rose-600 font-semibold">Falha ao salvar</span>}
           </span>
           <Button size="sm" onClick={handleSaveProvision} isLoading={saveStatus === 'saving'}>
-            <Save className="w-3.5 h-3.5 mr-1" />
+            <Save className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
             <span>Salvar Dispositivo</span>
           </Button>
         </div>
@@ -216,20 +226,21 @@ export const StructuredEditorPage: React.FC = () => {
         <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col max-h-[780px]">
           <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-brand-600" />
+              <Layers className="w-3.5 h-3.5 text-brand-600" aria-hidden="true" />
               <span>Árvore Normativa</span>
             </span>
             <button
               onClick={() => setIsNewModalOpen(true)}
               className="p-1 text-brand-600 hover:bg-brand-50 rounded"
               title="Adicionar Dispositivo"
+              aria-label="Adicionar Dispositivo"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
           <div className="overflow-y-auto p-2 space-y-1 flex-1 text-xs">
             {provisions.length === 0 ? (
-              <p className="p-4 text-center text-slate-400">Nenhum dispositivo cadastrado.</p>
+              <p className="p-4 text-center text-slate-500">Nenhum dispositivo cadastrado.</p>
             ) : (
               provisions.map((prov) => {
                 const isSelected = selectedProvision?.id === prov.id;
@@ -245,9 +256,9 @@ export const StructuredEditorPage: React.FC = () => {
                   >
                     <div className="truncate pr-2">
                       <span className="font-bold text-slate-900 block truncate">{prov.label || 'Sem rótulo'}</span>
-                      <span className="text-[11px] text-slate-500 block truncate">{prov.text}</span>
+                      <span className="text-xs text-slate-500 block truncate">{prov.text}</span>
                     </div>
-                    <Badge variant={(prov.change_type as any) || 'default'} className="text-[10px] shrink-0">
+                    <Badge variant={(prov.change_type as any) || 'default'} className="text-xs shrink-0">
                       {prov.change_type || 'mantido'}
                     </Badge>
                   </button>
@@ -261,13 +272,13 @@ export const StructuredEditorPage: React.FC = () => {
         <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col max-h-[780px]">
           <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-slate-500" />
+              <Lock className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
               <span>Documento-Base Original</span>
             </span>
-            <span className="text-[10px] text-slate-500 font-medium">Somente Leitura</span>
+            <span className="text-xs text-slate-500 font-medium">Somente Leitura</span>
           </div>
           <div className="p-4 overflow-y-auto text-xs font-serif leading-relaxed text-slate-700 bg-slate-50/30 flex-1 space-y-3">
-            <p className="italic text-slate-400 border-b pb-2">
+            <p className="italic text-slate-500 border-b pb-2">
               Texto da convenção/regimento anterior para confronto direto e rastreabilidade de origens.
             </p>
             <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-2xs">
@@ -293,7 +304,7 @@ export const StructuredEditorPage: React.FC = () => {
                     onChange={(e) => setEditLabel(e.target.value)}
                   />
                 </CardTitle>
-                <CardDescription className="text-[11px] mt-0.5">
+                <CardDescription className="text-xs mt-0.5">
                   UUID Permanente: <code className="text-slate-600">{selectedProvision?.id?.slice(0, 8)}...</code>
                 </CardDescription>
               </div>
@@ -329,7 +340,7 @@ export const StructuredEditorPage: React.FC = () => {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <StickyNote className="w-3.5 h-3.5" />
+                <StickyNote className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Notas Internas ({notes.length})</span>
               </button>
               <button
@@ -340,7 +351,7 @@ export const StructuredEditorPage: React.FC = () => {
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <GitBranch className="w-3.5 h-3.5" />
+                <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Mapeamento de Origem</span>
               </button>
             </div>
@@ -350,12 +361,12 @@ export const StructuredEditorPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {notes.length === 0 ? (
-                      <p className="text-slate-400 italic">Nenhuma nota interna vinculada a este artigo.</p>
+                      <p className="text-slate-500 italic">Nenhuma nota interna vinculada a este artigo.</p>
                     ) : (
                       notes.map((n) => (
                         <div key={n.id} className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-900">
                           <p>{n.content}</p>
-                          <span className="text-[10px] text-amber-700/80 mt-1 block">
+                          <span className="text-xs text-amber-700/80 mt-1 block">
                             Visibilidade: {n.visibility} • Categoria: {n.category}
                           </span>
                         </div>
@@ -380,7 +391,7 @@ export const StructuredEditorPage: React.FC = () => {
                   <p>
                     Classificação: <strong className="capitalize">{changeType}</strong>
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Dispositivos novos (incluídos) são protegidos pela regra CA-19 contra vinculações fictícias a
                     artigos da base anterior.
                   </p>

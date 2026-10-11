@@ -41,8 +41,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             <ChevronDown className="w-4 h-4" />
           </div>
         </div>
-        {error && <p className="text-[11px] text-rose-600 font-medium tracking-tight">{error}</p>}
-        {helperText && !error && <p className="text-[11px] text-slate-500">{helperText}</p>}
+        {error && <p className="text-xs text-rose-600 font-medium tracking-tight">{error}</p>}
+        {helperText && !error && <p className="text-xs text-slate-500">{helperText}</p>}
       </div>
     );
   }

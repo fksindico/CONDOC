@@ -58,7 +58,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 rounded-lg p-1 hover:bg-slate-100 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="text-slate-400 hover:text-slate-600 rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />

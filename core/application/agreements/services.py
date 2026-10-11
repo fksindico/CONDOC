@@ -122,23 +122,27 @@ class AgreementService:
     @transaction.atomic
     def withdraw_agreement(
         condominium_id: uuid.UUID,
-        campaign_id: uuid.UUID,
-        participant_id: uuid.UUID,
-        published_suggestion_revision_id: uuid.UUID,
-        reason: Optional[str] = None
+        campaign_id: Optional[uuid.UUID] = None,
+        participant_id: Optional[uuid.UUID] = None,
+        published_suggestion_revision_id: Optional[uuid.UUID] = None,
+        reason: Optional[str] = None,
+        agreement_id: Optional[uuid.UUID] = None,
     ) -> ConsultativeAgreement:
         """
         CA-36: Retirada de concordância consultiva.
         Atualiza active=False e preserva o evento histórico imutável em AgreementEvent.
         """
-        campaign = ConsultationCampaign.objects.get(id=campaign_id, condominium_id=condominium_id)
-        assert_campaign_allows_agreements(campaign.state, campaign.settings.get('allow_agreements', True))
+        if agreement_id:
+            agreement = ConsultativeAgreement.objects.get(id=agreement_id, condominium_id=condominium_id)
+        else:
+            campaign = ConsultationCampaign.objects.get(id=campaign_id, condominium_id=condominium_id)
+            assert_campaign_allows_agreements(campaign.state, campaign.settings.get('allow_agreements', True))
 
-        agreement = ConsultativeAgreement.objects.get(
-            condominium_id=condominium_id,
-            participant_id=participant_id,
-            published_suggestion_revision_id=published_suggestion_revision_id
-        )
+            agreement = ConsultativeAgreement.objects.get(
+                condominium_id=condominium_id,
+                participant_id=participant_id,
+                published_suggestion_revision_id=published_suggestion_revision_id
+            )
 
         if not agreement.active:
             # Já retirado

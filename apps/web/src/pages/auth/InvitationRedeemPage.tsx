@@ -82,7 +82,7 @@ export const InvitationRedeemPage: React.FC = () => {
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center space-y-1">
           <div className="inline-flex items-center justify-center p-3 bg-brand-600 rounded-2xl shadow-md text-white mb-2">
-            <Building2 className="w-7 h-7" />
+            <Building2 className="w-7 h-7" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Acesso à Consulta Pública</h1>
           <p className="text-xs text-slate-600">
@@ -93,7 +93,7 @@ export const InvitationRedeemPage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <KeyRound className="w-5 h-5 text-brand-600" />
+              <KeyRound className="w-5 h-5 text-brand-600" aria-hidden="true" />
               <span>Resgatar Convite de Acesso</span>
             </CardTitle>
             <CardDescription>
@@ -166,7 +166,7 @@ export const InvitationRedeemPage: React.FC = () => {
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   O canal informado será conferido com a lista da administração para liberar sua participação.
                 </p>
               </div>
@@ -175,7 +175,7 @@ export const InvitationRedeemPage: React.FC = () => {
             <CardFooter>
               <Button type="submit" className="w-full" isLoading={isRedeeming} disabled={success}>
                 <span>Confirmar e Entrar</span>
-                <ArrowRight className="w-4 h-4 ml-1.5" />
+                <ArrowRight className="w-4 h-4 ml-1.5" aria-hidden="true" />
               </Button>
             </CardFooter>
           </form>

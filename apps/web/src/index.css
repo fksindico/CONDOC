@@ -6,6 +6,12 @@
   body {
     @apply bg-slate-50 text-slate-900;
   }
+  a:not([class]) {
+    @apply text-brand-600 hover:text-brand-700 underline-offset-2;
+  }
+  a:not([class]):hover {
+    @apply underline;
+  }
 }
 
 /* Customização do Editor Tiptap / ProseMirror */
@@ -24,3 +30,41 @@
 .ProseMirror:focus {
   @apply outline-none ring-0;
 }
+
+/* Tipografia Legal - text-wrap para evitar orphans */
+.font-serif p {
+  text-wrap: pretty;
+}
+
+/* Animações de entrada suaves */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in {
+    animation: none;
+  }
+}
+

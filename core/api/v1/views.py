@@ -86,6 +86,12 @@ from application.agreements.services import (
     IncorporationService,
 )
 from application.preservation.services import PreservationService
+from domain.identity.exceptions import (
+    DuplicateBuildingError,
+    DuplicateUnitError,
+    TenantMismatchError,
+    DomainError,
+)
 from application.common.idempotency import IdempotencyService
 from domain.imports.exceptions import (
     ImportPreviewOutdatedError,
@@ -354,12 +360,107 @@ class BuildingListCreateView(APIView):
     def post(self, request, condominium_id):
         serializer = BuildingSerializer(data=request.data)
         if serializer.is_valid():
-            building = CondominiumService.create_building(
-                condominium_id=condominium_id,
-                **serializer.validated_data
-            )
-            return Response(BuildingSerializer(building).data, status=status.HTTP_201_CREATED)
+            try:
+                building = CondominiumService.create_building(
+                    condominium_id=condominium_id,
+                    **serializer.validated_data
+                )
+                return Response(BuildingSerializer(building).data, status=status.HTTP_201_CREATED)
+            except DuplicateBuildingError as e:
+                return Response({"error": "Torre/Bloco com este código já existe para este condomínio."}, status=status.HTTP_400_BAD_REQUEST)
+            except DomainError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CondominiumDetailUpdateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        try:
+            condo = Condominium.objects.get(id=condominium_id)
+        except Condominium.DoesNotExist:
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CondominiumSerializer(condo).data, status=status.HTTP_200_OK)
+
+    def put(self, request, condominium_id):
+        return self._update(request, condominium_id, partial=False)
+
+    def patch(self, request, condominium_id):
+        return self._update(request, condominium_id, partial=True)
+
+    def _update(self, request, condominium_id, partial=False):
+        try:
+            condo = Condominium.objects.get(id=condominium_id)
+        except Condominium.DoesNotExist:
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CondominiumSerializer(condo, data=request.data, partial=partial)
+        if serializer.is_valid():
+            try:
+                updated = CondominiumService.update_condominium(
+                    condominium_id=condominium_id,
+                    **serializer.validated_data
+                )
+                return Response(CondominiumSerializer(updated).data, status=status.HTTP_200_OK)
+            except DomainError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, condominium_id):
+        try:
+            condo = Condominium.objects.get(id=condominium_id)
+        except Condominium.DoesNotExist:
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        condo.status = 'inactive'
+        condo.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BuildingDetailUpdateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, building_id):
+        try:
+            building = Building.objects.get(id=building_id, condominium_id=condominium_id)
+        except Building.DoesNotExist:
+            return Response({"error": "Torre/Bloco não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(BuildingSerializer(building).data, status=status.HTTP_200_OK)
+
+    def put(self, request, condominium_id, building_id):
+        return self._update(request, condominium_id, building_id, partial=False)
+
+    def patch(self, request, condominium_id, building_id):
+        return self._update(request, condominium_id, building_id, partial=True)
+
+    def _update(self, request, condominium_id, building_id, partial=False):
+        try:
+            building = Building.objects.get(id=building_id, condominium_id=condominium_id)
+        except Building.DoesNotExist:
+            return Response({"error": "Torre/Bloco não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = BuildingSerializer(building, data=request.data, partial=partial)
+        if serializer.is_valid():
+            try:
+                updated = CondominiumService.update_building(
+                    building_id=building_id,
+                    **serializer.validated_data
+                )
+                return Response(BuildingSerializer(updated).data, status=status.HTTP_200_OK)
+            except DuplicateBuildingError as e:
+                return Response({"error": "Torre/Bloco com este código já existe para este condomínio."}, status=status.HTTP_400_BAD_REQUEST)
+            except DomainError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, condominium_id, building_id):
+        try:
+            building = Building.objects.get(id=building_id, condominium_id=condominium_id)
+        except Building.DoesNotExist:
+            return Response({"error": "Torre/Bloco não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        building.status = 'inactive'
+        building.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UnitListCreateView(APIView):
@@ -374,13 +475,70 @@ class UnitListCreateView(APIView):
         if serializer.is_valid():
             data = serializer.validated_data.copy()
             building_id = data.pop('building_id', None)
-            unit = CondominiumService.create_unit(
-                condominium_id=condominium_id,
-                building_id=building_id,
-                **data
-            )
-            return Response(UnitSerializer(unit).data, status=status.HTTP_201_CREATED)
+            try:
+                unit = CondominiumService.create_unit(
+                    condominium_id=condominium_id,
+                    building_id=building_id,
+                    **data
+                )
+                return Response(UnitSerializer(unit).data, status=status.HTTP_201_CREATED)
+            except DuplicateUnitError as e:
+                return Response({"error": "Unidade com este código já existe para esta torre/condomínio."}, status=status.HTTP_400_BAD_REQUEST)
+            except TenantMismatchError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except DomainError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UnitDetailUpdateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, unit_id):
+        try:
+            unit = Unit.objects.select_related('building').get(id=unit_id, condominium_id=condominium_id)
+        except Unit.DoesNotExist:
+            return Response({"error": "Unidade não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(UnitSerializer(unit).data, status=status.HTTP_200_OK)
+
+    def put(self, request, condominium_id, unit_id):
+        return self._update(request, condominium_id, unit_id, partial=False)
+
+    def patch(self, request, condominium_id, unit_id):
+        return self._update(request, condominium_id, unit_id, partial=True)
+
+    def _update(self, request, condominium_id, unit_id, partial=False):
+        try:
+            unit = Unit.objects.get(id=unit_id, condominium_id=condominium_id)
+        except Unit.DoesNotExist:
+            return Response({"error": "Unidade não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UnitSerializer(unit, data=request.data, partial=partial)
+        if serializer.is_valid():
+            try:
+                data = serializer.validated_data.copy()
+                updated = CondominiumService.update_unit(
+                    unit_id=unit_id,
+                    **data
+                )
+                return Response(UnitSerializer(updated).data, status=status.HTTP_200_OK)
+            except DuplicateUnitError as e:
+                return Response({"error": "Unidade com este código já existe para esta torre/condomínio."}, status=status.HTTP_400_BAD_REQUEST)
+            except TenantMismatchError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except DomainError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, condominium_id, unit_id):
+        try:
+            unit = Unit.objects.get(id=unit_id, condominium_id=condominium_id)
+        except Unit.DoesNotExist:
+            return Response({"error": "Unidade não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+        unit.status = 'inactive'
+        unit.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 class ResidentRegistrationListCreateView(APIView):

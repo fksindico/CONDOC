@@ -4,15 +4,19 @@ import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
 import { MessageSquare, ArrowRight, Filter, Search, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { Pagination } from '@/components/ui/Pagination';
 
 export const ModerationQueuePage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
   const [queue, setQueue] = useState<any[]>([]);
   const [filterAnalysis, setFilterAnalysis] = useState('');
   const [filterPublication, setFilterPublication] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -37,8 +41,19 @@ export const ModerationQueuePage: React.FC = () => {
     fetchQueue();
   }, [activeCondominiumId, filterAnalysis, filterPublication]);
 
+  const totalPages = Math.ceil(queue.length / pageSize) || 1;
+  const paginatedQueue = queue.slice((page - 1) * pageSize, page * pageSize);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Participação & Moderação' },
+          { label: 'Fila de Moderação (4D)' },
+        ]}
+        showHome
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
@@ -57,13 +72,16 @@ export const ModerationQueuePage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <Filter className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
                 <span>Filtros:</span>
               </span>
               <select
                 className="text-xs border border-slate-200 rounded-lg p-2 outline-none font-medium text-slate-700"
                 value={filterAnalysis}
-                onChange={(e) => setFilterAnalysis(e.target.value)}
+                onChange={(e) => {
+                  setFilterAnalysis(e.target.value);
+                  setPage(1);
+                }}
               >
                 <option value="">Todas as Análises</option>
                 <option value="pendente">Pendente de Análise</option>
@@ -72,7 +90,10 @@ export const ModerationQueuePage: React.FC = () => {
               <select
                 className="text-xs border border-slate-200 rounded-lg p-2 outline-none font-medium text-slate-700"
                 value={filterPublication}
-                onChange={(e) => setFilterPublication(e.target.value)}
+                onChange={(e) => {
+                  setFilterPublication(e.target.value);
+                  setPage(1);
+                }}
               >
                 <option value="">Todas as Publicações</option>
                 <option value="nao_publicada">Não Publicadas</option>
@@ -86,9 +107,10 @@ export const ModerationQueuePage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Visualização Desktop: Tabela */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
+              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider sticky top-0">
                 <tr>
                   <th className="px-6 py-3">Protocolo</th>
                   <th className="px-6 py-3 w-1/3">Teor da Proposta</th>
@@ -100,26 +122,26 @@ export const ModerationQueuePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {queue.length === 0 ? (
+                {paginatedQueue.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
                       Nenhuma sugestão encontrada para os filtros selecionados.
                     </td>
                   </tr>
                 ) : (
-                  queue.map((sug) => (
+                  paginatedQueue.map((sug) => (
                     <tr key={sug.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-3.5 font-mono font-bold text-slate-900">
                         {sug.public_protocol}
                       </td>
                       <td className="px-6 py-3.5">
                         <p className="line-clamp-2 text-slate-800 font-medium">{sug.text}</p>
-                        <p className="line-clamp-1 text-slate-400 text-[11px] mt-0.5">{sug.justification}</p>
+                        <p className="line-clamp-1 text-slate-500 text-xs mt-0.5">{sug.justification}</p>
                       </td>
                       <td className="px-6 py-3.5">
                         <Badge
                           variant={sug.analysis_status === 'concluida' ? 'success' : 'warning'}
-                          className="capitalize text-[10px]"
+                          className="capitalize text-xs"
                         >
                           {sug.analysis_status}
                         </Badge>
@@ -127,7 +149,7 @@ export const ModerationQueuePage: React.FC = () => {
                       <td className="px-6 py-3.5">
                         <Badge
                           variant={sug.editorial_decision === 'acolhida' ? 'success' : 'default'}
-                          className="capitalize text-[10px]"
+                          className="capitalize text-xs"
                         >
                           {sug.editorial_decision.replace('_', ' ')}
                         </Badge>
@@ -141,7 +163,7 @@ export const ModerationQueuePage: React.FC = () => {
                               ? 'danger'
                               : 'default'
                           }
-                          className="capitalize text-[10px]"
+                          className="capitalize text-xs"
                         >
                           {sug.publication_status.replace('_', ' ')}
                         </Badge>
@@ -149,7 +171,7 @@ export const ModerationQueuePage: React.FC = () => {
                       <td className="px-6 py-3.5">
                         <Badge
                           variant={sug.incorporation_status === 'incorporada' ? 'success' : 'outline'}
-                          className="capitalize text-[10px]"
+                          className="capitalize text-xs"
                         >
                           {sug.incorporation_status === 'incorporada' ? 'Incorporada' : 'Pendente'}
                         </Badge>
@@ -158,7 +180,7 @@ export const ModerationQueuePage: React.FC = () => {
                         <Link to={`/painel/sugestoes/${sug.id}`}>
                           <Button size="sm" variant="outline">
                             <span>Moderar</span>
-                            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                            <ArrowRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
                           </Button>
                         </Link>
                       </td>
@@ -168,7 +190,86 @@ export const ModerationQueuePage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Visualização Mobile: Cards (M7.1) */}
+          <div className="md:hidden divide-y divide-slate-100 p-4 space-y-4">
+            {paginatedQueue.length === 0 ? (
+              <p className="text-center py-6 text-xs text-slate-500">
+                Nenhuma sugestão encontrada para os filtros selecionados.
+              </p>
+            ) : (
+              paginatedQueue.map((sug) => (
+                <div key={sug.id} className="pt-3 first:pt-0 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-slate-900 text-sm">
+                      {sug.public_protocol}
+                    </span>
+                    <Badge
+                      variant={sug.analysis_status === 'concluida' ? 'success' : 'warning'}
+                      className="capitalize text-xs"
+                    >
+                      {sug.analysis_status}
+                    </Badge>
+                  </div>
+                  <p className="text-slate-800 font-medium leading-relaxed">{sug.text}</p>
+                  {sug.justification && (
+                    <p className="text-slate-500 text-[11px] bg-slate-50 p-2 rounded border border-slate-100">
+                      {sug.justification}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    <Badge
+                      variant={sug.editorial_decision === 'acolhida' ? 'success' : 'default'}
+                      className="capitalize text-[10px]"
+                    >
+                      Decisão: {sug.editorial_decision.replace('_', ' ')}
+                    </Badge>
+                    <Badge
+                      variant={
+                        sug.publication_status === 'publicada'
+                          ? 'info'
+                          : sug.publication_status === 'oculta'
+                          ? 'danger'
+                          : 'default'
+                      }
+                      className="capitalize text-[10px]"
+                    >
+                      Mural: {sug.publication_status.replace('_', ' ')}
+                    </Badge>
+                    <Badge
+                      variant={sug.incorporation_status === 'incorporada' ? 'success' : 'outline'}
+                      className="capitalize text-[10px]"
+                    >
+                      {sug.incorporation_status === 'incorporada' ? 'Incorporada' : 'Não incorporada'}
+                    </Badge>
+                  </div>
+                  <div className="pt-2">
+                    <Link to={`/painel/sugestoes/${sug.id}`}>
+                      <Button size="sm" variant="outline" className="w-full justify-center">
+                        <span>Analisar e Moderar</span>
+                        <ArrowRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
+
+        {totalPages > 1 && (
+          <CardFooter className="bg-slate-50 border-t border-slate-100 p-3">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={queue.length}
+              pageSize={pageSize}
+              showSummary
+              onPageChange={(p) => setPage(p)}
+              className="w-full"
+            />
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

@@ -37,7 +37,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
   }, [content, editor]);
 
   if (!editor) {
-    return <div className="p-4 text-xs text-slate-400">Carregando editor...</div>;
+    return <div className="p-4 text-xs text-slate-500">Carregando editor...</div>;
   }
 
   return (

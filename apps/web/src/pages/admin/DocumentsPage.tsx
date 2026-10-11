@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 export const DocumentsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -68,23 +69,24 @@ export const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Projetos Normativos', href: '/painel/projetos' },
+          { label: 'Minutas do Projeto' },
+        ]}
+        showHome
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            to="/painel/projetos"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 mb-1 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar aos Projetos</span>
-          </Link>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Minutas Normativas</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Minutas de trabalho, histórico de versões e dispositivos normativos estruturados (S09).
           </p>
         </div>
         <Button size="sm" onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-1.5" />
+          <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
           <span>Nova Minuta</span>
         </Button>
       </div>
@@ -112,10 +114,10 @@ export const DocumentsPage: React.FC = () => {
             <Card key={d.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <Badge variant="info" className="uppercase font-mono text-[10px]">
+                  <Badge variant="info" className="uppercase font-mono text-xs">
                     {d.type.replace('_', ' ')}
                   </Badge>
-                  <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="text-xs font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded">
                     {d.editorial_status.replace('_', ' ')}
                   </span>
                 </div>

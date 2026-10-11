@@ -11,6 +11,8 @@ import { Alert } from '@/components/ui/Alert';
 import { Modal } from '@/components/ui/Modal';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Tabs } from '@/components/ui/Tabs';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 export const ResidentsPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
@@ -84,8 +86,22 @@ export const ResidentsPage: React.FC = () => {
     return matchesTab && matchesSearch;
   });
 
+  const tabItems = [
+    { key: 'todos', label: 'Todos', badge: memberships.length },
+    { key: 'validado', label: 'Validados' },
+    { key: 'pendente', label: 'Pendentes' },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Estrutura & Moradores' },
+          { label: 'Moradores & Vínculos' },
+        ]}
+        showHome
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Moradores & Vínculos</h1>
@@ -94,7 +110,7 @@ export const ResidentsPage: React.FC = () => {
           </p>
         </div>
         <Button size="sm" onClick={() => setIsModalOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-1.5" />
+          <UserPlus className="w-4 h-4 mr-1.5" aria-hidden="true" />
           <span>Novo Pré-cadastro</span>
         </Button>
       </div>
@@ -104,33 +120,13 @@ export const ResidentsPage: React.FC = () => {
       <Card>
         <CardHeader className="p-4 sm:p-6 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Abas de Status */}
-            <div className="flex gap-1 bg-slate-100 p-1 rounded-lg text-xs font-medium">
-              <button
-                onClick={() => setActiveTab('todos')}
-                className={`px-3 py-1.5 rounded-md transition-colors ${
-                  activeTab === 'todos' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Todos ({memberships.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('validado')}
-                className={`px-3 py-1.5 rounded-md transition-colors ${
-                  activeTab === 'validado' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Validados
-              </button>
-              <button
-                onClick={() => setActiveTab('pendente')}
-                className={`px-3 py-1.5 rounded-md transition-colors ${
-                  activeTab === 'pendente' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Pendentes
-              </button>
-            </div>
+            {/* Abas de Status com Tabs Component */}
+            <Tabs
+              items={tabItems}
+              activeKey={activeTab}
+              onChange={(k) => setActiveTab(k as any)}
+              size="sm"
+            />
 
             {/* Busca */}
             <div className="relative w-full sm:w-64">

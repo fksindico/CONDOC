@@ -80,8 +80,9 @@ export const SuggestionCreatePage: React.FC = () => {
         <button
           onClick={() => navigate('/portal/documento')}
           className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
+          aria-label="Voltar para a minuta"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" aria-hidden="true" />
         </button>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Enviar Sugestão</h1>
@@ -94,7 +95,7 @@ export const SuggestionCreatePage: React.FC = () => {
       {protocolResult ? (
         <Card className="text-center p-8 space-y-4">
           <div className="inline-flex p-3 bg-emerald-100 rounded-full text-emerald-700 mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
+            <CheckCircle2 className="w-10 h-10" aria-hidden="true" />
           </div>
           <h2 className="text-xl font-bold text-slate-900">Sugestão Protocolada com Sucesso!</h2>
           <div className="p-3 bg-slate-100 rounded-lg max-w-sm mx-auto font-mono text-base font-bold text-slate-800 border">
@@ -192,7 +193,7 @@ export const SuggestionCreatePage: React.FC = () => {
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-start gap-2">
-                <ShieldAlert className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <ShieldAlert className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" aria-hidden="true" />
                 <span>
                   <strong>Aviso de Transparência (LGPD):</strong> Sua sugestão é registrada de forma privada com
                   protocolo único. A identidade do autor não é exposta a outros moradores.
@@ -205,7 +206,7 @@ export const SuggestionCreatePage: React.FC = () => {
                 Cancelar
               </Button>
               <Button type="submit" isLoading={isLoading}>
-                <Send className="w-4 h-4 mr-1.5" />
+                <Send className="w-4 h-4 mr-1.5" aria-hidden="true" />
                 <span>Protocolar Sugestão</span>
               </Button>
             </CardFooter>

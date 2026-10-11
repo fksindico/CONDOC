@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS app.buildings (
     display_order INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_building_tenant_code UNIQUE (condominium_id, code)
 );
 
 CREATE TABLE IF NOT EXISTS app.units (
@@ -48,7 +49,8 @@ CREATE TABLE IF NOT EXISTS app.units (
     block TEXT,
     status TEXT NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_unit_building_code UNIQUE (condominium_id, building_id, code)
 );
 
 CREATE TABLE IF NOT EXISTS app.accounts (

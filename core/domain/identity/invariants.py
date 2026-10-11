@@ -8,6 +8,8 @@ from .exceptions import (
     TenantMismatchError,
     MissingAuditPurposeError,
     UnauthorizedPublicationError,
+    DuplicateBuildingError,
+    DuplicateUnitError,
 )
 
 FORBIDDEN_ELECTORAL_TERMS = {
@@ -61,3 +63,22 @@ def assert_sindico_publication_authority(roles: List[str]) -> None:
         raise UnauthorizedPublicationError(
             "Apenas o síndico ativo tem autoridade para publicar documentos ou revisões públicas."
         )
+
+def assert_unique_building_code(is_duplicate: bool, code: str) -> None:
+    """
+    Garante a unicidade do código do prédio/torre dentro do condomínio (UQ-BUILDING-01).
+    """
+    if is_duplicate:
+        raise DuplicateBuildingError(
+            f"Torre/Bloco com código '{code}' já existe neste condomínio."
+        )
+
+def assert_unique_unit_code(is_duplicate: bool, code: str) -> None:
+    """
+    Garante a unicidade do código da unidade dentro da torre/condomínio (UQ-UNIT-01).
+    """
+    if is_duplicate:
+        raise DuplicateUnitError(
+            f"Unidade com código '{code}' já existe para esta torre/condomínio."
+        )
+

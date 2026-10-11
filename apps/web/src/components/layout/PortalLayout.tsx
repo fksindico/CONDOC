@@ -39,7 +39,7 @@ export const PortalLayout: React.FC = () => {
             {/* Logo / Condomínio */}
             <div className="flex items-center gap-3">
               <Link to="/portal" className="flex items-center gap-2 text-brand-700 font-bold text-lg tracking-tight">
-                <Building2 className="w-6 h-6 text-brand-600" />
+                <Building2 className="w-6 h-6 text-brand-600" aria-hidden="true" />
                 <span>CONDOC</span>
               </Link>
               <div className="h-4 w-px bg-slate-200 hidden sm:block" />
@@ -57,7 +57,7 @@ export const PortalLayout: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-all shadow-xs"
                   title="Acessar o Painel Administrativo de Gestão"
                 >
-                  <ShieldCheck className="w-4 h-4 text-slate-950" />
+                  <ShieldCheck className="w-4 h-4 text-slate-950" aria-hidden="true" />
                   <span>Painel do Síndico</span>
                 </Link>
               ) : !isAuthenticated ? (
@@ -66,7 +66,7 @@ export const PortalLayout: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-all shadow-2xs"
                   title="Acesso de síndicos, comissões e gestão"
                 >
-                  <LogIn className="w-3.5 h-3.5 text-brand-600" />
+                  <LogIn className="w-3.5 h-3.5 text-brand-600" aria-hidden="true" />
                   <span>Área do Síndico</span>
                 </Link>
               ) : null}
@@ -81,7 +81,7 @@ export const PortalLayout: React.FC = () => {
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors cursor-pointer"
                     title="Sair do portal"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
+                    <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Sair</span>
                   </button>
                 </>
@@ -104,7 +104,7 @@ export const PortalLayout: React.FC = () => {
                       : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0 text-current" />
+                  <Icon className="w-4 h-4 shrink-0 text-current" aria-hidden="true" />
                   <span>{item.label}</span>
                 </Link>
               );

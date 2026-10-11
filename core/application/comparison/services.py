@@ -508,6 +508,7 @@ class RenumberingService:
         return {
             "document_id": str(document_id),
             "provisions_renumbered": renumbered_count,
+            "total_revisions_created": renumbered_count,
             "strategy": strategy,
             "status": "completed"
         }

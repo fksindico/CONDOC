@@ -418,6 +418,10 @@ class SnapshotService:
         Cria snapshot imutável congelando o estado exato de cada dispositivo.
         Computa o hash SHA-256 reproduzível.
         """
+        existing = DocumentSnapshot.objects.filter(document_id=document_id, version_label=version_label.strip()).first()
+        if existing:
+            assert_snapshot_immutable(existing.is_immutable)
+
         provisions = Provision.objects.filter(document_id=document_id)
         items_payload = []
         provision_revision_pairs = []

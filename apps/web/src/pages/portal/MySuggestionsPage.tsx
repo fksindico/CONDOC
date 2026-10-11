@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const MySuggestionsPage: React.FC = () => {
@@ -47,18 +48,21 @@ export const MySuggestionsPage: React.FC = () => {
         </div>
         <Link to="/portal/sugerir">
           <Button size="sm">
-            <Send className="w-4 h-4 mr-1.5" />
+            <Send className="w-4 h-4 mr-1.5" aria-hidden="true" />
             <span>Nova Sugestão</span>
           </Button>
         </Link>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 animate-fade-in">
         {isLoading ? (
-          <p className="text-xs text-slate-400 text-center py-8">Carregando suas sugestões...</p>
+          <div className="space-y-4">
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         ) : mySuggestions.length === 0 ? (
           <Card className="text-center py-12 text-slate-500">
-            <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+            <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2" aria-hidden="true" />
             <p className="text-sm font-semibold text-slate-700">Você ainda não protocolou nenhuma sugestão.</p>
             <p className="text-xs text-slate-500 mt-0.5">
               Explore a minuta em discussão e envie propostas para melhorar o convívio no condomínio.
@@ -80,7 +84,7 @@ export const MySuggestionsPage: React.FC = () => {
                     <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                       {sug.public_protocol}
                     </span>
-                    <Badge variant="outline" className="text-[10px] uppercase">
+                    <Badge variant="outline" className="text-xs uppercase">
                       {sug.category}
                     </Badge>
                   </div>
@@ -93,7 +97,7 @@ export const MySuggestionsPage: React.FC = () => {
                           ? 'info'
                           : 'warning'
                       }
-                      className="text-[10px] capitalize"
+                      className="text-xs capitalize"
                     >
                       {sug.analysis_status}
                     </Badge>
@@ -105,7 +109,7 @@ export const MySuggestionsPage: React.FC = () => {
                           ? 'danger'
                           : 'default'
                       }
-                      className="text-[10px] capitalize"
+                      className="text-xs capitalize"
                     >
                       {sug.editorial_decision.replace('_', ' ')}
                     </Badge>
@@ -121,14 +125,14 @@ export const MySuggestionsPage: React.FC = () => {
                 {sug.public_shared_reason && (
                   <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-lg text-xs text-emerald-900 space-y-1">
                     <span className="font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
                       <span>Retorno Oficial da Comissão:</span>
                     </span>
                     <p className="leading-relaxed">{sug.public_shared_reason}</p>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
                   <span>Enviada em {formatDatePtBr(sug.created_at)}</span>
                   <span>Versão {sug.version_number}</span>
                 </div>

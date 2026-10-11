@@ -57,7 +57,7 @@ export const AccessStatusPage: React.FC = () => {
                   <h4 className="text-sm font-semibold text-slate-900">{st.title}</h4>
                   <p className="text-xs text-slate-600 mt-0.5">{st.description}</p>
                 </div>
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                   Habilitado
                 </span>
               </div>

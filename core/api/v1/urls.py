@@ -8,8 +8,11 @@ from .views import (
     LoginView,
     LogoutView,
     CondominiumListCreateView,
+    CondominiumDetailUpdateView,
     BuildingListCreateView,
+    BuildingDetailUpdateView,
     UnitListCreateView,
+    UnitDetailUpdateView,
     ResidentRegistrationListCreateView,
     UnitMembershipListView,
     VerifyMembershipActionView,
@@ -83,12 +86,15 @@ urlpatterns = [
 
     # Condomínios (Tenancy Raiz)
     path('condominiums', CondominiumListCreateView.as_view(), name='api_v1_condominiums'),
+    path('condominiums/<uuid:condominium_id>', CondominiumDetailUpdateView.as_view(), name='api_v1_condominium_detail'),
 
     # Torres / Blocos / Prédios
     path('condominiums/<uuid:condominium_id>/buildings', BuildingListCreateView.as_view(), name='api_v1_buildings'),
+    path('condominiums/<uuid:condominium_id>/buildings/<uuid:building_id>', BuildingDetailUpdateView.as_view(), name='api_v1_building_detail'),
 
     # Unidades Autônomas
     path('condominiums/<uuid:condominium_id>/units', UnitListCreateView.as_view(), name='api_v1_units'),
+    path('condominiums/<uuid:condominium_id>/units/<uuid:unit_id>', UnitDetailUpdateView.as_view(), name='api_v1_unit_detail'),
 
     # Pré-cadastro manual de moradores (CA-02)
     path('condominiums/<uuid:condominium_id>/registrations', ResidentRegistrationListCreateView.as_view(), name='api_v1_registrations'),

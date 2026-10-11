@@ -10,6 +10,7 @@ import { CardSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LegalDisclaimerBanner } from '@/components/ui/LegalDisclaimerBanner';
 import { Alert } from '@/components/ui/Alert';
+import { Pagination } from '@/components/ui/Pagination';
 
 export const PublicSuggestionsWallPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
@@ -39,6 +40,9 @@ export const PublicSuggestionsWallPage: React.FC = () => {
     });
   }, [activeCondominiumId]);
 
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
+
   const filtered = suggestions.filter(
     (s) =>
       !search ||
@@ -46,8 +50,11 @@ export const PublicSuggestionsWallPage: React.FC = () => {
       (s.sanitized_public_text && s.sanitized_public_text.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const paginatedFiltered = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
           Mural de Sugestões Públicas
@@ -61,7 +68,7 @@ export const PublicSuggestionsWallPage: React.FC = () => {
 
       {/* Busca */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" aria-hidden="true" />
         <input
           type="text"
           className="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
@@ -89,14 +96,14 @@ export const PublicSuggestionsWallPage: React.FC = () => {
             />
           </div>
         ) : (
-          filtered.map((s) => (
+          paginatedFiltered.map((s) => (
             <Card key={s.id} className="hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
                     {s.public_protocol}
                   </span>
-                  <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                  <Badge variant="outline" className="text-xs uppercase font-mono">
                     {s.category}
                   </Badge>
                 </div>
@@ -113,7 +120,7 @@ export const PublicSuggestionsWallPage: React.FC = () => {
                 <Link to={`/portal/mural/${s.id}`}>
                   <Button variant="outline" size="sm" className="w-full justify-between mt-2 font-semibold text-slate-800 hover:text-brand-700 hover:border-brand-300 hover:bg-brand-50 transition-colors">
                     <span>Ver Detalhe & Apoiar</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" />
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" aria-hidden="true" />
                   </Button>
                 </Link>
               </CardContent>
@@ -121,6 +128,19 @@ export const PublicSuggestionsWallPage: React.FC = () => {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="bg-white p-3 rounded-xl border border-slate-200">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            pageSize={pageSize}
+            showSummary
+            onPageChange={(p) => setPage(p)}
+          />
+        </div>
+      )}
     </div>
   );
 };

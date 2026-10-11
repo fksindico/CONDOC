@@ -85,12 +85,12 @@ export const TeamPage: React.FC = () => {
                     <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-3.5">
                         <span className="font-semibold text-slate-900 text-sm block">{r.account_name || 'Usuário'}</span>
-                        <span className="text-[11px] text-slate-500">{r.account_email || '—'}</span>
+                        <span className="text-xs text-slate-500">{r.account_email || '—'}</span>
                       </td>
                       <td className="px-6 py-3.5">
                         <Badge
                           variant={r.role === 'sindico' ? 'warning' : 'outline'}
-                          className="font-mono uppercase text-[10px]"
+                          className="font-mono uppercase text-xs"
                         >
                           {r.role}
                         </Badge>

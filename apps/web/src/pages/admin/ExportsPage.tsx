@@ -185,7 +185,7 @@ export const ExportsPage: React.FC = () => {
                 <p className="font-mono text-[11px] truncate">
                   Manifesto SHA-256: <code>{internalReportResult.manifest_hash}</code>
                 </p>
-                <p className="text-[11px]">
+                <p className="text-xs">
                   Total de contribuições documentadas:{' '}
                   <strong>{internalReportResult.report_content?.total_suggestions_analyzed || 0}</strong>
                 </p>

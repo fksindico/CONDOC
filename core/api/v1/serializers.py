@@ -67,6 +67,7 @@ class BuildingSerializer(serializers.ModelSerializer):
 
 class UnitSerializer(serializers.ModelSerializer):
     building_name = serializers.CharField(source='building.name', read_only=True)
+    building_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Unit

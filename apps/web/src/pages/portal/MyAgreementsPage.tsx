@@ -6,6 +6,7 @@ import { BookmarkCheck, RotateCcw, ArrowRight, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { LegalDisclaimerBanner } from '@/components/ui/LegalDisclaimerBanner';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const MyAgreementsPage: React.FC = () => {
@@ -48,12 +49,15 @@ export const MyAgreementsPage: React.FC = () => {
 
       <LegalDisclaimerBanner />
 
-      <div className="space-y-4">
+      <div className="space-y-4 animate-fade-in">
         {isLoading ? (
-          <p className="text-xs text-slate-400 text-center py-8">Carregando suas concordâncias...</p>
+          <div className="space-y-4">
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         ) : agreements.length === 0 ? (
           <Card className="text-center py-12 text-slate-500">
-            <BookmarkCheck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+            <BookmarkCheck className="w-10 h-10 mx-auto text-slate-300 mb-2" aria-hidden="true" />
             <p className="text-sm font-semibold text-slate-700">Você não possui concordâncias ativas registradas.</p>
             <p className="text-xs text-slate-500 mt-0.5">
               Explore o mural de sugestões públicas e registre seu apoio nas propostas que considerar pertinentes.
@@ -77,7 +81,7 @@ export const MyAgreementsPage: React.FC = () => {
                   <h4 className="font-serif text-sm font-semibold text-slate-900 mt-1">
                     {agr.sanitized_public_text}
                   </h4>
-                  <p className="text-[11px] text-slate-400">Registrada em {formatDatePtBr(agr.created_at)}</p>
+                  <p className="text-xs text-slate-500">Registrada em {formatDatePtBr(agr.created_at)}</p>
                 </div>
                 <div className="shrink-0 flex items-center gap-2.5">
                   <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
@@ -86,7 +90,7 @@ export const MyAgreementsPage: React.FC = () => {
                   <Link to={`/portal/mural/${agr.published_suggestion_revision_id}`}>
                     <Button size="sm" variant="outline" className="font-semibold text-slate-800 hover:text-brand-700">
                       <span>Ver Proposta</span>
-                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      <ArrowRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
                     </Button>
                   </Link>
                 </div>

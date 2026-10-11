@@ -25,3 +25,12 @@ class MissingAuditPurposeError(DomainError):
 class ElectoralFeatureForbiddenError(DomainError):
     """Violação do limite inegociável: tentativa de invocar recurso eleitoral ou votação."""
     pass
+
+class DuplicateBuildingError(DomainError):
+    """Tentativa de registrar ou atualizar prédio/torre com código duplicado no condomínio."""
+    pass
+
+class DuplicateUnitError(DomainError):
+    """Tentativa de registrar ou atualizar unidade autônoma com código duplicado na mesma torre/condomínio."""
+    pass
+

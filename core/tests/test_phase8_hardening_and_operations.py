@@ -116,22 +116,28 @@ def test_scripts_operacionais_executam_com_sucesso():
     """Valida a execução dos scripts operacionais doctor.sh, migrate.sh, backup.sh e restore.sh."""
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
+    bash_cmd = "bash"
+    if os.name == "nt":
+        git_bash = r"C:\Program Files\Git\bin\bash.exe"
+        if os.path.exists(git_bash):
+            bash_cmd = git_bash
+
     # 1. Executa doctor.sh
     doctor_path = os.path.join(base_dir, "scripts", "doctor.sh")
-    res_doc = subprocess.run(["bash", doctor_path], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    res_doc = subprocess.run([bash_cmd, doctor_path], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res_doc.returncode == 0, f"doctor.sh falhou: {res_doc.stderr}"
     assert "APROVADO" in res_doc.stdout
 
     # 2. Executa migrate.sh
     migrate_path = os.path.join(base_dir, "scripts", "migrate.sh")
-    res_mig = subprocess.run(["bash", migrate_path], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    res_mig = subprocess.run([bash_cmd, migrate_path], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res_mig.returncode == 0, f"migrate.sh falhou: {res_mig.stderr}"
     assert "migrations processadas com sucesso" in res_mig.stdout
 
     # 3. Executa backup.sh
     backup_script = os.path.join(base_dir, "scripts", "backup.sh")
     temp_backup_dir = os.path.join(base_dir, "test_backups_tmp")
-    res_bak = subprocess.run(["bash", backup_script, temp_backup_dir], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    res_bak = subprocess.run([bash_cmd, backup_script, temp_backup_dir], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res_bak.returncode == 0, f"backup.sh falhou: {res_bak.stderr}"
     assert "CONCLUÍDO COM SUCESSO" in res_bak.stdout or "SUCESSO" in res_bak.stdout
 
@@ -142,7 +148,7 @@ def test_scripts_operacionais_executam_com_sucesso():
 
     # 4. Executa restore.sh apontando para o backup gerado
     restore_script = os.path.join(base_dir, "scripts", "restore.sh")
-    res_res = subprocess.run(["bash", restore_script, latest_backup], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    res_res = subprocess.run([bash_cmd, restore_script, latest_backup], cwd=base_dir, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res_res.returncode == 0, f"restore.sh falhou: {res_res.stderr}"
     assert "CONCLUÍDA COM SUCESSO" in res_res.stdout or "SUCESSO" in res_res.stdout
 

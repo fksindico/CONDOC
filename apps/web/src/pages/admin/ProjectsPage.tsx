@@ -108,10 +108,10 @@ export const ProjectsPage: React.FC = () => {
             <Card key={p.id} className="flex flex-col justify-between hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <Badge variant="info" className="uppercase font-mono text-[10px]">
+                  <Badge variant="info" className="uppercase font-mono text-xs">
                     {p.kind}
                   </Badge>
-                  <span className="text-[11px] text-slate-600 font-medium capitalize">
+                  <span className="text-xs text-slate-600 font-medium capitalize">
                     {p.status}
                   </span>
                 </div>
@@ -119,7 +119,7 @@ export const ProjectsPage: React.FC = () => {
                 {p.purpose && <CardDescription className="line-clamp-2 mt-1">{p.purpose}</CardDescription>}
               </CardHeader>
               <CardContent className="pt-0 pb-4">
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-600 mb-4 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-slate-600 mb-4 font-medium">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Iniciado em {formatDatePtBr(p.created_at)}</span>
                 </div>

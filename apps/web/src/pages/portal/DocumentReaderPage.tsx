@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
 import { LegalDisclaimerBanner } from '@/components/ui/LegalDisclaimerBanner';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 
 export const DocumentReaderPage: React.FC = () => {
   const { activeCondominiumId } = useTenant();
@@ -58,7 +59,7 @@ export const DocumentReaderPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs font-mono uppercase bg-white">
-            <Lock className="w-3 h-3 mr-1 text-slate-400" />
+            <Lock className="w-3 h-3 mr-1 text-slate-400" aria-hidden="true" />
             <span>Versão Congelada</span>
           </Badge>
         </div>
@@ -68,7 +69,7 @@ export const DocumentReaderPage: React.FC = () => {
 
       {/* Barra de Busca de Artigos */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" aria-hidden="true" />
         <input
           type="text"
           className="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
@@ -83,10 +84,14 @@ export const DocumentReaderPage: React.FC = () => {
       {/* Listagem Estruturada de Artigos do Snapshot */}
       <div className="space-y-4">
         {isLoading ? (
-          <p className="text-xs text-slate-400 text-center py-8">Carregando artigos da minuta...</p>
+          <div className="space-y-4 animate-fade-in">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         ) : filtered.length === 0 ? (
           <Card className="text-center py-10 text-slate-500">
-            <BookOpen className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+            <BookOpen className="w-8 h-8 mx-auto text-slate-300 mb-2" aria-hidden="true" />
             <p className="text-sm font-medium">Nenhum artigo encontrado para a pesquisa.</p>
           </Card>
         ) : (
@@ -113,7 +118,7 @@ export const DocumentReaderPage: React.FC = () => {
                       )
                     }
                   >
-                    <Send className="w-3.5 h-3.5 mr-1 text-brand-600" />
+                    <Send className="w-3.5 h-3.5 mr-1 text-brand-600" aria-hidden="true" />
                     <span>Sugerir neste artigo</span>
                   </Button>
                 </div>

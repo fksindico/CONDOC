@@ -124,7 +124,7 @@ export const CampaignsPage: React.FC = () => {
           </p>
         </div>
         <Button size="sm" onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-1.5" />
+          <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
           <span>Nova Campanha</span>
         </Button>
       </div>
@@ -158,7 +158,7 @@ export const CampaignsPage: React.FC = () => {
                         {camp.state || 'Rascunho'}
                       </Badge>
                       {camp.settings?.hide_counts && (
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           Contagens Ocultas
                         </Badge>
                       )}
@@ -177,19 +177,19 @@ export const CampaignsPage: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Link to={`/painel/sugestoes?campaign_id=${camp.id}`}>
                       <Button size="sm" variant="outline">
-                        <MessageSquare className="w-3.5 h-3.5 mr-1 text-brand-600" />
+                        <MessageSquare className="w-3.5 h-3.5 mr-1 text-brand-600" aria-hidden="true" />
                         <span>Fila 4D</span>
                       </Button>
                     </Link>
                     <Link to={`/painel/estatisticas`}>
                       <Button size="sm" variant="outline">
-                        <BarChart3 className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                        <BarChart3 className="w-3.5 h-3.5 mr-1 text-slate-500" aria-hidden="true" />
                         <span>Métricas</span>
                       </Button>
                     </Link>
                     {!isOpen && camp.state !== 'encerrada' && (
                       <Button size="sm" onClick={() => handleToggleState(camp.id, 'open')}>
-                        <Play className="w-3.5 h-3.5 mr-1" />
+                        <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                         <span>Abrir Consulta</span>
                       </Button>
                     )}
@@ -199,7 +199,7 @@ export const CampaignsPage: React.FC = () => {
                         variant="destructive"
                         onClick={() => handleToggleState(camp.id, 'close')}
                       >
-                        <Square className="w-3.5 h-3.5 mr-1" />
+                        <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                         <span>Encerrar Consulta</span>
                       </Button>
                     )}

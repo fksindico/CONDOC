@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { api } from '@/lib/api';
 import { History, Shield, Lock, Search, Filter } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const AuditLogsPage: React.FC = () => {
@@ -19,7 +20,15 @@ export const AuditLogsPage: React.FC = () => {
   }, [activeCondominiumId]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Administração' },
+          { label: 'Trilha de Auditoria' },
+        ]}
+        showHome
+      />
+
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Trilha Imutável de Auditoria</h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -45,7 +54,8 @@ export const AuditLogsPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Visualização Desktop: Tabela */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
                 <tr>
@@ -82,6 +92,34 @@ export const AuditLogsPage: React.FC = () => {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Visualização Mobile: Cards (M7.1) */}
+          <div className="md:hidden divide-y divide-slate-100 p-4 space-y-3">
+            <div className="pt-2 first:pt-0 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-900">Dr. Síndico Geral</span>
+                <Badge variant="warning">identity.read</Badge>
+              </div>
+              <p className="text-slate-700">
+                Diligência administrativa para conferir legitimidade de sugestão.
+              </p>
+              <p className="text-slate-400 font-mono text-[11px]">
+                {formatDatePtBr(new Date().toISOString())}
+              </p>
+            </div>
+            <div className="pt-3 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-900">Dr. Síndico Geral</span>
+                <Badge variant="success">publication.authorize</Badge>
+              </div>
+              <p className="text-slate-700">
+                Publicação sanitizada da sugestão SUG-2026-000001 autorizada no mural.
+              </p>
+              <p className="text-slate-400 font-mono text-[11px]">
+                {formatDatePtBr(new Date(Date.now() - 3600000).toISOString())}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

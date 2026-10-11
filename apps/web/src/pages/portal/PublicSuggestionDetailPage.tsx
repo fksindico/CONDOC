@@ -194,7 +194,7 @@ export const PublicSuggestionDetailPage: React.FC = () => {
             </div>
 
             {/* Aviso Legal Permanente Obrigatório (UI-28) */}
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 text-[11px] text-slate-600 leading-tight">
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 text-xs text-slate-600 leading-tight">
               <strong>Aviso Legal Permanente:</strong> {LEGAL_DISCLAIMER_TEXT}
             </div>
 

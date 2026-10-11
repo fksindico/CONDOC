@@ -24,11 +24,15 @@ from domain.identity.invariants import (
     assert_same_tenant,
     assert_audit_purpose,
     assert_sindico_publication_authority,
+    assert_unique_building_code,
+    assert_unique_unit_code,
 )
 from domain.identity.exceptions import (
     DomainError,
     TenantMismatchError,
     InvalidMembershipStatusError,
+    DuplicateBuildingError,
+    DuplicateUnitError,
 )
 
 class CondominiumService:
@@ -43,7 +47,20 @@ class CondominiumService:
         )
 
     @staticmethod
+    def update_condominium(condominium_id: uuid.UUID, **fields) -> Condominium:
+        condo = Condominium.objects.get(id=condominium_id)
+        if 'name' in fields and fields['name']:
+            assert_no_electoral_intent(fields['name'])
+        for key, value in fields.items():
+            if hasattr(condo, key):
+                setattr(condo, key, value)
+        condo.save()
+        return condo
+
+    @staticmethod
     def create_building(condominium_id: uuid.UUID, code: str, name: str, kind: str = 'tower', display_order: int = 0) -> Building:
+        if Building.objects.filter(condominium_id=condominium_id, code=code).exists():
+            raise DuplicateBuildingError(f"Torre/Bloco com código '{code}' já existe neste condomínio.")
         return Building.objects.create(
             condominium_id=condominium_id,
             code=code,
@@ -53,10 +70,26 @@ class CondominiumService:
         )
 
     @staticmethod
+    def update_building(building_id: uuid.UUID, **fields) -> Building:
+        building = Building.objects.get(id=building_id)
+        new_code = fields.get('code')
+        if new_code is not None and new_code != building.code:
+            if Building.objects.filter(condominium_id=building.condominium_id, code=new_code).exclude(id=building.id).exists():
+                raise DuplicateBuildingError(f"Torre/Bloco com código '{new_code}' já existe neste condomínio.")
+        for key, value in fields.items():
+            if hasattr(building, key):
+                setattr(building, key, value)
+        building.save()
+        return building
+
+    @staticmethod
     def create_unit(condominium_id: uuid.UUID, code: str, building_id: Optional[uuid.UUID] = None, ideal_fraction: Optional[float] = None, **kwargs) -> Unit:
         if building_id:
             building = Building.objects.get(id=building_id)
             assert_same_tenant(condominium_id, building.condominium_id, "Prédio/Bloco")
+
+        if Unit.objects.filter(condominium_id=condominium_id, building_id=building_id, code=code).exists():
+            raise DuplicateUnitError(f"Unidade com código '{code}' já existe para esta torre/condomínio.")
 
         return Unit.objects.create(
             condominium_id=condominium_id,
@@ -65,6 +98,36 @@ class CondominiumService:
             ideal_fraction=ideal_fraction,
             **kwargs
         )
+
+    @staticmethod
+    def update_unit(unit_id: uuid.UUID, **fields) -> Unit:
+        unit = Unit.objects.get(id=unit_id)
+        new_code = fields.get('code', unit.code)
+        new_building_id = fields['building_id'] if 'building_id' in fields else unit.building_id
+
+        if 'building_id' in fields and fields['building_id']:
+            target_building = Building.objects.get(id=fields['building_id'])
+            assert_same_tenant(unit.condominium_id, target_building.condominium_id, "Prédio/Bloco")
+
+        code_changed = 'code' in fields and fields['code'] != unit.code
+        building_changed = 'building_id' in fields and fields['building_id'] != unit.building_id
+
+        if code_changed or building_changed:
+            if Unit.objects.filter(
+                condominium_id=unit.condominium_id,
+                building_id=new_building_id,
+                code=new_code
+            ).exclude(id=unit.id).exists():
+                raise DuplicateUnitError(f"Unidade com código '{new_code}' já existe para esta torre/condomínio.")
+
+        for key, value in fields.items():
+            if key == 'building_id':
+                unit.building_id = value
+            elif hasattr(unit, key):
+                setattr(unit, key, value)
+        unit.save()
+        return unit
+
 
 
 class ResidentRegistrationService:

@@ -93,7 +93,7 @@ export const AdminLayout: React.FC = () => {
         {/* Brand Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <Link to="/painel" className="flex items-center gap-2.5 text-white font-bold text-base tracking-tight">
-            <Building2 className="w-6 h-6 text-brand-400" />
+            <Building2 className="w-6 h-6 text-brand-400" aria-hidden="true" />
             <span>CONDOC</span>
             <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-brand-900/60 text-brand-300 border border-brand-700">
               Gestão
@@ -102,14 +102,15 @@ export const AdminLayout: React.FC = () => {
           <button
             className="md:hidden text-slate-400 hover:text-white"
             onClick={() => setIsSidebarOpen(false)}
+            aria-label="Fechar menu lateral"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Seletor de Condomínio Ativo */}
         <div className="p-3 border-b border-slate-800">
-          <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
             Condomínio Ativo
           </label>
           <select
@@ -147,7 +148,7 @@ export const AdminLayout: React.FC = () => {
                             : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                         }`}
                       >
-                        <Icon className="w-4 h-4 shrink-0" />
+                        <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
                         <span className="truncate">{item.label}</span>
                       </Link>
                     </li>
@@ -165,7 +166,7 @@ export const AdminLayout: React.FC = () => {
             className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors shadow-2xs"
             title="Visualizar a experiência do morador"
           >
-            <Home className="w-4 h-4 text-brand-400" />
+            <Home className="w-4 h-4 text-brand-400" aria-hidden="true" />
             <span>Ver Portal do Morador</span>
           </Link>
         </div>
@@ -174,14 +175,15 @@ export const AdminLayout: React.FC = () => {
         <div className="p-3 border-t border-slate-800 flex items-center justify-between text-xs">
           <div className="truncate pr-2">
             <p className="font-semibold text-white truncate">{user?.full_name || 'Usuário Gestão'}</p>
-            <p className="text-[11px] text-slate-400 capitalize">{activeRole}</p>
+            <p className="text-xs text-slate-500 capitalize">{activeRole}</p>
           </div>
           <button
             onClick={logout}
             className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
             title="Encerrar Sessão"
+            aria-label="Encerrar Sessão"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </aside>
@@ -193,8 +195,9 @@ export const AdminLayout: React.FC = () => {
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="text-slate-600 hover:text-slate-900"
+            aria-label="Abrir menu de navegação"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6" aria-hidden="true" />
           </button>
           <span className="font-semibold text-sm text-slate-900 truncate">
             {activeCondominium?.name || 'CONDOC'}

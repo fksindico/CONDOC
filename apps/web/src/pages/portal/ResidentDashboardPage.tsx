@@ -24,11 +24,11 @@ export const ResidentDashboardPage: React.FC = () => {
   }, [activeCondominium]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Banner de Boas-Vindas */}
-      <div className="bg-gradient-to-br from-brand-700 via-brand-800 to-indigo-900 text-white rounded-2xl p-6 sm:p-8 shadow-lg shadow-brand-950/20 relative overflow-hidden border border-brand-600/30">
+      <div className="bg-gradient-to-br from-brand-700 via-brand-800 to-indigo-900 text-white rounded-2xl p-6 sm:p-8 shadow-lg shadow-brand-950/20 relative overflow-hidden border border-brand-600/30 animate-fade-in-up">
         <div className="max-w-3xl space-y-3.5 relative z-10">
-          <Badge variant="outline" className="text-white border-white/30 bg-white/10 text-[11px] uppercase tracking-wider backdrop-blur-sm">
+          <Badge variant="outline" className="text-white border-white/30 bg-white/10 text-xs uppercase tracking-wider backdrop-blur-sm">
             Consulta Pública Ativa
           </Badge>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
@@ -40,13 +40,13 @@ export const ResidentDashboardPage: React.FC = () => {
           <div className="pt-2 flex flex-wrap gap-3">
             <Link to="/portal/documento">
               <Button variant="white" className="font-semibold text-brand-950 hover:bg-slate-100 shadow-md">
-                <BookOpen className="w-4 h-4 mr-2 text-brand-700" />
+                <BookOpen className="w-4 h-4 mr-2 text-brand-700" aria-hidden="true" />
                 <span>Ler Minuta em Consulta</span>
               </Button>
             </Link>
             <Link to="/portal/sugerir">
               <Button variant="outline-white" className="font-semibold">
-                <Send className="w-4 h-4 mr-2 text-white" />
+                <Send className="w-4 h-4 mr-2 text-white" aria-hidden="true" />
                 <span>Enviar Sugestão</span>
               </Button>
             </Link>
@@ -59,10 +59,10 @@ export const ResidentDashboardPage: React.FC = () => {
 
       {/* Cards de Atalhos e Recursos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between animate-fade-in-up">
           <CardHeader>
             <div className="p-2.5 w-fit rounded-xl bg-blue-100 text-blue-800 border border-blue-200/60 mb-2">
-              <BookOpen className="w-5 h-5" />
+              <BookOpen className="w-5 h-5" aria-hidden="true" />
             </div>
             <CardTitle className="text-base text-slate-900">Documento Normativo</CardTitle>
             <CardDescription className="text-xs text-slate-600 leading-relaxed">
@@ -77,7 +77,7 @@ export const ResidentDashboardPage: React.FC = () => {
                 className="w-full justify-between text-slate-800 font-semibold group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-300 transition-colors"
               >
                 <span>Explorar Artigos</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Button>
             </Link>
           </CardContent>
@@ -86,7 +86,7 @@ export const ResidentDashboardPage: React.FC = () => {
         <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <CardHeader>
             <div className="p-2.5 w-fit rounded-xl bg-indigo-100 text-indigo-800 border border-indigo-200/60 mb-2">
-              <MessageSquare className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5" aria-hidden="true" />
             </div>
             <CardTitle className="text-base text-slate-900">Mural de Sugestões</CardTitle>
             <CardDescription className="text-xs text-slate-600 leading-relaxed">
@@ -101,7 +101,7 @@ export const ResidentDashboardPage: React.FC = () => {
                 className="w-full justify-between text-slate-800 font-semibold group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-300 transition-colors"
               >
                 <span>Ver Propostas Públicas</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Button>
             </Link>
           </CardContent>
@@ -110,7 +110,7 @@ export const ResidentDashboardPage: React.FC = () => {
         <Card className="group hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <CardHeader>
             <div className="p-2.5 w-fit rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200/60 mb-2">
-              <BookmarkCheck className="w-5 h-5" />
+              <BookmarkCheck className="w-5 h-5" aria-hidden="true" />
             </div>
             <CardTitle className="text-base text-slate-900">Minhas Concordâncias</CardTitle>
             <CardDescription className="text-xs text-slate-600 leading-relaxed">
@@ -125,7 +125,7 @@ export const ResidentDashboardPage: React.FC = () => {
                 className="w-full justify-between text-slate-800 font-semibold group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-300 transition-colors"
               >
                 <span>Minhas Manifestações</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Button>
             </Link>
           </CardContent>

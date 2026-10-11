@@ -104,13 +104,13 @@ export const ImportWizardPage: React.FC = () => {
 
       {/* Indicador de Etapas */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-3 text-xs font-semibold">
-        <span className={step >= 1 ? 'text-brand-600' : 'text-slate-400'}>1. Upload da Planilha</span>
+        <span className={step >= 1 ? 'text-brand-600' : 'text-slate-500'}>1. Upload da Planilha</span>
         <span className="text-slate-300">→</span>
-        <span className={step >= 2 ? 'text-brand-600' : 'text-slate-400'}>2. Mapeamento de Colunas</span>
+        <span className={step >= 2 ? 'text-brand-600' : 'text-slate-500'}>2. Mapeamento de Colunas</span>
         <span className="text-slate-300">→</span>
-        <span className={step >= 3 ? 'text-brand-600' : 'text-slate-400'}>3. Prévia & Conflitos</span>
+        <span className={step >= 3 ? 'text-brand-600' : 'text-slate-500'}>3. Prévia & Conflitos</span>
         <span className="text-slate-300">→</span>
-        <span className={step >= 4 ? 'text-emerald-600' : 'text-slate-400'}>4. Concluído</span>
+        <span className={step >= 4 ? 'text-emerald-600' : 'text-slate-500'}>4. Concluído</span>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
@@ -120,7 +120,7 @@ export const ImportWizardPage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Upload className="w-5 h-5 text-brand-600" />
+              <Upload className="w-5 h-5 text-brand-600" aria-hidden="true" />
               <span>Etapa 1: Selecionar Arquivo</span>
             </CardTitle>
             <CardDescription>Formatos suportados: CSV e XLSX (até 10MB).</CardDescription>
@@ -128,7 +128,7 @@ export const ImportWizardPage: React.FC = () => {
           <form onSubmit={handleFileUpload}>
             <CardContent className="space-y-4">
               <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50/50 transition-colors cursor-pointer">
-                <FileSpreadsheet className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                <FileSpreadsheet className="w-10 h-10 text-slate-400 mx-auto mb-2" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-700">Clique para selecionar ou arraste sua planilha</p>
                 <p className="text-xs text-slate-500 mt-1">
                   Proteção automática contra injeção de fórmulas ativada (V21-07).
@@ -149,7 +149,7 @@ export const ImportWizardPage: React.FC = () => {
             <CardFooter>
               <Button type="submit" isLoading={isLoading} disabled={!file}>
                 <span>Continuar para Mapeamento</span>
-                <ArrowRight className="w-4 h-4 ml-1.5" />
+                <ArrowRight className="w-4 h-4 ml-1.5" aria-hidden="true" />
               </Button>
             </CardFooter>
           </form>
@@ -227,7 +227,7 @@ export const ImportWizardPage: React.FC = () => {
             </Button>
             <Button onClick={handleApplyMapping} isLoading={isLoading}>
               <span>Validar e Gerar Prévia</span>
-              <ArrowRight className="w-4 h-4 ml-1.5" />
+              <ArrowRight className="w-4 h-4 ml-1.5" aria-hidden="true" />
             </Button>
           </CardFooter>
         </Card>
@@ -246,19 +246,19 @@ export const ImportWizardPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
               <div className="p-3 bg-slate-50 border rounded-lg">
                 <span className="text-xl font-bold text-slate-900">{previewData.total_rows || 0}</span>
-                <p className="text-[11px] text-slate-500 mt-0.5">Linhas Lidas</p>
+                <p className="text-xs text-slate-500 mt-0.5">Linhas Lidas</p>
               </div>
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <span className="text-xl font-bold text-emerald-800">{previewData.proposed_creates || 0}</span>
-                <p className="text-[11px] text-emerald-700 mt-0.5">Novos Cadastros</p>
+                <p className="text-xs text-emerald-700 mt-0.5">Novos Cadastros</p>
               </div>
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <span className="text-xl font-bold text-blue-800">{previewData.proposed_updates || 0}</span>
-                <p className="text-[11px] text-blue-700 mt-0.5">Atualizações</p>
+                <p className="text-xs text-blue-700 mt-0.5">Atualizações</p>
               </div>
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <span className="text-xl font-bold text-amber-800">{previewData.conflicts_count || 0}</span>
-                <p className="text-[11px] text-amber-700 mt-0.5">Conflitos</p>
+                <p className="text-xs text-amber-700 mt-0.5">Conflitos</p>
               </div>
             </div>
 
@@ -273,7 +273,7 @@ export const ImportWizardPage: React.FC = () => {
             </Button>
             <Button onClick={handleConfirmBatch} isLoading={isLoading}>
               <span>Confirmar e Aplicar Lote</span>
-              <CheckCircle2 className="w-4 h-4 ml-1.5" />
+              <CheckCircle2 className="w-4 h-4 ml-1.5" aria-hidden="true" />
             </Button>
           </CardFooter>
         </Card>
@@ -283,7 +283,7 @@ export const ImportWizardPage: React.FC = () => {
       {step === 4 && (
         <Card className="text-center p-8 space-y-4">
           <div className="inline-flex p-3 bg-emerald-100 rounded-full text-emerald-700 mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
+            <CheckCircle2 className="w-10 h-10" aria-hidden="true" />
           </div>
           <h2 className="text-xl font-bold text-slate-900">Lote Processado com Sucesso!</h2>
           <p className="text-xs text-slate-600 max-w-md mx-auto">

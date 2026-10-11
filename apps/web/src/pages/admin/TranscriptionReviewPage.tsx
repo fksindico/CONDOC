@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle2, Edit3, Upload, FileText, ShieldAlert } from 'l
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 export const TranscriptionReviewPage: React.FC = () => {
   const { docId } = useParams<{ docId: string }>();
@@ -29,16 +30,18 @@ export const TranscriptionReviewPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Projetos Normativos', href: '/painel/projetos' },
+          { label: 'Documento', href: docId ? `/painel/documentos/${docId}/editor` : undefined },
+          { label: 'Revisão OCR' },
+        ]}
+        showHome
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            to="/painel/projetos"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 mb-1 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar</span>
-          </Link>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
             Conferência Humana de Transcrição (OCR)
           </h1>

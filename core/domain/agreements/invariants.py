@@ -109,6 +109,7 @@ def calculate_agreement_metrics(
     pct_units = round((count_units / total_eligible_units * 100), 1) if total_eligible_units > 0 else 0.0
 
     return {
+        "total_agreements": count_individuals,
         "concordant_individuals": count_individuals,
         "eligible_individuals_denominator": total_eligible_residents,
         "percentage_individuals": pct_individuals,

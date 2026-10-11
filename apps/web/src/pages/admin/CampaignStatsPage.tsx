@@ -57,7 +57,7 @@ export const CampaignStatsPage: React.FC = () => {
         </div>
 
         <Button onClick={handleCreateSnapshot} isLoading={isCapturing} disabled={!selectedCampaignId}>
-          <Camera className="w-4 h-4 mr-1.5" />
+          <Camera className="w-4 h-4 mr-1.5" aria-hidden="true" />
           <span>Congelar Fotografia Estatística</span>
         </Button>
       </div>
@@ -89,7 +89,7 @@ export const CampaignStatsPage: React.FC = () => {
         <Card className="border-blue-100 bg-blue-50/20">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-blue-600" aria-hidden="true" />
               <span>Dimensão 1: Participação por Indivíduo</span>
             </CardTitle>
             <CardDescription>
@@ -117,7 +117,7 @@ export const CampaignStatsPage: React.FC = () => {
         <Card className="border-indigo-100 bg-indigo-50/20">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Building className="w-5 h-5 text-indigo-600" />
+              <Building className="w-5 h-5 text-indigo-600" aria-hidden="true" />
               <span>Dimensão 2: Representatividade por Unidade</span>
             </CardTitle>
             <CardDescription>

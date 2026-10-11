@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { formatDatePtBr } from '@/lib/utils';
 
 export const SnapshotsPage: React.FC = () => {
@@ -69,16 +70,18 @@ export const SnapshotsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Projetos Normativos', href: '/painel/projetos' },
+          { label: 'Minuta de Trabalho', href: docId ? `/painel/documentos/${docId}/editor` : undefined },
+          { label: 'Snapshots' },
+        ]}
+        showHome
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            to="/painel/projetos"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 mb-1 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar</span>
-          </Link>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
             Snapshots & Versões Imutáveis
           </h1>
@@ -115,7 +118,7 @@ export const SnapshotsPage: React.FC = () => {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-slate-900 text-sm">{snap.version_label}</h3>
-                    <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                    <Badge variant="outline" className="text-xs uppercase font-mono">
                       {snap.purpose}
                     </Badge>
                   </div>
@@ -125,7 +128,7 @@ export const SnapshotsPage: React.FC = () => {
                       {snap.content_hash || '—'}
                     </span>
                   </p>
-                  <p className="text-[11px] text-slate-400">Congelado em {formatDatePtBr(snap.frozen_at)}</p>
+                  <p className="text-xs text-slate-500">Congelado em {formatDatePtBr(snap.frozen_at)}</p>
                 </div>
                 <div className="flex items-center gap-2.5 shrink-0">
                   <Link to="/painel/campanhas">

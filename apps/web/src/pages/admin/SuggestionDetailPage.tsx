@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { IdentityRevealModal } from '@/components/ui/IdentityRevealModal';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 export const SuggestionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -168,16 +169,18 @@ export const SuggestionDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: 'Participação & Moderação' },
+          { label: 'Fila de Moderação', href: '/painel/sugestoes' },
+          { label: `Protocolo ${suggestion.public_protocol}` },
+        ]}
+        showHome
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            to="/painel/sugestoes"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 mb-1 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar à Fila</span>
-          </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-mono">
               {suggestion.public_protocol}
@@ -197,7 +200,7 @@ export const SuggestionDetailPage: React.FC = () => {
                 <User className="w-3.5 h-3.5" />
                 <span>Autor: {revealedIdentity.full_name}</span>
               </p>
-              <p className="text-[11px] text-emerald-700 mt-0.5">
+              <p className="text-xs text-emerald-700 mt-0.5">
                 Unidade: <strong>{revealedIdentity.unit_code}</strong> • {revealedIdentity.email}
               </p>
             </div>
@@ -226,7 +229,7 @@ export const SuggestionDetailPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4 text-xs">
               <div>
-                <span className="font-bold text-slate-700 block mb-1 uppercase tracking-wider text-[11px]">
+                <span className="font-bold text-slate-700 block mb-1 uppercase tracking-wider text-xs">
                   Redação Proposta:
                 </span>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium leading-relaxed">
@@ -234,7 +237,7 @@ export const SuggestionDetailPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <span className="font-bold text-slate-700 block mb-1 uppercase tracking-wider text-[11px]">
+                <span className="font-bold text-slate-700 block mb-1 uppercase tracking-wider text-xs">
                   Justificativa / Motivação:
                 </span>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 leading-relaxed">
@@ -360,7 +363,7 @@ export const SuggestionDetailPage: React.FC = () => {
                   </span>
                 </Button>
                 {!isSindico && (
-                  <p className="text-[11px] text-rose-600 mt-1.5 text-center font-medium">
+                  <p className="text-xs text-rose-600 mt-1.5 text-center font-medium">
                     Seu papel atual não possui autoridade para assinar publicação de conteúdo.
                   </p>
                 )}
@@ -414,7 +417,7 @@ export const SuggestionDetailPage: React.FC = () => {
                 </Button>
               )}
               {suggestion.editorial_decision !== 'acolhida' && suggestion.editorial_decision !== 'acolhida_parcial' && (
-                <p className="text-[11px] text-amber-700 text-center font-medium">
+                <p className="text-xs text-amber-700 text-center font-medium">
                   Apenas sugestões acolhidas ou acolhidas parcialmente podem ser incorporadas à minuta.
                 </p>
               )}
