@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # 1. POSTGRESQL 15 COM EXTENSÕES E RLS
+  # ============================================================================
+  db:
+    image: supabase/postgres:15.1.1.78
+    container_name: supabase_db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-condc_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB:-condc_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ============================================================================
+  # 2. SUPABASE AUTH (GoTrue)
+  # ============================================================================
+  auth:
+    image: supabase/gotrue:v2.158.0
+    container_name: supabase_auth
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "9999:9999"
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-https://condoc.fk.adm.br}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-condc_dev}?sslmode=disable
+      GOTRUE_SITE_URL: ${SITE_URL:-https://condoc.fk.adm.br}
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+
+  # ============================================================================
+  # 3. SUPABASE STORAGE ENGINE
+  # ============================================================================
+  storage:
+    image: supabase/storage-api:v1.11.0
+    container_name: supabase_storage
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      ANON_KEY: ${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy_service}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-condc_dev}?sslmode=disable
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: default
+      REGION: local
+      GLOBAL_S3_BUCKET: condc-storage
+    volumes:
+      - storage_data:/var/lib/storage
+
+  # ============================================================================
+  # 4. POSTGREST (REST API)
+  # ============================================================================
+  rest:
+    image: postgrest/postgrest:v12.0.2
+    container_name: supabase_rest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    environment:
+      PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-condc_dev}
+      PGRST_DB_SCHEMAS: public,storage,app
+      PGRST_DB_ANON_ROLE: postgres
+      PGRST_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+
+  # ============================================================================
+  # 5. SUPABASE STUDIO (DASHBOARD ADMINISTRATIVO LOCAL)
+  # ============================================================================
+  studio:
+    image: supabase/studio:latest
+    container_name: supabase_studio
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      STUDIO_PG_META_URL: http://db:5432
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}\\
+      SUPABASE_URL: http://192.168.10.201:8000
+      SUPABASE_REST_URL: http://192.168.10.201:3001
+      SUPABASE_PUBLIC_URL: http://192.168.10.201:8000
+
+volumes:
+  pgdata:
+  storage_data:

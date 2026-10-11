@@ -58,10 +58,30 @@ def main():
     with sftp.file('/tmp/core.tar.gz', 'wb') as f:
         f.write(tar_stream.read())
 
-    print("Enviando .env de configuração...")
-    with open('.env', 'rb') as f_local:
-        with sftp.file('/tmp/condc.env', 'wb') as f_remote:
-            f_remote.write(f_local.read())
+    print("Configurando /opt/condc/.env para conexao com LXC 2...")
+    backend_env = f"""# CONDOC Backend Environment - LXC 1
+DJANGO_SETTINGS_MODULE=config.settings.dev
+DEBUG=True
+SECRET_KEY=condoc-production-secret-key-192-168-10-200
+ALLOWED_HOSTS=*
+
+# Banco de dados PostgreSQL na LXC 2 (192.168.10.201)
+POSTGRES_DB=condc_dev
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD={password}
+POSTGRES_HOST=192.168.10.201
+POSTGRES_PORT=5432
+
+# Redis local na LXC 1
+REDIS_URL=redis://127.0.0.1:6379/0
+
+# Supabase Auth / Storage na LXC 2
+SUPABASE_URL=http://192.168.10.201:8000
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy_service
+"""
+    with sftp.file('/tmp/condc.env', 'w') as f_remote:
+        f_remote.write(backend_env)
     sftp.close()
 
     # 3. Extrai em /opt/condc/core e move .env
@@ -78,8 +98,8 @@ def main():
 
     # 5. Configura e inicia o systemd service
     print("Criando serviço systemd condc-backend.service...")
-    service_content = """[Unit]
-Description=CONDC Core Django API Backend
+    service_content = f"""[Unit]
+Description=CONDOC Core Django API Backend
 After=network.target
 
 [Service]
