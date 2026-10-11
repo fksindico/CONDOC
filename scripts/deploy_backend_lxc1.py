@@ -37,8 +37,8 @@ def main():
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host, port=port, username=user, password=password, timeout=15)
 
-    # 1. Empacota core/ (excluindo __pycache__, .pytest_cache)
-    print("Empacotando diretório core/...")
+    # 1. Empacota core/ e scripts/
+    print("Empacotando diretórios core/ e scripts/...")
     tar_stream = io.BytesIO()
     with tarfile.open(fileobj=tar_stream, mode='w:gz') as tar:
         core_dir = os.path.abspath('core')
@@ -48,16 +48,39 @@ def main():
                 if file.endswith(('.pyc', '.pyo')):
                     continue
                 full_path = os.path.join(root, file)
-                rel_path = os.path.relpath(full_path, core_dir)
+                rel_path = os.path.join('core', os.path.relpath(full_path, core_dir))
+                tar.add(full_path, arcname=rel_path)
+
+        scripts_dir = os.path.abspath('scripts')
+        for root, dirs, files in os.walk(scripts_dir):
+            dirs[:] = [d for d in dirs if d not in ('__pycache__', '.venv')]
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.join('scripts', os.path.relpath(full_path, scripts_dir))
+                tar.add(full_path, arcname=rel_path)
+
+        supabase_dir = os.path.abspath('supabase')
+        for root, dirs, files in os.walk(supabase_dir):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.join('supabase', os.path.relpath(full_path, supabase_dir))
+                tar.add(full_path, arcname=rel_path)
+
+        docs_dir = os.path.abspath('docs')
+        for root, dirs, files in os.walk(docs_dir):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.join('docs', os.path.relpath(full_path, docs_dir))
                 tar.add(full_path, arcname=rel_path)
     tar_stream.seek(0)
 
-    # 2. Upload via SFTP para /tmp/core.tar.gz e .env
-    print("Enviando core.tar.gz...")
+    # 2. Upload via SFTP para /tmp/bundle.tar.gz e .env
+    print("Enviando bundle.tar.gz...")
     sftp = ssh.open_sftp()
-    with sftp.file('/tmp/core.tar.gz', 'wb') as f:
+    with sftp.file('/tmp/bundle.tar.gz', 'wb') as f:
         f.write(tar_stream.read())
 
+    pg_password = env.get('POSTGRES_PASSWORD', '@@Condoc#')
     print("Configurando /opt/condc/.env para conexao com LXC 2...")
     backend_env = f"""# CONDOC Backend Environment - LXC 1
 DJANGO_SETTINGS_MODULE=config.settings.dev
@@ -68,7 +91,7 @@ ALLOWED_HOSTS=*
 # Banco de dados PostgreSQL na LXC 2 (192.168.10.201)
 POSTGRES_DB=condc_dev
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD={password}
+POSTGRES_PASSWORD={pg_password}
 POSTGRES_HOST=192.168.10.201
 POSTGRES_PORT=5432
 
@@ -84,13 +107,14 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy_service
         f_remote.write(backend_env)
     sftp.close()
 
-    # 3. Extrai em /opt/condc/core e move .env
-    print("Extraindo em /opt/condc/core...")
-    exec_sudo(ssh, password, "mkdir -p /opt/condc/core")
-    exec_sudo(ssh, password, "tar -xzf /tmp/core.tar.gz -C /opt/condc/core")
+    # 3. Extrai em /opt/condc e move .env
+    print("Extraindo em /opt/condc...")
+    exec_sudo(ssh, password, "mkdir -p /opt/condc")
+    exec_sudo(ssh, password, "tar -xzf /tmp/bundle.tar.gz -C /opt/condc")
+    exec_sudo(ssh, password, "chmod +x /opt/condc/scripts/*.sh 2>/dev/null || true")
     exec_sudo(ssh, password, "mv /tmp/condc.env /opt/condc/.env && chmod 600 /opt/condc/.env")
     exec_sudo(ssh, password, "chown -R condoc:condoc /opt/condc")
-    exec_sudo(ssh, password, "rm -f /tmp/core.tar.gz")
+    exec_sudo(ssh, password, "rm -f /tmp/bundle.tar.gz")
 
     # 4. Instala dependências do Python no venv da LXC 1
     print("Instalando dependências Python no /opt/condc/venv...")

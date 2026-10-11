@@ -53,8 +53,11 @@ fi
 
 # 4. Verificação das Migrations do Supabase
 echo -n "[4/6] Verificando arquivos de migração SQL... "
-MIGRATION_COUNT=$(ls -1 supabase/migrations/*.sql 2>/dev/null | wc -l || echo 0)
-if [ "$MIGRATION_COUNT" -gt 0 ]; then
+MIGRATION_COUNT=0
+if [ -d "supabase/migrations" ]; then
+    MIGRATION_COUNT=$(ls -1 supabase/migrations/*.sql 2>/dev/null | wc -l | tr -d '[:space:]')
+fi
+if [ -n "$MIGRATION_COUNT" ] && [ "$MIGRATION_COUNT" -gt 0 ] 2>/dev/null; then
     echo "OK ($MIGRATION_COUNT migrations encontradas)"
 else
     echo "FALHA: Nenhuma migration encontrada em supabase/migrations/."
