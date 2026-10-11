@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { api } from '@/lib/api';
-import { ArrowLeft, FileDiff, Download, ShieldCheck, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, FileDiff, Download, ShieldCheck, CheckCircle2, XCircle, Edit3, History } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -43,7 +43,7 @@ export const CompareDeParaPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 mb-1 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar</span>
+            <span>Voltar aos Projetos</span>
           </Link>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
             Relatório Comparativo DePara & Origens
@@ -51,6 +51,20 @@ export const CompareDeParaPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Rastreabilidade de alterações entre a convenção/regimento anterior e a nova minuta (CA-19, CA-20, CA-21).
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to={`/painel/documentos/${docId}/editor`}>
+            <Button size="sm" variant="outline">
+              <Edit3 className="w-3.5 h-3.5 mr-1 text-brand-600" />
+              <span>Editor Estruturado</span>
+            </Button>
+          </Link>
+          <Link to={`/painel/documentos/${docId}/versoes`}>
+            <Button size="sm" variant="outline">
+              <History className="w-3.5 h-3.5 mr-1 text-slate-500" />
+              <span>Snapshots</span>
+            </Button>
+          </Link>
         </div>
       </div>
 

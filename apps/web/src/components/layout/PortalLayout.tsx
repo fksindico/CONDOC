@@ -12,10 +12,12 @@ import {
   LogOut,
   Home,
   FileText,
+  ShieldCheck,
+  LogIn,
 } from 'lucide-react';
 
 export const PortalLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isSindico, isAdmin, isAuthenticated } = useAuth();
   const { activeCondominium } = useTenant();
   const location = useLocation();
 
@@ -46,19 +48,44 @@ export const PortalLayout: React.FC = () => {
               </span>
             </div>
 
-            {/* Usuário / Sair */}
-            <div className="flex items-center gap-4 text-xs">
-              <span className="text-slate-600 hidden md:inline">
-                Olá, <strong className="text-slate-900">{user?.full_name || 'Morador'}</strong>
-              </span>
-              <button
-                onClick={logout}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors"
-                title="Sair do portal"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sair</span>
-              </button>
+            {/* Usuário / Alternador de Perfil / Sair */}
+            <div className="flex items-center gap-3 text-xs">
+              {/* Botão de Alternância para o Painel do Síndico / Gestão */}
+              {isSindico || isAdmin ? (
+                <Link
+                  to="/painel"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-all shadow-xs"
+                  title="Acessar o Painel Administrativo de Gestão"
+                >
+                  <ShieldCheck className="w-4 h-4 text-slate-950" />
+                  <span>Painel do Síndico</span>
+                </Link>
+              ) : !isAuthenticated ? (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-all shadow-2xs"
+                  title="Acesso de síndicos, comissões e gestão"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-brand-600" />
+                  <span>Área do Síndico</span>
+                </Link>
+              ) : null}
+
+              {isAuthenticated ? (
+                <>
+                  <span className="text-slate-600 hidden md:inline">
+                    Olá, <strong className="text-slate-900">{user?.full_name || 'Morador'}</strong>
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                    title="Sair do portal"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sair</span>
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
 

@@ -4,7 +4,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { Document } from '@condc/api-contracts';
-import { FileText, Plus, ArrowLeft, ArrowRight, Edit3, Camera, FileDiff, History } from 'lucide-react';
+import { FileText, Plus, ArrowLeft, ArrowRight, Edit3, Camera, FileDiff, History, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -146,6 +146,12 @@ export const DocumentsPage: React.FC = () => {
                     <Button variant="outline" size="sm" className="w-full justify-center">
                       <History className="w-3.5 h-3.5 mr-1" />
                       <span>Snapshots</span>
+                    </Button>
+                  </Link>
+                  <Link to={`/assembleia/${d.id}`} className="col-span-2">
+                    <Button variant="outline" size="sm" className="w-full justify-center text-slate-800 border-slate-300 hover:bg-slate-100">
+                      <Maximize2 className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+                      <span>Projetar em Assembleia</span>
                     </Button>
                   </Link>
                 </div>

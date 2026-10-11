@@ -191,6 +191,39 @@ def qa_context(db):
 # 1. TESTES DE ESTRUTURA, MEMBRESIAS E VALIDAÇÃO (FASES 1 E 2)
 # ==============================================================================
 
+def test_qa_endpoint_auth_login_and_logout(qa_context):
+    """Testa ciclo de autenticação BFF: login, persistência de sessão e logout."""
+    client = APIClient()
+    condo = qa_context['condo1']
+    sindico = qa_context['sindico_acc']
+
+    # 1. Login com conta de síndico
+    resp_login = client.post(
+        "/api/v1/auth/login",
+        data={"email": sindico.email, "condominium_id": str(condo.id)},
+        format="json"
+    )
+    assert resp_login.status_code == 200
+    assert resp_login.data['authenticated'] is True
+    assert "sindico" in resp_login.data['account']['roles']
+
+    # 2. Inspeciona sessão ativa
+    resp_session = client.get("/api/v1/auth/session")
+    assert resp_session.status_code == 200
+    assert resp_session.data['authenticated'] is True
+    assert resp_session.data['account']['email'] == sindico.email
+
+    # 3. Logout
+    resp_logout = client.post("/api/v1/auth/logout")
+    assert resp_logout.status_code == 200
+    assert resp_logout.data['authenticated'] is False
+
+    # 4. Sessão deve estar vazia após logout
+    resp_after = client.get("/api/v1/auth/session")
+    assert resp_after.status_code == 200
+    assert resp_after.data['authenticated'] is False
+
+
 def test_qa_endpoint_memberships_list(qa_context):
     """Testa listagem de memberships via GET /api/v1/condominiums/<id>/memberships."""
     client = APIClient()

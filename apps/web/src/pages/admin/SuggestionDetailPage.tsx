@@ -44,6 +44,10 @@ export const SuggestionDetailPage: React.FC = () => {
   const [sanitizedJustification, setSanitizedJustification] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // Dimensão 4: Incorporação na Minuta (CA-40)
+  const [incorporateText, setIncorporateText] = useState('');
+  const [isIncorporating, setIsIncorporating] = useState(false);
+
   const fetchDetail = async () => {
     if (!activeCondominiumId || !id) return;
     try {
@@ -53,6 +57,7 @@ export const SuggestionDetailPage: React.FC = () => {
         setSuggestion(found);
         setSanitizedText(found.text || '');
         setSanitizedJustification(found.justification || '');
+        setIncorporateText(found.text || '');
       }
     } catch (err) {
       console.error(err);
@@ -62,6 +67,33 @@ export const SuggestionDetailPage: React.FC = () => {
   useEffect(() => {
     fetchDetail();
   }, [activeCondominiumId, id]);
+
+  const handleIncorporate = async () => {
+    if (!activeCondominiumId || !id || !suggestion) return;
+    if (!suggestion.target_provision_id) {
+      toast.error('Esta sugestão não possui dispositivo normativo alvo vinculado para incorporação.');
+      return;
+    }
+    if (incorporateText.trim().length < 5) {
+      toast.error('O texto da nova revisão deve conter no mínimo 5 caracteres.');
+      return;
+    }
+    setIsIncorporating(true);
+    try {
+      // CA-40: Incorporação atômica gerando nova revisão da minuta
+      await api.post(`/condominiums/${activeCondominiumId}/suggestions/${id}/incorporate`, {
+        target_provision_id: suggestion.target_provision_id,
+        new_text: incorporateText.trim(),
+        description: `Incorporação da sugestão ${suggestion.public_protocol}.`,
+      });
+      toast.success('Sugestão incorporada atomicamente à minuta normativa!');
+      fetchDetail();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao incorporar sugestão na minuta.');
+    } finally {
+      setIsIncorporating(false);
+    }
+  };
 
   const handleRevealIdentity = async (justification: string) => {
     if (!activeCondominiumId || !id) return;
@@ -333,6 +365,59 @@ export const SuggestionDetailPage: React.FC = () => {
                   </p>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Dimensão 4: Incorporação na Minuta de Trabalho (CA-40) */}
+          <Card className="border-emerald-200 bg-emerald-50/15">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Dimensão 4: Incorporação na Minuta</span>
+                <Badge
+                  variant={suggestion.incorporation_status === 'incorporada' ? 'success' : 'outline'}
+                >
+                  {suggestion.incorporation_status === 'incorporada' ? 'Incorporada na Minuta' : 'Não Incorporada'}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Consolida atomicamente a contribuição na minuta, gerando nova revisão no editor (CA-40).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-xs">
+              <Alert variant="info" title="Transação Atômica Vinculada">
+                A incorporação exige que a sugestão tenha sido acolhida pela comissão. A redação abaixo substituirá o
+                dispositivo normativo e criará uma nova revisão formal.
+              </Alert>
+
+              <div>
+                <label className="block font-semibold text-slate-700 uppercase mb-1">
+                  Redação Final para Incorporação *
+                </label>
+                <textarea
+                  rows={4}
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none font-serif bg-white text-slate-900"
+                  value={incorporateText}
+                  onChange={(e) => setIncorporateText(e.target.value)}
+                  disabled={suggestion.incorporation_status === 'incorporada'}
+                />
+              </div>
+
+              {suggestion.incorporation_status !== 'incorporada' && (
+                <Button
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={handleIncorporate}
+                  isLoading={isIncorporating}
+                  disabled={suggestion.editorial_decision !== 'acolhida' && suggestion.editorial_decision !== 'acolhida_parcial'}
+                >
+                  <FileCheck2 className="w-4 h-4 mr-1.5" />
+                  <span>Incorporar à Minuta Normativa</span>
+                </Button>
+              )}
+              {suggestion.editorial_decision !== 'acolhida' && suggestion.editorial_decision !== 'acolhida_parcial' && (
+                <p className="text-[11px] text-amber-700 text-center font-medium">
+                  Apenas sugestões acolhidas ou acolhidas parcialmente podem ser incorporadas à minuta.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

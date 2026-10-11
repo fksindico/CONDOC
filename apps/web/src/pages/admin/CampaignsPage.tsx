@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
 import type { ConsultationCampaign } from '@condc/api-contracts';
-import { Sliders, Plus, Play, Square, Eye, EyeOff, ShieldAlert, Calendar } from 'lucide-react';
+import { Sliders, Plus, Play, Square, Eye, EyeOff, ShieldAlert, Calendar, MessageSquare, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -173,7 +174,19 @@ export const CampaignsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <Link to={`/painel/sugestoes?campaign_id=${camp.id}`}>
+                      <Button size="sm" variant="outline">
+                        <MessageSquare className="w-3.5 h-3.5 mr-1 text-brand-600" />
+                        <span>Fila 4D</span>
+                      </Button>
+                    </Link>
+                    <Link to={`/painel/estatisticas`}>
+                      <Button size="sm" variant="outline">
+                        <BarChart3 className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                        <span>Métricas</span>
+                      </Button>
+                    </Link>
                     {!isOpen && camp.state !== 'encerrada' && (
                       <Button size="sm" onClick={() => handleToggleState(camp.id, 'open')}>
                         <Play className="w-3.5 h-3.5 mr-1" />

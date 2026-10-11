@@ -5,6 +5,8 @@ from django.urls import path
 from .views import (
     # Fase 1
     SessionInfoView,
+    LoginView,
+    LogoutView,
     CondominiumListCreateView,
     BuildingListCreateView,
     UnitListCreateView,
@@ -76,6 +78,8 @@ from .views import (
 urlpatterns = [
     # Sessão e Auth BFF
     path('auth/session', SessionInfoView.as_view(), name='api_v1_session_info'),
+    path('auth/login', LoginView.as_view(), name='api_v1_login'),
+    path('auth/logout', LogoutView.as_view(), name='api_v1_logout'),
 
     # Condomínios (Tenancy Raiz)
     path('condominiums', CondominiumListCreateView.as_view(), name='api_v1_condominiums'),

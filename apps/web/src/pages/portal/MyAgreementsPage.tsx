@@ -79,10 +79,16 @@ export const MyAgreementsPage: React.FC = () => {
                   </h4>
                   <p className="text-[11px] text-slate-400">Registrada em {formatDatePtBr(agr.created_at)}</p>
                 </div>
-                <div className="shrink-0">
+                <div className="shrink-0 flex items-center gap-2.5">
                   <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                     Apoio Ativo
                   </span>
+                  <Link to={`/portal/mural/${agr.published_suggestion_revision_id}`}>
+                    <Button size="sm" variant="outline" className="font-semibold text-slate-800 hover:text-brand-700">
+                      <span>Ver Proposta</span>
+                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

@@ -183,12 +183,24 @@ export const StructuredEditorPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Indicador de Salvamento (UI-13) */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-medium">
+        {/* Ações e Navegação Contextual */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link to={`/painel/documentos/${docId}/compare`}>
+            <Button size="sm" variant="outline">
+              <GitBranch className="w-3.5 h-3.5 mr-1 text-slate-500" />
+              <span>DePara</span>
+            </Button>
+          </Link>
+          <Link to={`/painel/documentos/${docId}/versoes`}>
+            <Button size="sm" variant="outline">
+              <History className="w-3.5 h-3.5 mr-1 text-slate-500" />
+              <span>Snapshots</span>
+            </Button>
+          </Link>
+          <span className="text-xs font-medium px-2">
             {saveStatus === 'saving' && <span className="text-amber-600 animate-pulse font-semibold">Salvando...</span>}
             {saveStatus === 'saved' && <span className="text-emerald-700 font-semibold">Salvo no servidor</span>}
-            {saveStatus === 'conflict' && <span className="text-rose-600 font-bold">Conflito de Concorrência!</span>}
+            {saveStatus === 'conflict' && <span className="text-rose-600 font-bold">Conflito 409!</span>}
             {saveStatus === 'error' && <span className="text-rose-600 font-semibold">Falha ao salvar</span>}
           </span>
           <Button size="sm" onClick={handleSaveProvision} isLoading={saveStatus === 'saving'}>

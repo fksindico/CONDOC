@@ -21,6 +21,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isMorador: boolean;
   refetchSession: () => Promise<void>;
+  login: (email: string, password?: string, condominiumId?: string) => Promise<UserAccount>;
   logout: () => Promise<void>;
 }
 
@@ -67,6 +68,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchSession();
   }, [fetchSession]);
 
+  const login = async (email: string, password?: string, condominiumId?: string): Promise<UserAccount> => {
+    const res = await api.post<{ authenticated: boolean; account: UserAccount }>('/auth/login', {
+      email,
+      password,
+      condominium_id: condominiumId,
+    });
+    if (res.data.authenticated && res.data.account) {
+      setUser(res.data.account);
+      setIsAuthenticated(true);
+      const userRoles = res.data.account.roles || [];
+      setRoles(userRoles);
+      if (userRoles.includes('sindico')) {
+        setActiveRole('sindico');
+      } else if (userRoles.includes('admin')) {
+        setActiveRole('admin');
+      } else if (userRoles.length > 0) {
+        setActiveRole(userRoles[0]);
+      } else {
+        setActiveRole('morador');
+      }
+      return res.data.account;
+    }
+    throw new Error('Falha ao autenticar.');
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -96,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         isMorador,
         refetchSession: fetchSession,
+        login,
         logout,
       }}
     >

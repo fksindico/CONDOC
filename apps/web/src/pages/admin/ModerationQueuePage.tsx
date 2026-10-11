@@ -95,13 +95,14 @@ export const ModerationQueuePage: React.FC = () => {
                   <th className="px-6 py-3">Dimensão 1: Análise</th>
                   <th className="px-6 py-3">Dimensão 2: Decisão</th>
                   <th className="px-6 py-3">Dimensão 3: Publicação</th>
+                  <th className="px-6 py-3">Dimensão 4: Incorporação</th>
                   <th className="px-6 py-3 text-right">Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {queue.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
                       Nenhuma sugestão encontrada para os filtros selecionados.
                     </td>
                   </tr>
@@ -143,6 +144,14 @@ export const ModerationQueuePage: React.FC = () => {
                           className="capitalize text-[10px]"
                         >
                           {sug.publication_status.replace('_', ' ')}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <Badge
+                          variant={sug.incorporation_status === 'incorporada' ? 'success' : 'outline'}
+                          className="capitalize text-[10px]"
+                        >
+                          {sug.incorporation_status === 'incorporada' ? 'Incorporada' : 'Pendente'}
                         </Badge>
                       </td>
                       <td className="px-6 py-3.5 text-right">

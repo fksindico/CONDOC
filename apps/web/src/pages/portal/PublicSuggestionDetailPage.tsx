@@ -12,6 +12,7 @@ import {
   Building,
   RotateCcw,
   MessageSquare,
+  Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -195,6 +196,17 @@ export const PublicSuggestionDetailPage: React.FC = () => {
             {/* Aviso Legal Permanente Obrigatório (UI-28) */}
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 text-[11px] text-slate-600 leading-tight">
               <strong>Aviso Legal Permanente:</strong> {LEGAL_DISCLAIMER_TEXT}
+            </div>
+
+            {/* Ação de Complemento (CA-30) */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500">Deseja aprimorar ou propor um ajuste nesta sugestão pública?</span>
+              <Link to={`/portal/sugerir?parent_suggestion_id=${suggestion.id}&target_provision_id=${suggestion.target_provision_id || ''}`}>
+                <Button variant="outline" size="sm" className="font-semibold text-slate-800 hover:text-brand-700">
+                  <Send className="w-3.5 h-3.5 mr-1 text-brand-600" />
+                  <span>Propor Complemento</span>
+                </Button>
+              </Link>
             </div>
           </div>
 

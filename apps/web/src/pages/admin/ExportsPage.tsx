@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { api } from '@/lib/api';
-import { Download, ShieldCheck, FileCheck, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Download, ShieldCheck, FileCheck, FileText, CheckCircle2, AlertTriangle, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -90,15 +91,23 @@ export const ExportsPage: React.FC = () => {
           </select>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button onClick={handleGeneratePublicPackage} isLoading={isLoading}>
             <Download className="w-4 h-4 mr-1.5" />
             <span>Gerar Pacote Externo Público</span>
           </Button>
           <Button variant="outline" onClick={handleGenerateInternalReport} isLoading={isLoading}>
             <FileText className="w-4 h-4 mr-1.5" />
-            <span>Relatório Interno da Comissão</span>
+            <span>Relatório Interno</span>
           </Button>
+          {selectedDocId && (
+            <Link to={`/assembleia/${selectedDocId}`}>
+              <Button variant="outline" className="border-indigo-300 text-indigo-800 hover:bg-indigo-50">
+                <Maximize2 className="w-4 h-4 mr-1.5 text-indigo-600" />
+                <span>Projetar em Assembleia</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

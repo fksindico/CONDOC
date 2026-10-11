@@ -23,6 +23,8 @@ import {
   FileSpreadsheet,
   Menu,
   X,
+  Home,
+  Eye,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -155,6 +157,18 @@ export const AdminLayout: React.FC = () => {
             </div>
           ))}
         </nav>
+
+        {/* Acesso ao Portal do Morador */}
+        <div className="p-3 border-t border-slate-800">
+          <Link
+            to="/portal"
+            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors shadow-2xs"
+            title="Visualizar a experiência do morador"
+          >
+            <Home className="w-4 h-4 text-brand-400" />
+            <span>Ver Portal do Morador</span>
+          </Link>
+        </div>
 
         {/* Perfil & Logout */}
         <div className="p-3 border-t border-slate-800 flex items-center justify-between text-xs">

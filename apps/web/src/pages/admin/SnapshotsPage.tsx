@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
-import { History, Plus, ArrowLeft, Lock, CheckCircle2, Copy } from 'lucide-react';
+import { History, Plus, ArrowLeft, Lock, CheckCircle2, Copy, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -127,7 +127,13 @@ export const SnapshotsPage: React.FC = () => {
                   </p>
                   <p className="text-[11px] text-slate-400">Congelado em {formatDatePtBr(snap.frozen_at)}</p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <Link to="/painel/campanhas">
+                    <Button size="sm" variant="outline">
+                      <Sliders className="w-3.5 h-3.5 mr-1 text-brand-600" />
+                      <span>Abrir Consulta</span>
+                    </Button>
+                  </Link>
                   <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Imutável</span>

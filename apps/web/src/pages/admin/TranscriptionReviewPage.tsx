@@ -54,8 +54,18 @@ export const TranscriptionReviewPage: React.FC = () => {
 
       {isConfirmed && (
         <Alert variant="success" title="Conferência Humana Concluída!">
-          A transcrição foi homologada e fixada como documento-base somente leitura para comparação e mapeamento de
-          origens.
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-1">
+            <span>
+              A transcrição foi homologada e fixada como documento-base somente leitura para confronto de redação e
+              mapeamento de origens.
+            </span>
+            <Link to={`/painel/documentos/${docId}/editor`}>
+              <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0">
+                <Edit3 className="w-3.5 h-3.5 mr-1" />
+                <span>Avançar para Editor Estruturado</span>
+              </Button>
+            </Link>
+          </div>
         </Alert>
       )}
 

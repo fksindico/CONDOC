@@ -234,6 +234,100 @@ class SessionInfoView(APIView):
         })
 
 
+class LoginView(APIView):
+    """
+    Autenticação BFF de Sessão (ADR-002, PRD Mestre v3.0 Seção 21).
+    Valida a conta, resolve papéis ativos no condomínio e popula request.session.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        condominium_id = request.data.get('condominium_id')
+
+        if not email:
+            return Response({"error": "E-mail obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        account = Account.objects.filter(email__iexact=email).first()
+        if not account:
+            return Response({"error": "Conta não encontrada para o e-mail informado."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not account.is_active or getattr(account, 'status', 'active') != 'active':
+            return Response({"error": "Conta inativa ou suspensa."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Determina o condomínio ativo
+        condo = None
+        if condominium_id:
+            try:
+                condo = Condominium.objects.filter(id=condominium_id).first()
+            except Exception:
+                pass
+
+        if not condo:
+            # Busca primeiro papel associado à conta
+            role_obj = RoleAssignment.objects.filter(account=account, status='active').first()
+            if role_obj:
+                condo = role_obj.condominium
+            else:
+                # Busca se tem vínculo como morador/residente
+                res = Resident.objects.filter(account=account).first()
+                if res:
+                    condo = res.condominium
+                else:
+                    condo = Condominium.objects.first()
+
+        tenant_id = str(condo.id) if condo else None
+
+        # Busca papéis da conta no condomínio selecionado
+        roles = []
+        if condo:
+            role_objs = RoleAssignment.objects.filter(
+                condominium=condo,
+                account=account,
+                status='active'
+            )
+            roles = [r.role.lower() for r in role_objs]
+
+        # Se a conta for residente, garante o papel 'morador'
+        if condo and Resident.objects.filter(condominium=condo, account=account).exists():
+            if 'morador' not in roles:
+                roles.append('morador')
+
+        if not roles:
+            roles = ['morador']
+
+        # Popula a sessão do Django para o BFFSessionAuthentication
+        request.session['account_id'] = str(account.id)
+        request.session['email'] = account.email
+        request.session['full_name'] = account.full_name
+        request.session['tenant_id'] = tenant_id
+        request.session['roles'] = roles
+        request.session.modified = True
+
+        return Response({
+            "authenticated": True,
+            "account": {
+                "account_id": str(account.id),
+                "full_name": account.full_name,
+                "email": account.email,
+                "tenant_id": tenant_id,
+                "roles": roles,
+            }
+        }, status=status.HTTP_200_OK)
+
+
+class LogoutView(APIView):
+    """Encerra a sessão BFF e expira o cookie no navegador."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        request.session.flush()
+        return Response({
+            "authenticated": False,
+            "account": None
+        }, status=status.HTTP_200_OK)
+
+
 class CondominiumListCreateView(APIView):
     permission_classes = [AllowAny]
 
