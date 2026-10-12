@@ -303,3 +303,65 @@ class TestPhase1APIEndpoints:
         resp_list = client.get('/api/v1/condominiums')
         assert resp_list.status_code == 200
         assert len(resp_list.json()) >= 1
+
+    def test_resident_registration_crud_and_lifecycle(self):
+        """Validação completa de criação, listagem com unit_code, edição e exclusão de pré-cadastros."""
+        client = Client()
+        condo = Condominium.objects.create(name="Residencial das Orquídeas", cnpj="99.888.777/0001-66")
+        condo_other = Condominium.objects.create(name="Outro Condomínio", cnpj="11.222.333/0001-55")
+        unit1 = Unit.objects.create(condominium=condo, code="402B")
+        unit2 = Unit.objects.create(condominium=condo, code="501A")
+
+        # 1. Criação de pré-cadastro
+        resp_create = client.post(f'/api/v1/condominiums/{condo.id}/registrations', {
+            "unit_id": str(unit1.id),
+            "full_name": "Ana Clara Siqueira",
+            "relationship": "proprietario_residente",
+            "phone_e164": "+5511988887777",
+            "email": "ana.clara@exemplo.com",
+            "notes": "Mudança prevista para o fim do mês"
+        }, content_type='application/json')
+        assert resp_create.status_code == 201
+        reg_data = resp_create.json()
+        reg_id = reg_data['id']
+        assert reg_data['full_name'] == "Ana Clara Siqueira"
+        assert reg_data['unit_code'] == "402B"
+        assert reg_data['status'] == "pendente"
+
+        # 2. Listagem de pré-cadastros (verifica presença do registro e do unit_code)
+        resp_list = client.get(f'/api/v1/condominiums/{condo.id}/registrations')
+        assert resp_list.status_code == 200
+        items = resp_list.json()
+        assert len(items) == 1
+        assert items[0]['id'] == reg_id
+        assert items[0]['unit_code'] == "402B"
+        assert items[0]['full_name'] == "Ana Clara Siqueira"
+
+        # 3. Consulta de detalhe
+        resp_get = client.get(f'/api/v1/condominiums/{condo.id}/registrations/{reg_id}')
+        assert resp_get.status_code == 200
+        assert resp_get.json()['full_name'] == "Ana Clara Siqueira"
+
+        # 4. Atualização parcial (PATCH)
+        resp_patch = client.patch(f'/api/v1/condominiums/{condo.id}/registrations/{reg_id}', {
+            "full_name": "Ana Clara Siqueira de Souza",
+            "unit_id": str(unit2.id),
+            "phone_e164": "+5511977776666"
+        }, content_type='application/json')
+        assert resp_patch.status_code == 200
+        patched = resp_patch.json()
+        assert patched['full_name'] == "Ana Clara Siqueira de Souza"
+        assert patched['unit_code'] == "501A"
+        assert patched['phone_e164'] == "+5511977776666"
+
+        # 5. Isolamento Multi-tenant (condomínio incorreto não acessa)
+        resp_cross = client.get(f'/api/v1/condominiums/{condo_other.id}/registrations/{reg_id}')
+        assert resp_cross.status_code == 404
+
+        # 6. Exclusão do pré-cadastro
+        resp_del = client.delete(f'/api/v1/condominiums/{condo.id}/registrations/{reg_id}')
+        assert resp_del.status_code == 204
+
+        # Confirma que foi excluído
+        resp_get_after = client.get(f'/api/v1/condominiums/{condo.id}/registrations/{reg_id}')
+        assert resp_get_after.status_code == 404

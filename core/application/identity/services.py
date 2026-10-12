@@ -231,6 +231,46 @@ class ResidentRegistrationService:
             preverified_by_id=preverified_by
         )
 
+    @staticmethod
+    def update_registration(
+        condominium_id: uuid.UUID,
+        registration_id: uuid.UUID,
+        **fields
+    ) -> ResidentRegistration:
+        reg = ResidentRegistration.objects.select_related('unit').get(
+            id=registration_id,
+            condominium_id=condominium_id
+        )
+        if 'unit_id' in fields and fields['unit_id']:
+            unit = Unit.objects.get(id=fields['unit_id'])
+            assert_same_tenant(condominium_id, unit.condominium_id, "Unidade")
+            reg.unit = unit
+        if 'full_name' in fields and fields['full_name']:
+            reg.full_name = fields['full_name'].strip()
+        if 'phone_e164' in fields:
+            reg.phone_e164 = fields['phone_e164'].strip() if fields['phone_e164'] else None
+        if 'email' in fields:
+            reg.email = fields['email'].strip() if fields['email'] else None
+        if 'relationship' in fields and fields['relationship']:
+            reg.relationship = fields['relationship']
+        if 'status' in fields and fields['status']:
+            reg.status = fields['status']
+        if 'notes' in fields:
+            reg.notes = fields['notes']
+        reg.save()
+        return reg
+
+    @staticmethod
+    def delete_registration(
+        condominium_id: uuid.UUID,
+        registration_id: uuid.UUID
+    ) -> None:
+        reg = ResidentRegistration.objects.get(
+            id=registration_id,
+            condominium_id=condominium_id
+        )
+        reg.delete()
+
 
 class MembershipVerificationService:
     """

@@ -81,15 +81,21 @@ class UnitSerializer(serializers.ModelSerializer):
 
 
 class ResidentRegistrationCreateSerializer(serializers.ModelSerializer):
-    unit_id = serializers.UUIDField(required=True)
+    unit_id = serializers.UUIDField(required=False)
+    unit_code = serializers.CharField(source='unit.code', read_only=True)
 
     class Meta:
         model = ResidentRegistration
         fields = [
-            'id', 'unit_id', 'full_name', 'phone_e164', 'email',
-            'relationship', 'notes', 'status', 'created_at'
+            'id', 'unit_id', 'unit_code', 'full_name', 'phone_e164', 'email',
+            'relationship', 'source', 'notes', 'status', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'status', 'created_at']
+        read_only_fields = ['id', 'unit_code', 'source', 'status', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        if self.instance is None and not attrs.get('unit_id'):
+            raise serializers.ValidationError({"unit_id": "Unidade autônoma é obrigatória."})
+        return attrs
 
 
 class UnitMembershipListSerializer(serializers.ModelSerializer):

@@ -106,6 +106,22 @@ export interface UnitMembership {
   created_at: ISODateString;
 }
 
+export interface ResidentRegistration {
+  id: UUID;
+  condominium_id?: UUID;
+  unit_id: UUID;
+  unit_code?: string;
+  full_name: string;
+  phone_e164?: string;
+  email?: string;
+  relationship: ResidentCategory | string;
+  source?: 'manual' | 'import' | string;
+  status: 'pendente' | 'convidado' | 'vinculado' | 'recusado' | 'cancelado' | string;
+  notes?: string;
+  created_at: ISODateString;
+  updated_at?: ISODateString;
+}
+
 // ==========================================
 // Convites e Importação
 // ==========================================

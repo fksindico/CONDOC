@@ -234,6 +234,63 @@ def test_qa_endpoint_memberships_list(qa_context):
     assert resp.data[0]['resident_name'] == "Marcos Morador"
 
 
+def test_qa_endpoint_resident_registrations_lifecycle(qa_context):
+    """Testa ciclo de vida completo de pré-cadastros de moradores: criação, listagem com unidade, edição e exclusão."""
+    client = APIClient()
+    condo = qa_context['condo1']
+    unit = qa_context['membership'].unit
+
+    # 1. Cria pré-cadastro manual (CA-02: sem credencial automática)
+    resp_create = client.post(
+        f"/api/v1/condominiums/{condo.id}/registrations",
+        data={
+            "unit_id": str(unit.id),
+            "full_name": "Juliana Silveira",
+            "relationship": "inquilino",
+            "phone_e164": "+5511988881234",
+            "email": "juliana@exemplo.com"
+        },
+        format="json"
+    )
+    assert resp_create.status_code == 201
+    reg_id = resp_create.data['id']
+    assert resp_create.data['full_name'] == "Juliana Silveira"
+    assert resp_create.data['unit_code'] == "101"
+    assert resp_create.data['source'] == "manual"
+    assert resp_create.data['status'] == "pendente"
+
+    # 2. Listagem de pré-cadastros deve conter o registro com código da unidade
+    resp_list = client.get(f"/api/v1/condominiums/{condo.id}/registrations")
+    assert resp_list.status_code == 200
+    reg_found = next((r for r in resp_list.data if r['id'] == reg_id), None)
+    assert reg_found is not None
+    assert reg_found['full_name'] == "Juliana Silveira"
+    assert reg_found['unit_code'] == "101"
+
+    # 3. Consulta de detalhe
+    resp_get = client.get(f"/api/v1/condominiums/{condo.id}/registrations/{reg_id}")
+    assert resp_get.status_code == 200
+    assert resp_get.data['full_name'] == "Juliana Silveira"
+
+    # 4. Edição (PATCH) do pré-cadastro
+    resp_patch = client.patch(
+        f"/api/v1/condominiums/{condo.id}/registrations/{reg_id}",
+        data={"full_name": "Juliana Silveira Ramos", "phone_e164": "+5511999990000"},
+        format="json"
+    )
+    assert resp_patch.status_code == 200
+    assert resp_patch.data['full_name'] == "Juliana Silveira Ramos"
+    assert resp_patch.data['phone_e164'] == "+5511999990000"
+
+    # 5. Exclusão do pré-cadastro
+    resp_del = client.delete(f"/api/v1/condominiums/{condo.id}/registrations/{reg_id}")
+    assert resp_del.status_code == 204
+
+    # Confirma que não existe mais
+    resp_after = client.get(f"/api/v1/condominiums/{condo.id}/registrations/{reg_id}")
+    assert resp_after.status_code == 404
+
+
 def test_qa_endpoint_membership_verify_action(qa_context):
     """Testa validação documental de vínculo com método e motivo via POST /verify (CA-12, CA-15)."""
     client = APIClient()

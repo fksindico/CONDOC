@@ -638,7 +638,9 @@ class ResidentRegistrationListCreateView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id):
-        registrations = ResidentRegistration.objects.filter(condominium_id=condominium_id)
+        registrations = ResidentRegistration.objects.filter(
+            condominium_id=condominium_id
+        ).select_related('unit').order_by('-created_at')
         return Response(ResidentRegistrationCreateSerializer(registrations, many=True).data)
 
     def post(self, request, condominium_id):
@@ -653,6 +655,45 @@ class ResidentRegistrationListCreateView(APIView):
             )
             return Response(ResidentRegistrationCreateSerializer(registration).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResidentRegistrationDetailUpdateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, registration_id):
+        try:
+            reg = ResidentRegistration.objects.select_related('unit').get(
+                id=registration_id,
+                condominium_id=condominium_id
+            )
+        except ResidentRegistration.DoesNotExist:
+            return Response({"error": "Pré-cadastro não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ResidentRegistrationCreateSerializer(reg).data, status=status.HTTP_200_OK)
+
+    def patch(self, request, condominium_id, registration_id):
+        try:
+            reg = ResidentRegistrationService.update_registration(
+                condominium_id=condominium_id,
+                registration_id=registration_id,
+                **request.data
+            )
+            return Response(ResidentRegistrationCreateSerializer(reg).data, status=status.HTTP_200_OK)
+        except ResidentRegistration.DoesNotExist:
+            return Response({"error": "Pré-cadastro não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, condominium_id, registration_id):
+        try:
+            ResidentRegistrationService.delete_registration(
+                condominium_id=condominium_id,
+                registration_id=registration_id
+            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ResidentRegistration.DoesNotExist:
+            return Response({"error": "Pré-cadastro não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UnitMembershipListView(APIView):
