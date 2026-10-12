@@ -17,8 +17,11 @@ def main():
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(env.get('LXC_APP_HOST', '192.168.10.200'), username=env.get('LXC_APP_USER', 'condoc'), password=env.get('LXC_APP_PASSWORD'))
 
-    stdin, stdout, stderr = ssh.exec_command("grep -n 'audit-logs' /opt/condc/core/api/v1/urls.py")
+    stdin, stdout, stderr = ssh.exec_command("grep -n 'registrations' /opt/condc/core/api/v1/urls.py")
     print("Grep na LXC 1:\n", stdout.read().decode('utf-8'))
+
+    stdin, stdout, stderr = ssh.exec_command("find /opt/condc/core -name '*.pyc' -delete")
+    print("Deleted .pyc files on LXC 1")
 
     def exec_sudo(cmd):
         stdin, stdout, stderr = ssh.exec_command("sudo -S " + cmd)
