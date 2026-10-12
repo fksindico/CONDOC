@@ -55,6 +55,7 @@ from application.identity.services import (
     CondominiumService,
     ResidentRegistrationService,
     MembershipVerificationService,
+    UnitMembershipService,
     RoleService,
     IdentityAuditService,
 )
@@ -424,9 +425,10 @@ class CondominiumDetailUpdateView(APIView):
             condo = Condominium.objects.get(id=condominium_id)
         except Condominium.DoesNotExist:
             return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        condo.status = 'inactive'
+        condo.status = 'archived'
         condo.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 class BuildingDetailUpdateView(APIView):
@@ -611,7 +613,49 @@ class VerifyMembershipActionView(APIView):
         return Response(UnitMembershipListSerializer(membership).data, status=status.HTTP_200_OK)
 
 
+class UnitMembershipDetailUpdateView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, membership_id):
+        try:
+            m = UnitMembership.objects.select_related('unit', 'resident').get(
+                id=membership_id,
+                condominium_id=condominium_id
+            )
+        except UnitMembership.DoesNotExist:
+            return Response({"error": "Vínculo de morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(UnitMembershipListSerializer(m).data, status=status.HTTP_200_OK)
+
+    def patch(self, request, condominium_id, membership_id):
+        try:
+            updated = UnitMembershipService.update_membership(
+                condominium_id=condominium_id,
+                membership_id=membership_id,
+                **request.data
+            )
+            return Response(UnitMembershipListSerializer(updated).data, status=status.HTTP_200_OK)
+        except UnitMembership.DoesNotExist:
+            return Response({"error": "Vínculo de morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, condominium_id, membership_id):
+        actor_id = _get_or_create_actor_id(request)
+        try:
+            UnitMembershipService.delete_membership(
+                condominium_id=condominium_id,
+                membership_id=membership_id,
+                actor_account_id=actor_id
+            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except UnitMembership.DoesNotExist:
+            return Response({"error": "Vínculo de morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class RoleAssignmentListCreateView(APIView):
+
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id):

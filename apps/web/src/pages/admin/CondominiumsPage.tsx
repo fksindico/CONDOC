@@ -194,12 +194,13 @@ export const CondominiumsPage: React.FC = () => {
   };
 
   const handleToggleArchive = async (condo: Condominium) => {
-    const newStatus = condo.status === 'inactive' ? 'active' : 'inactive';
-    const actionLabel = newStatus === 'active' ? 'reativado' : 'arquivado/desativado';
+    const isArchived = condo.status === 'archived' || condo.status === 'inactive';
+    const newStatus = isArchived ? 'active' : 'archived';
+    const actionLabel = newStatus === 'active' ? 'reativado com sucesso' : 'arquivado com sucesso';
 
     try {
       await api.patch(`/condominiums/${condo.id}`, { status: newStatus });
-      toast.success(`Condomínio "${condo.name}" ${actionLabel} com sucesso.`);
+      toast.success(`Condomínio "${condo.name}" ${actionLabel}.`);
       await refetchCondominiums();
       await fetchCondos();
     } catch (err: any) {
@@ -213,12 +214,12 @@ export const CondominiumsPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await api.delete(`/condominiums/${selectedCondo.id}`);
-      toast.success(`Condomínio "${selectedCondo.name}" desativado do sistema.`);
+      toast.success(`Condomínio "${selectedCondo.name}" arquivado/desativado com sucesso.`);
       setIsDeleteOpen(false);
       await refetchCondominiums();
       await fetchCondos();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao desativar condomínio.');
+      toast.error(err.message || 'Erro ao arquivar/desativar condomínio.');
     } finally {
       setIsSubmitting(false);
     }
@@ -236,15 +237,21 @@ export const CondominiumsPage: React.FC = () => {
       (c.cnpj && c.cnpj.includes(searchQuery)) ||
       (c.address_city && c.address_city.toLowerCase().includes(searchQuery.toLowerCase()));
 
+    const isArchived = c.status === 'archived' || c.status === 'inactive';
     const matchesStatus =
-      statusFilter === 'all' ? true : statusFilter === 'active' ? c.status !== 'inactive' : c.status === 'inactive';
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'active'
+        ? !isArchived
+        : isArchived;
 
     return matchesSearch && matchesStatus;
   });
 
   const totalCount = condoList.length;
-  const activeCount = condoList.filter((c) => c.status !== 'inactive').length;
-  const inactiveCount = condoList.filter((c) => c.status === 'inactive').length;
+  const activeCount = condoList.filter((c) => c.status !== 'archived' && c.status !== 'inactive').length;
+  const inactiveCount = condoList.filter((c) => c.status === 'archived' || c.status === 'inactive').length;
+
 
   return (
     <div className="space-y-6">
@@ -394,7 +401,8 @@ export const CondominiumsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredCondos.map((condo) => {
             const isActiveContext = condo.id === activeCondominiumId;
-            const isInactive = condo.status === 'inactive';
+            const isInactive = condo.status === 'archived' || condo.status === 'inactive';
+
 
             return (
               <Card
@@ -693,7 +701,9 @@ export const CondominiumsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               >
                 <option value="active">Ativo</option>
-                <option value="inactive">Inativo / Arquivado</option>
+                <option value="archived">Arquivado</option>
+                <option value="suspended">Suspenso</option>
+
               </select>
             </div>
             <div>

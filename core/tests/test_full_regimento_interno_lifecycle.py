@@ -977,6 +977,29 @@ class TestFullRegimentoInternoLifecycle:
         assert len(package["manifest_hash"]) == 64
         assert package["disclaimer"] == DISCLAIMER_FINAL_PUBLICATION
 
+        # Persistência dos arquivos exportados em exports/ para consulta e entrega
+        import os
+        export_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "exports"))
+        os.makedirs(export_dir, exist_ok=True)
+        with open(os.path.join(export_dir, "minuta_limpa_final.txt"), "w", encoding="utf-8") as f:
+            f.write(package["files_content"]["minuta_limpa_final.txt"])
+        with open(os.path.join(export_dir, "minuta_limpa_final.json"), "w", encoding="utf-8") as f:
+            json.dump(package["files_content"]["minuta_limpa_final.json"], f, indent=2, ensure_ascii=False)
+        with open(os.path.join(export_dir, "relatorio_depara_consolidado.json"), "w", encoding="utf-8") as f:
+            json.dump(package["files_content"]["relatorio_depara_consolidado.json"], f, indent=2, ensure_ascii=False)
+        manifest_payload = {
+            "artifact_id": package["artifact_id"],
+            "document_id": package["document_id"],
+            "document_title": package["document_title"],
+            "manifest_hash": package["manifest_hash"],
+            "disclaimer": package["disclaimer"],
+            "created_at": package["created_at"],
+            "files_manifest": package["files_manifest"]
+        }
+        with open(os.path.join(export_dir, "manifest.json"), "w", encoding="utf-8") as f:
+            json.dump(manifest_payload, f, indent=2, ensure_ascii=False)
+
+
         # CA-42: Verificação de ausência absoluta de notas internas ou PII
         files_content = package["files_content"]
         clean_json_str = json.dumps(files_content["minuta_limpa_final.json"])

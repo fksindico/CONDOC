@@ -58,6 +58,21 @@ class CondominiumService:
         return condo
 
     @staticmethod
+    def archive_condominium(condominium_id: uuid.UUID) -> Condominium:
+        condo = Condominium.objects.get(id=condominium_id)
+        condo.status = 'archived'
+        condo.save()
+        return condo
+
+    @staticmethod
+    def reactivate_condominium(condominium_id: uuid.UUID) -> Condominium:
+        condo = Condominium.objects.get(id=condominium_id)
+        condo.status = 'active'
+        condo.save()
+        return condo
+
+
+    @staticmethod
     def create_building(condominium_id: uuid.UUID, code: str, name: str, kind: str = 'tower', display_order: int = 0) -> Building:
         if Building.objects.filter(condominium_id=condominium_id, code=code).exists():
             raise DuplicateBuildingError(f"Torre/Bloco com código '{code}' já existe neste condomínio.")
@@ -220,6 +235,65 @@ class MembershipVerificationService:
         )
 
         return membership
+
+
+class UnitMembershipService:
+    @staticmethod
+    def update_membership(
+        condominium_id: uuid.UUID,
+        membership_id: uuid.UUID,
+        **fields
+    ) -> UnitMembership:
+        membership = UnitMembership.objects.select_related('resident', 'unit').get(
+            id=membership_id,
+            condominium_id=condominium_id
+        )
+        if 'category' in fields and fields['category']:
+            membership.category = fields['category']
+        if 'membership_status' in fields and fields['membership_status']:
+            membership.membership_status = fields['membership_status']
+        if 'verification_status' in fields and fields['verification_status']:
+            membership.verification_status = fields['verification_status']
+
+        resident = membership.resident
+        if resident:
+            if 'resident_name' in fields and fields['resident_name']:
+                resident.full_name = fields['resident_name']
+            if 'phone_e164' in fields:
+                resident.phone_e164 = fields['phone_e164']
+            resident.save()
+
+        membership.save()
+        return membership
+
+    @staticmethod
+    def delete_membership(
+        condominium_id: uuid.UUID,
+        membership_id: uuid.UUID,
+        actor_account_id: Optional[uuid.UUID] = None
+    ) -> UnitMembership:
+        membership = UnitMembership.objects.get(
+            id=membership_id,
+            condominium_id=condominium_id
+        )
+        prev_status = membership.verification_status
+        membership.membership_status = 'ended'
+        membership.verification_status = 'revogado'
+        membership.ended_at = timezone.now()
+        membership.save()
+
+        if actor_account_id:
+            MembershipVerificationEvent.objects.create(
+                condominium_id=condominium_id,
+                membership_id=membership.id,
+                previous_status=prev_status,
+                new_status='revogado',
+                method='administrativo',
+                reason='Revogação/Exclusão de vínculo realizada pelo síndico ou gestor.',
+                actor_account_id=actor_account_id
+            )
+        return membership
+
 
 
 class RoleService:

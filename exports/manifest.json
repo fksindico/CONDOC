@@ -1,0 +1,28 @@
+{
+  "artifact_id": "b9858bff-cf39-4cbc-b49d-12e4b4ac1eae",
+  "document_id": "a1b0fb4f-9ebe-4abd-9161-6607dae6e5a6",
+  "document_title": "Regimento Interno do Condomínio Parque Real",
+  "manifest_hash": "422bcc5a727a041ef820533db1f0fa462e34a4f65d369e59c4dc10868e425330",
+  "disclaimer": "Minuta consolidada para subsidiar deliberação assemblear. A plataforma CONDOC apoia a gestão e a redação prévia e NÃO realiza votação, apuração de votos, cálculo de quórum de assembleia, aprovação vinculante ou registro cartorial.",
+  "created_at": "2026-10-12T00:06:07.819898+00:00",
+  "files_manifest": [
+    {
+      "path": "minuta_limpa_final.json",
+      "sha256": "a2d54cb0d7e2f006a3297d0dc993bc385b82a6f5ca923a9aa091d68454c2793c",
+      "size_bytes": 11300,
+      "mime_type": "application/json"
+    },
+    {
+      "path": "minuta_limpa_final.txt",
+      "sha256": "9ff400f942dbeb6343f40519d27bfe0c6ca690ccc55bc64dbea9c74a85a80616",
+      "size_bytes": 4848,
+      "mime_type": "text/plain"
+    },
+    {
+      "path": "relatorio_depara_consolidado.json",
+      "sha256": "8082d1fce0764972b2561fb495303fd62c93152b3b6d480ce57a103aaf003932",
+      "size_bytes": 12703,
+      "mime_type": "application/json"
+    }
+  ]
+}

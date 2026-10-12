@@ -15,6 +15,7 @@ from .views import (
     UnitDetailUpdateView,
     ResidentRegistrationListCreateView,
     UnitMembershipListView,
+    UnitMembershipDetailUpdateView,
     VerifyMembershipActionView,
     RoleAssignmentListCreateView,
     # Fase 2
@@ -101,6 +102,7 @@ urlpatterns = [
 
     # Vínculos com Unidades (CA-13, CA-14)
     path('condominiums/<uuid:condominium_id>/memberships', UnitMembershipListView.as_view(), name='api_v1_memberships'),
+    path('condominiums/<uuid:condominium_id>/memberships/<uuid:membership_id>', UnitMembershipDetailUpdateView.as_view(), name='api_v1_membership_detail'),
 
     # Verificação Documental Auditada de Vínculo (CA-12, CA-15)
     path('condominiums/<uuid:condominium_id>/memberships/<uuid:membership_id>/verify', VerifyMembershipActionView.as_view(), name='api_v1_membership_verify'),

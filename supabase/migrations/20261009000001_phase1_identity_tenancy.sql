@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS app.condominiums (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     cnpj VARCHAR(18),
-    status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'archived')),
+    status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'archived', 'inactive')),
     timezone VARCHAR(50) NOT NULL DEFAULT 'America/Sao_Paulo',
     address_street VARCHAR(255),
     address_number VARCHAR(50),

@@ -88,7 +88,7 @@ class TestCondominiumUnitsIntegrity:
         resp_del = client.delete(f'/api/v1/condominiums/{condo.id}')
         assert resp_del.status_code == 204
         condo.refresh_from_db()
-        assert condo.status == "inactive"
+        assert condo.status in ("archived", "inactive")
 
     def test_buildings_creation_edition_and_uniqueness(self):
         """

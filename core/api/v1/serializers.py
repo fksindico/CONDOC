@@ -94,16 +94,18 @@ class ResidentRegistrationCreateSerializer(serializers.ModelSerializer):
 class UnitMembershipListSerializer(serializers.ModelSerializer):
     unit_code = serializers.CharField(source='unit.code', read_only=True)
     resident_name = serializers.CharField(source='resident.full_name', read_only=True)
+    phone_e164 = serializers.CharField(source='resident.phone_e164', read_only=True)
 
     class Meta:
         model = UnitMembership
         fields = [
-            'id', 'condominium_id', 'resident_id', 'resident_name',
+            'id', 'condominium_id', 'resident_id', 'resident_name', 'phone_e164',
             'unit_id', 'unit_code', 'category', 'verification_status',
             'membership_status', 'verification_method', 'reviewed_at',
             'started_at', 'ended_at'
         ]
         read_only_fields = fields
+
 
 
 class VerifyMembershipActionSerializer(serializers.Serializer):

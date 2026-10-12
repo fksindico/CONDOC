@@ -1,0 +1,247 @@
+{
+  "document_id": "a1b0fb4f-9ebe-4abd-9161-6607dae6e5a6",
+  "document_title": "Regimento Interno do Condomínio Parque Real",
+  "total_entries": 23,
+  "total_new_provisions": 0,
+  "total_excluded_provisions": 1,
+  "entries": [
+    {
+      "entry_type": "mantido",
+      "draft_provision_id": "e8067281-ae17-476a-8078-dc62ce7353bc",
+      "draft_label": "Título I",
+      "draft_text": "Do Condomínio e sua Destinação Residencial",
+      "draft_position": 1,
+      "change_type": "mantido",
+      "sources": [],
+      "summary": "Dispositivo (Título I) derivado de 0 origem(ns) (mantido)."
+    },
+    {
+      "entry_type": "mantido",
+      "draft_provision_id": "007a5969-ed2a-41ad-a037-f6993b32b908",
+      "draft_label": "Capítulo I",
+      "draft_text": "Dos Direitos e Deveres Gerais dos Condôminos",
+      "draft_position": 2,
+      "change_type": "mantido",
+      "sources": [],
+      "summary": "Dispositivo (Capítulo I) derivado de 0 origem(ns) (mantido)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "b3d700b1-9c04-404d-b618-b42704a18273",
+      "draft_label": "Capítulo II",
+      "draft_text": "Do Sossego e Horário de Silêncio das 22h às 08h",
+      "draft_position": 3,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Capítulo II) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "727d2214-cb48-4fd9-881e-b3733a3b7374",
+      "draft_label": "Capítulo III",
+      "draft_text": "Da Convivência e Trânsito de Animais de Estimação - Pets",
+      "draft_position": 4,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Capítulo III) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "992c3224-9f5c-4a59-9f3b-5a28a30da815",
+      "draft_label": "Capítulo IV",
+      "draft_text": "Do Uso das Áreas Comuns - Salão de Festas, Piscina e Churrasqueira",
+      "draft_position": 5,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Capítulo IV) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "cf9f9bce-a48f-4bea-acba-313cd901289f",
+      "draft_label": "Capítulo V",
+      "draft_text": "Das Penalidades, Advertências e Recursos Administrativos",
+      "draft_position": 6,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Capítulo V) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "ef9f6bca-c73b-4d0e-b496-6863038ef1a8",
+      "draft_label": "Art. 1º",
+      "draft_text": "O Condomínio Residencial Parque Real destina-se exclusivamente para fins residenciais familiares, sendo terminantemente vedada a exploração comercial, industrial ou profissional com atendimento presencial que desvirtue sua finalidade.",
+      "draft_position": 7,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 1º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "018858f6-7a05-4ef0-a3fe-4f9d7a7739ae",
+      "draft_label": "Art. 2º",
+      "draft_text": "São direitos dos condôminos e moradores usar, gozar e dispor livremente de suas unidades autônomas, bem como utilizar as áreas comuns de acordo com a sua destinação, desde que respeitadas as normas de segurança, sossego, saúde e boa convivência comunitária.",
+      "draft_position": 8,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 2º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "63056873-5c3a-4fd8-ae5b-fed6e09ebcb6",
+      "draft_label": "Art. 3º",
+      "draft_text": "São deveres dos condôminos e posseiros: contribuir pontualmente com as despesas ordinárias e extraordinárias; manter inalterada a fachada arquitetônica e a cor das esquadrias; e cumprir rigorosamente as normas da Convenção Condominial e deste Regimento.",
+      "draft_position": 9,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 3º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "ccba5729-0abd-47cd-b03f-b10078df03ae",
+      "draft_label": "Art. 4º",
+      "draft_text": "Fica instituído o horário de silêncio no condomínio das 22h00 às 08h00 nos dias úteis, e até às 09h00 aos sábados, domingos e feriados, período no qual é expressamente proibido produzir ruídos, algazarras, música alta ou festas que perturbem o repouso dos vizinhos.",
+      "draft_position": 10,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 4º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "b118881c-bbc2-46bd-9e8e-80e58a8c7f98",
+      "draft_label": "Art. 5º",
+      "draft_text": "Obras, reparos, montagem de móveis e quaisquer reformas ruidosas nas unidades privativas somente são permitidas de segunda a sexta-feira, das 08h00 às 17h00, e aos sábados, das 09h00 às 13h00, sendo estritamente vedadas aos domingos e feriados.",
+      "draft_position": 11,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 5º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "137b0d3a-51d5-4364-ada1-739e73a359fe",
+      "draft_label": "Art. 6º",
+      "draft_text": "É plenamente assegurado aos moradores o direito de manter animais de estimação (pets) de qualquer porte no interior de suas unidades, desde que não representem ameaça à integridade física, saúde ou sossego dos demais habitantes do condomínio.",
+      "draft_position": 12,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 6º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "3fe2f42a-9e74-43ec-80ec-3f72bc654d70",
+      "draft_label": "Art. 7º",
+      "draft_text": "O trânsito de animais domésticos pelas áreas comuns e elevadores é livre com o uso de coleira e guia curta, sendo permitido o uso de qualquer elevador quando o animal estiver no colo do tutor, e do elevador social em caso de inoperância do elevador de serviço, mantida a obrigação de recolhimento imediato de dejetos.",
+      "draft_position": 13,
+      "change_type": "renumerado",
+      "sources": [
+        {
+          "source_provision_id": "7bee0620-73c4-48fd-b199-9dee27f71dd8",
+          "source_label": "Art. 7º Antigo",
+          "source_text": "Proibição de animais de qualquer espécie sem autorização do síndico.",
+          "relation_type": "alterado",
+          "reason": "Atualização com base na consulta pública e sugestão SUG-2026 sobre convivência de pets."
+        }
+      ],
+      "summary": "Dispositivo (Art. 7º) derivado de 1 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "a98ce8c9-3425-4797-bbbf-73dfeab985b7",
+      "draft_label": "Art. 8º",
+      "draft_text": "A utilização do Salão de Festas depende de reserva prévia formalizada junto à administração condominial e do recolhimento da respectiva taxa de limpeza e conservação, observando-se a capacidade máxima de 60 pessoas e o horário de encerramento às 02h00.",
+      "draft_position": 14,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 8º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "52a5c176-cc46-412e-afb5-90493f47f5da",
+      "draft_label": "Art. 9º",
+      "draft_text": "A área da Piscina é de uso exclusivo dos condôminos e moradores residentes, funcionando de terça a domingo das 07h00 às 22h00, sendo terminantemente proibido o consumo ou porte de garrafas, copos ou recipientes de vidro em todo o seu perímetro.",
+      "draft_position": 15,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 9º) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "a6433a66-f136-4e31-8cd9-21b75e27f5a7",
+      "draft_label": "Art. 10",
+      "draft_text": "A Churrasqueira comunitária poderá ser reservada para eventos de moradores, cabendo ao requisitante zelar pelo asseio, conservação das grelhas e equipamentos elétricos, e destinação adequada do carvão e resíduos ao término do uso.",
+      "draft_position": 16,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 10) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "30a9125c-80c2-4d6f-becc-38c3c70eab75",
+      "draft_label": "Art. 11",
+      "draft_text": "O bicicletário coletivo destina-se exclusivamente à guarda de bicicletas ativas dos moradores.",
+      "draft_position": 17,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 11) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "aa689089-22d4-470a-bf91-19ff6f274e82",
+      "draft_label": "Art. 12",
+      "draft_text": "É expressamente vedada a cessão ou locação de quaisquer áreas comuns do condomínio a terceiros não residentes para eventos com cobrança de ingressos, manifestações político-partidárias ou cultos religiosos públicos.",
+      "draft_position": 18,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 12) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "d5d5d5b3-02c9-48ed-b2e8-7ad632f6f2a8",
+      "draft_label": "Art. 13",
+      "draft_text": "A inobservância de qualquer obrigação prevista neste Regimento Interno ensejará notificação e advertência formal por escrito expedida pelo Síndico ou administradora ao condômino infrator.",
+      "draft_position": 19,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 13) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "4454e95c-b76b-4faf-a4a2-dfacb609483f",
+      "draft_label": "Art. 14",
+      "draft_text": "A reincidência na mesma infração no período de 12 (doze) meses acarretará aplicação de multa punitiva no valor de 1 (uma) cota condominial ordinária vigente, dobrando-se o valor nas reincidências subsequentes até o teto legal de 5 (cinco) cotas.",
+      "draft_position": 20,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 14) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "017fab87-43eb-4e32-9567-9cd2611eda11",
+      "draft_label": "Art. 15",
+      "draft_text": "Das penalidades de multa aplicadas caberá recurso administrativo sem efeito suspensivo ao Conselho Consultivo, no prazo improrrogável de 10 (dez) dias corridos a contar da confirmação do recebimento da notificação de infração.",
+      "draft_position": 21,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 15) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "renumerado",
+      "draft_provision_id": "7900435d-495e-4579-92f5-9d0a776e5a0e",
+      "draft_label": "Art. 16",
+      "draft_text": "Os casos omissos ou situações não contempladas neste Regimento Interno serão resolvidos pelo Síndico em conjunto com o Conselho Consultivo, ad referendum da Assembleia Geral dos Condôminos e nos termos da Lei Federal 10.406/2002 (Código Civil).",
+      "draft_position": 22,
+      "change_type": "renumerado",
+      "sources": [],
+      "summary": "Dispositivo (Art. 16) derivado de 0 origem(ns) (renumerado)."
+    },
+    {
+      "entry_type": "excluido",
+      "draft_provision_id": "948723f6-fc68-4887-9638-c4f9d43e4d23",
+      "draft_label": "[EXCLUÍDO] Art. 99",
+      "draft_text": "É obrigatório o uso de trajes formais nas reuniões do hall social.",
+      "draft_position": 50,
+      "change_type": "excluido",
+      "sources": [],
+      "summary": "Dispositivo ([EXCLUÍDO] Art. 99) excluído da minuta de trabalho. Mantido no histórico e DePara."
+    }
+  ]
+}
