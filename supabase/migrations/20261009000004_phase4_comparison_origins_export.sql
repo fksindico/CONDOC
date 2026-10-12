@@ -45,7 +45,9 @@ CREATE INDEX IF NOT EXISTS idx_cross_references_target ON app.cross_references(t
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================================================
 ALTER TABLE app.origin_mappings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.origin_mappings FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.cross_references ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.cross_references FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY rls_origin_mappings_tenant ON app.origin_mappings
     FOR ALL

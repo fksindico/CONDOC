@@ -12,6 +12,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.renderers import BaseRenderer, JSONRenderer
 from django.http import HttpResponse
 from django.utils import timezone
+import os
 import uuid
 
 from infrastructure.models import (
@@ -70,6 +71,7 @@ from application.documents.services import (
     InternalNoteService,
     SnapshotService,
 )
+from application.documents.canonical_export_service import CanonicalExportService
 from application.comparison.services import (
     OriginMappingService,
     ComparisonService,
@@ -196,23 +198,77 @@ from .serializers import (
     ConsultationSnapshotSerializer,
     ExportArtifactSerializer,
     ManifestVerificationSerializer,
+    IdentityAccessEventSerializer,
 )
 
 # ============================================================================
 # FASE 1: SESSÃO E IDENTIDADE
 # ============================================================================
 
-def _get_or_create_actor_id(request):
-    actor_id = getattr(request.user, 'account_id', None) or request.data.get('actor_account_id')
+def _resolve_actor_and_role(request, condominium_id=None):
+    """
+    Resolve o actor_id e o papel ativo (role) a partir da sessão segura BFF ou credencial autenticada.
+    Não assume 'sindico' por padrão em ausência de papel comprovado.
+    """
+    actor_id = getattr(request.user, 'account_id', None)
+    user_roles = getattr(request.user, 'roles', [])
+    user_role = None
+
+    if user_roles:
+        user_role = 'sindico' if 'sindico' in user_roles else user_roles[0]
+
+    # Se não autenticado via request.user, tenta sessão HTTP
+    if not actor_id and hasattr(request, 'session'):
+        actor_id = request.session.get('account_id')
+        session_roles = request.session.get('roles', [])
+        if session_roles and not user_role:
+            user_role = 'sindico' if 'sindico' in session_roles else session_roles[0]
+
+    # Se for informado explicitamente via header ou query param (ex.: testes negativos ?role=comissao)
+    override_role = request.headers.get('X-User-Role') or request.query_params.get('role')
+    if override_role:
+        user_role = override_role
+
+    # Em dados de requisição (compatibilidade)
+    if not actor_id and hasattr(request, 'data') and isinstance(request.data, dict):
+        actor_id = request.data.get('actor_account_id')
+
+    # Se houver actor_id e condomínio mas não tivermos user_role determinado, busca RoleAssignment no banco
+    if actor_id and condominium_id and not user_role:
+        try:
+            role_obj = RoleAssignment.objects.filter(
+                condominium_id=condominium_id,
+                account_id=actor_id,
+                status='active'
+            ).first()
+            if role_obj:
+                user_role = role_obj.role
+        except Exception:
+            pass
+
+    # Fallback seguro para ambiente de desenvolvimento/teste automatizado
     if not actor_id:
-        acc = Account.objects.first()
-        if not acc:
-            acc = Account.objects.create(
-                auth_user_id=uuid.uuid4(),
-                email="sistema.auditoria@condc.local",
-                full_name="Sistema Auditoria"
-            )
-        actor_id = acc.id
+        from django.conf import settings
+        if getattr(settings, 'TESTING', False) or getattr(settings, 'DEBUG', False):
+            acc = Account.objects.first()
+            if acc:
+                actor_id = acc.id
+                if condominium_id and not user_role:
+                    try:
+                        role_obj = RoleAssignment.objects.filter(
+                            condominium_id=condominium_id,
+                            account_id=actor_id,
+                            status='active'
+                        ).first()
+                        user_role = role_obj.role if role_obj else 'morador'
+                    except Exception:
+                        pass
+
+    return actor_id, user_role
+
+
+def _get_or_create_actor_id(request, condominium_id=None):
+    actor_id, _ = _resolve_actor_and_role(request, condominium_id)
     return actor_id
 
 
@@ -1155,10 +1211,11 @@ class TranscriptionDetailConfirmView(APIView):
         except SourceTranscription.DoesNotExist:
             return Response({"error": "Transcrição não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request, condominium_id, transcription_id, action):
+    def post(self, request, condominium_id, transcription_id, action=None):
         actor_id = _get_or_create_actor_id(request)
+        action_name = (action or request.data.get('action') or 'confirm').lower()
 
-        if action == 'confirm':
+        if action_name == 'confirm':
             # CA-17: Conferência humana do original
             serializer = TranscriptionConfirmActionSerializer(data=request.data)
             if not serializer.is_valid():
@@ -1170,7 +1227,7 @@ class TranscriptionDetailConfirmView(APIView):
             )
             return Response(SourceTranscriptionSerializer(trans).data, status=status.HTTP_200_OK)
 
-        elif action == 'correct':
+        elif action_name == 'correct':
             # CA-18: Correção humana gera nova versão de transcrição
             serializer = TranscriptionCorrectActionSerializer(data=request.data)
             if not serializer.is_valid():
@@ -1641,6 +1698,139 @@ class DocumentExportDeParaView(APIView):
         return Response(report, status=status.HTTP_200_OK)
 
 
+class DocumentPreflightView(APIView):
+    """
+    Auditoria prévia (Preflight) da árvore normativa (EDOSS-EX-01, EDOSS-EX-02).
+    Verifica Caputs obrigatórios, contenção estrita, notas órfãs e ausência de ciclos.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, document_id):
+        profile = request.data.get('profile', 'clean_working')
+        try:
+            report = CanonicalExportService.run_preflight(
+                condominium_id=condominium_id,
+                document_id=document_id,
+                profile=profile
+            )
+            return Response(report.to_dict(), status=status.HTTP_200_OK)
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DocumentCanonicalExportView(APIView):
+    """
+    Exportação Canônica Unificada Open Source DOCX e PDF (ED-OSS-2.0).
+    Pipeline: python-docx + LibreOffice headless + Hashing SHA-256 + Manifesto.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, document_id):
+        profile = request.data.get('profile', 'clean_working')
+        export_format = request.data.get('format', 'json').lower()
+        force_without_soffice = request.data.get('force_without_soffice', False)
+
+        actor_id = _get_or_create_actor_id(request)
+
+        try:
+            result = CanonicalExportService.export_canonical_pair(
+                condominium_id=condominium_id,
+                document_id=document_id,
+                author_account_id=actor_id,
+                profile=profile,
+                force_without_soffice=force_without_soffice
+            )
+
+            if not result.success:
+                return Response({
+                    "error": result.error_message,
+                    "preflight": result.preflight_report.to_dict() if result.preflight_report else None
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Download binário direto se solicitado
+            if export_format == 'pdf' and result.pdf_path and os.path.exists(result.pdf_path):
+                with open(result.pdf_path, 'rb') as f:
+                    pdf_bytes = f.read()
+                filename = os.path.basename(result.pdf_path)
+                resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+                resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+                resp['X-File-SHA256'] = result.pdf_sha256
+                return resp
+
+            if export_format == 'docx' and result.docx_path and os.path.exists(result.docx_path):
+                with open(result.docx_path, 'rb') as f:
+                    docx_bytes = f.read()
+                filename = os.path.basename(result.docx_path)
+                resp = HttpResponse(docx_bytes, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+                resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+                resp['X-File-SHA256'] = result.docx_sha256
+                return resp
+
+            # Resposta JSON padrão com dados dos arquivos e manifesto
+            return Response({
+                "success": True,
+                "profile": profile,
+                "artifacts": {
+                    "docx": {
+                        "filename": os.path.basename(result.docx_path),
+                        "sha256": result.docx_sha256,
+                        "size_bytes": result.docx_size_bytes,
+                    },
+                    "pdf": {
+                        "filename": os.path.basename(result.pdf_path) if result.pdf_path else None,
+                        "sha256": result.pdf_sha256,
+                        "size_bytes": result.pdf_size_bytes,
+                    } if result.pdf_path else None,
+                },
+                "manifest": result.manifest,
+                "preflight_passed": result.preflight_report.is_valid,
+            }, status=status.HTTP_200_OK)
+
+        except Document.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DocumentInstantiateTemplateView(APIView):
+    """
+    Instanciação de documento normativo completo a partir de template OSS aberto (EDOSS-OSS-04).
+    Gera novos UUIDs estáveis e preserva hierarquia LC 95.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id, project_id):
+        template_type = request.data.get('template_type', 'regimento')
+        title = request.data.get('title')
+        if not title:
+            title = "Regimento Interno" if template_type == 'regimento' else "Convenção de Condomínio"
+
+        actor_id = _get_or_create_actor_id(request)
+
+        try:
+            doc, provisions = CanonicalExportService.instantiate_template_to_document(
+                condominium_id=condominium_id,
+                project_id=project_id,
+                title=title,
+                template_type=template_type,
+                author_account_id=actor_id
+            )
+            return Response({
+                "id": str(doc.id),
+                "title": doc.title,
+                "type": doc.type,
+                "editorial_status": doc.editorial_status,
+                "provisions_count": len(provisions),
+                "created_at": doc.created_at.isoformat()
+            }, status=status.HTTP_201_CREATED)
+        except Project.DoesNotExist:
+            return Response({"error": "Projeto documental não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 # ============================================================================
 # FASE 5: CONSULTA PÚBLICA, PARTICIPAÇÃO E MODERAÇÃO EDITORIAL
 # ============================================================================
@@ -1963,8 +2153,7 @@ class ModerationPublicationAuthorizeView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        actor_id = _get_or_create_actor_id(request)
-        user_role = request.headers.get('X-User-Role', request.query_params.get('role', 'sindico'))
+        actor_id, user_role = _resolve_actor_and_role(request, condominium_id)
         data = serializer.validated_data
 
         try:
@@ -1997,8 +2186,7 @@ class ModerationPublicationHideView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        actor_id = _get_or_create_actor_id(request)
-        user_role = request.headers.get('X-User-Role', request.query_params.get('role', 'sindico'))
+        actor_id, user_role = _resolve_actor_and_role(request, condominium_id)
         data = serializer.validated_data
 
         try:
@@ -2027,8 +2215,7 @@ class ModerationIdentityAccessView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        actor_id = _get_or_create_actor_id(request)
-        user_role = request.headers.get('X-User-Role', request.query_params.get('role', 'sindico'))
+        actor_id, user_role = _resolve_actor_and_role(request, condominium_id)
         data = serializer.validated_data
 
         try:
@@ -2117,7 +2304,10 @@ class RevisionAgreementStatsView(APIView):
         else:
             pub_rev_uuid = uuid.UUID(pub_rev_id)
 
-        is_public = request.query_params.get('viewer', 'public').lower() == 'public'
+        _, actor_role = _resolve_actor_and_role(request, condominium_id)
+        has_admin_role = actor_role in ('sindico', 'admin', 'subsyndico', 'comissao')
+        viewer_param = request.query_params.get('viewer', 'public').lower()
+        is_public = not (has_admin_role and viewer_param in ('admin', 'sindico', 'gestao'))
         try:
             stats = AgreementService.get_revision_agreement_stats(
                 condominium_id=condominium_id,
@@ -2292,6 +2482,18 @@ class ManifestVerifyView(APIView):
             return Response({"error": str(e), "code": "MANIFEST_INTEGRITY_TAMPERED"}, status=status.HTTP_400_BAD_REQUEST)
         except ExportArtifact.DoesNotExist:
             return Response({"error": "Artefato não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AuditLogsListView(APIView):
+    """
+    S21A / CA-33: Consulta da trilha imutável de eventos de auditoria e acesso a dados pessoais.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        events = IdentityAuditService.list_access_events(condominium_id=condominium_id)
+        serializer = IdentityAccessEventSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

@@ -593,3 +593,79 @@ def test_qa_multi_tenant_isolation_boundary(qa_context):
     # 3. Pacote de exportação de A no tenant B deve retornar 404
     resp_pkg = client.post(f"/api/v1/condominiums/{condo_b.id}/documents/{doc_a.id}/export/package")
     assert resp_pkg.status_code == 404
+
+
+def test_qa_audit_logs_endpoint(qa_context):
+    """Testa consulta da trilha imutável de eventos de auditoria (S21A)."""
+    from infrastructure.models import IdentityAccessEvent
+    client = APIClient()
+    condo = qa_context['condo1']
+    sindico = qa_context['sindico_acc']
+
+    # Registra evento de auditoria
+    IdentityAccessEvent.objects.create(
+        condominium=condo,
+        actor_account=sindico,
+        target_type="resident_identity",
+        target_id=str(uuid.uuid4()),
+        purpose="Conferência de titularidade em diligência administrativa (LGPD)."
+    )
+
+    resp = client.get(f"/api/v1/condominiums/{condo.id}/audit-logs")
+    assert resp.status_code == 200
+    assert len(resp.data) >= 1
+    event = resp.data[0]
+    assert str(event['condominium_id']) == str(condo.id)
+    assert event['actor_name'] == sindico.full_name
+    assert "Conferência" in event['purpose']
+
+
+def test_qa_transcription_confirm_and_correct_endpoints(qa_context):
+    """Testa homologação e correção humana de transcrição OCR (CA-17, CA-18)."""
+    from infrastructure.models import SourceFile, SourceTranscription
+    client = APIClient()
+    condo = qa_context['condo1']
+    doc = qa_context['document']
+    sindico = qa_context['sindico_acc']
+
+    source_file = SourceFile.objects.create(
+        condominium=condo,
+        uploaded_by=sindico,
+        storage_key="test/sample.pdf",
+        filename="regimento_antigo.pdf",
+        mime_type="application/pdf",
+        size_bytes=1024,
+        file_hash="fakehash123",
+        state="ready"
+    )
+
+    transcription = SourceTranscription.objects.create(
+        document=doc,
+        condominium=condo,
+        source_file=source_file,
+        version=1,
+        status="under_review",
+        raw_text="Artigo 1. Texto bruto escaneado com erro de OCR",
+        corrected_text="Artigo 1. Texto bruto escaneado com erro de OCR"
+    )
+
+    # 1. Confirmação (CA-17)
+    resp_confirm = client.post(
+        f"/api/v1/condominiums/{condo.id}/transcriptions/{transcription.id}/confirm",
+        data={"corrected_text": "Art. 1º Texto conferido manualmente."},
+        format="json"
+    )
+    assert resp_confirm.status_code == 200
+    assert resp_confirm.data['status'] == "confirmed"
+    assert resp_confirm.data['corrected_text'] == "Art. 1º Texto conferido manualmente."
+
+    # 2. Correção gerando nova versão homologada (CA-18)
+    resp_correct = client.post(
+        f"/api/v1/condominiums/{condo.id}/transcriptions/{transcription.id}/correct",
+        data={"corrected_text": "Art. 1º Texto com emenda corretiva de transcrição."},
+        format="json"
+    )
+    assert resp_correct.status_code == 201
+    assert resp_correct.data['version'] == 2
+    assert resp_correct.data['status'] == "confirmed"
+

@@ -13,6 +13,7 @@ from infrastructure.models import (
     UnitMembership,
     MembershipVerificationEvent,
     RoleAssignment,
+    IdentityAccessEvent,
     ImportBatch,
     ImportRow,
     AccessInvitation,
@@ -538,6 +539,19 @@ class ManifestVerificationSerializer(serializers.Serializer):
         child=serializers.CharField(trim_whitespace=False, allow_blank=True),
         required=True
     )
+
+
+class IdentityAccessEventSerializer(serializers.ModelSerializer):
+    actor_name = serializers.CharField(source='actor_account.full_name', read_only=True)
+    actor_email = serializers.CharField(source='actor_account.email', read_only=True)
+
+    class Meta:
+        model = IdentityAccessEvent
+        fields = [
+            'id', 'condominium_id', 'actor_account_id', 'actor_name', 'actor_email',
+            'target_type', 'target_id', 'purpose', 'created_at'
+        ]
+        read_only_fields = fields
 
 
 

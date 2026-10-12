@@ -125,11 +125,12 @@ class BackupConsistencyService:
             )
 
         for u_data in db_dump.get("units", []):
+            b_id_raw = u_data.get('building_id')
             Unit.objects.update_or_create(
                 id=uuid.UUID(u_data['id']),
                 defaults={
                     "condominium": condo,
-                    "building_id": uuid.UUID(u_data['building_id']),
+                    "building_id": uuid.UUID(b_id_raw) if b_id_raw else None,
                     "code": u_data['code'],
                     "status": u_data.get('status', 'active')
                 }

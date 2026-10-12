@@ -5,7 +5,7 @@ Regras de segurança, integridade criptográfica de tokens e validação de cont
 import hashlib
 import re
 from typing import Optional
-from django.utils import timezone
+from datetime import datetime, timezone
 from .exceptions import (
     InvitationExpiredOrExhaustedError,
     InvitationRevokedError,
@@ -46,7 +46,7 @@ def assert_invitation_active(
     if status == 'revogado':
         raise InvitationRevokedError("Este convite foi revogado pela administração do condomínio.")
 
-    now = timezone.now()
+    now = datetime.now(timezone.utc) if getattr(expires_at, 'tzinfo', None) else datetime.now()
     if status == 'expirado' or now >= expires_at:
         raise InvitationExpiredOrExhaustedError("Este convite já expirou e não pode mais ser utilizado.")
 

@@ -15,7 +15,7 @@ load_dotenv(ROOT_DIR / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-dev-key-condc-2026-replace-in-prod")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1")
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,condoc.fk.adm.br,192.168.10.200").split(",")
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,condoc.fk.adm.br").split(",")
 
 # Reconhecimento de cabeçalho HTTPS vindo do Proxy Reverso (NPM / Caddy / Cloudflare)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

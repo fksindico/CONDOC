@@ -44,6 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_artifacts_public ON app.export_artifacts(is_publi
 
 -- 3. Habilitação de RLS
 ALTER TABLE app.export_artifacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.export_artifacts FORCE ROW LEVEL SECURITY;
 
 -- 4. Política de Isolamento Multi-Tenancy
 DO $$ BEGIN

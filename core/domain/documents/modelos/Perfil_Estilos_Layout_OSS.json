@@ -1,0 +1,47 @@
+{
+  "version": "ED-OSS-2.0",
+  "kind": "proposed_style_configuration",
+  "legal_requirement": false,
+  "page": {
+    "size": "A4",
+    "margins_cm": {
+      "left": 3,
+      "right": 2,
+      "top": 2.5,
+      "bottom": 2.5
+    }
+  },
+  "body": {
+    "font": "Liberation Serif",
+    "font_license_gate": "verify_distribution_license_in_F0",
+    "size_pt": 12,
+    "line_spacing": 1.15,
+    "space_after_pt": 6,
+    "alignment": "justify"
+  },
+  "regions": {
+    "size_pt": 9,
+    "different_first_page": true,
+    "first_header_state": "cleared",
+    "first_footer_state": "cleared",
+    "page_number_field": "PageNumber",
+    "page_count_field": "PageCount"
+  },
+  "table_presets": {
+    "classic-v1": {
+      "border_pt": 0.75,
+      "border_color": "#B8BEC7",
+      "header_background": "#EEF1F5",
+      "text_color": "#1F2937",
+      "padding_mm": 2,
+      "repeat_header": true
+    }
+  },
+  "notes": {
+    "footnote_numbering": "decimal_continuous",
+    "endnote_numbering": "lower_roman_continuous",
+    "endnote_position": "end_of_document"
+  },
+  "unsupported_or_missing_font": "block_final",
+  "plugin_runtime": "own_oss_implementation_required"
+}

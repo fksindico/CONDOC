@@ -40,3 +40,6 @@ build/
 
 # Claude Code
 .claude/
+
+# Test artifacts
+test_screenshots/

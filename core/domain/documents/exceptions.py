@@ -30,3 +30,24 @@ class TranscriptionStatusError(DocumentDomainError):
 class PrivateNoteAccessForbiddenError(DocumentDomainError):
     """Tentativa de expor ou acessar notas internas sem autorização (CA-24)."""
     pass
+
+
+class GrammarValidationError(DocumentDomainError):
+    """Erro base para violação da gramática normativa LC 95."""
+    pass
+
+
+class MissingCaputError(GrammarValidationError):
+    """Dispositivo de Artigo não possui Caput inicial obrigatório."""
+    pass
+
+
+class InvalidContainmentError(GrammarValidationError):
+    """Violação da hierarquia estrita de contenção normativa."""
+    pass
+
+
+class MaxDepthExceededError(GrammarValidationError):
+    """Profundidade máxima da árvore hierárquica excedida."""
+    pass
+

@@ -1,0 +1,558 @@
+{
+  "version": "ED-OSS-2.0",
+  "document_kind": "regimento",
+  "editorial_status": "draft",
+  "legal_status": "not_validated",
+  "instantiate_new_uuids": true,
+  "root": {
+    "id": "828f3dce-c436-4bdd-adc6-c6f754e1842e",
+    "type": "document_root",
+    "children": [
+      {
+        "id": "fb5659bd-f1a0-4c19-8b4a-c33fb5442264",
+        "type": "document_heading",
+        "body": [
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "type": "placeholder",
+                "key": "document_identification",
+                "resolved": false,
+                "label": "Preencher e conferir; não é cláusula jurídica pronta"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f799c7dd-152d-4c3e-96d5-14cf9853c686",
+        "type": "preamble",
+        "body": [
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "type": "placeholder",
+                "key": "context",
+                "resolved": false,
+                "label": "Preencher e conferir; não é cláusula jurídica pronta"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "382b86b0-37cf-401f-ad08-d38c31952183",
+        "type": "chapter",
+        "heading": "Objeto e definições",
+        "numbering": {
+          "policy": "sequential",
+          "value": 1
+        },
+        "children": [
+          {
+            "id": "91f8c8f4-38d7-4296-b7a5-586b7b53d268",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 1
+            },
+            "children": [
+              {
+                "id": "2cc8de82-6847-49c2-8b22-66c94b5621fb",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_1_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "9539575d-2eb7-41df-a7bc-6b533f413a1f",
+        "type": "chapter",
+        "heading": "Convivência",
+        "numbering": {
+          "policy": "sequential",
+          "value": 2
+        },
+        "children": [
+          {
+            "id": "b4fbbc98-fb0b-454b-a5d9-03d95515eef7",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 2
+            },
+            "children": [
+              {
+                "id": "d932b533-fc96-46ff-ae33-d87206455962",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_2_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "5cd37f35-e84e-4a61-a299-1e76044f92de",
+        "type": "chapter",
+        "heading": "Entrada e prestadores",
+        "numbering": {
+          "policy": "sequential",
+          "value": 3
+        },
+        "children": [
+          {
+            "id": "08e3a3a7-ba1e-490a-80e6-fb5e312a2898",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 3
+            },
+            "children": [
+              {
+                "id": "3de9e500-71fe-4834-814a-ea5e215abf59",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_3_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "c3c49b04-a120-495a-9611-569982de9bd2",
+        "type": "chapter",
+        "heading": "Mudanças e entregas",
+        "numbering": {
+          "policy": "sequential",
+          "value": 4
+        },
+        "children": [
+          {
+            "id": "7f93d938-97f1-4618-b1ee-98a0eaebde62",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 4
+            },
+            "children": [
+              {
+                "id": "87ed355d-445c-47b2-8507-a529a9639e6e",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_4_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "72cd372d-7ae6-44cb-a98c-fe5d40eec315",
+        "type": "chapter",
+        "heading": "Reformas",
+        "numbering": {
+          "policy": "sequential",
+          "value": 5
+        },
+        "children": [
+          {
+            "id": "46611e28-5890-4e22-b3a6-9c074efd74b5",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 5
+            },
+            "children": [
+              {
+                "id": "6520c840-c348-4d1b-b729-c2f4b3c77c40",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_5_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "00d1b64f-60b5-4ad7-a959-f5389e34d955",
+        "type": "chapter",
+        "heading": "Circulação e áreas comuns",
+        "numbering": {
+          "policy": "sequential",
+          "value": 6
+        },
+        "children": [
+          {
+            "id": "7e60213a-37b3-4a15-910f-86a82af89ac2",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 6
+            },
+            "children": [
+              {
+                "id": "fbc96127-1509-4a92-9340-e63334e65a18",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_6_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a58454d3-ef60-4c1c-95a5-e8565c0d303f",
+        "type": "chapter",
+        "heading": "Garagens, se existentes",
+        "numbering": {
+          "policy": "sequential",
+          "value": 7
+        },
+        "children": [
+          {
+            "id": "46b3a029-f9e9-423d-b14b-5006d9aade48",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 7
+            },
+            "children": [
+              {
+                "id": "bd2c80e9-3a77-401d-9ad7-250d2590f704",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_7_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "e23f2ea3-4190-48a1-bada-ece46f9d5b6f",
+        "type": "chapter",
+        "heading": "Lazer, se existente",
+        "numbering": {
+          "policy": "sequential",
+          "value": 8
+        },
+        "children": [
+          {
+            "id": "a1b5916d-4713-4fda-aa04-cc95412b95a1",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 8
+            },
+            "children": [
+              {
+                "id": "fa89eda4-780a-4349-bd17-bd4cf7c4b0da",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_8_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a823727e-ea96-4c98-8f0f-588ab7495bd2",
+        "type": "chapter",
+        "heading": "Limpeza e resíduos",
+        "numbering": {
+          "policy": "sequential",
+          "value": 9
+        },
+        "children": [
+          {
+            "id": "986cc0b6-eddc-4342-8a0a-3e8943a0374d",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 9
+            },
+            "children": [
+              {
+                "id": "99390ac6-fe67-436f-b67f-8790dfdae098",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_9_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "34f8f38f-2d46-43ed-8e74-7a252df6b870",
+        "type": "chapter",
+        "heading": "Segurança e emergências",
+        "numbering": {
+          "policy": "sequential",
+          "value": 10
+        },
+        "children": [
+          {
+            "id": "ea541fa0-1820-42c4-98b8-99e7cfac5442",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 10
+            },
+            "children": [
+              {
+                "id": "1cf3d563-be30-4578-ac9a-f8fbad0a830d",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_10_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "7e4abaee-2399-4b97-aa00-f0ebb3a6250c",
+        "type": "chapter",
+        "heading": "Animais e convivência",
+        "numbering": {
+          "policy": "sequential",
+          "value": 11
+        },
+        "children": [
+          {
+            "id": "54f737a7-d48d-4bb6-8438-1dd1563e55ad",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 11
+            },
+            "children": [
+              {
+                "id": "2346006f-e4b9-4d15-80a2-9f0f1ae0ea8f",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_11_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "fd2b9a6c-401d-4e50-90a5-cac275676a90",
+        "type": "chapter",
+        "heading": "Ocorrências e comunicação",
+        "numbering": {
+          "policy": "sequential",
+          "value": 12
+        },
+        "children": [
+          {
+            "id": "bb2a37ba-653e-4a78-8413-aee47482f69b",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 12
+            },
+            "children": [
+              {
+                "id": "99409eab-eb7f-45be-9d16-622dd66e42d3",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_12_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1c7076f0-0118-4921-8dac-f5c3dd9b1112",
+        "type": "chapter",
+        "heading": "Disposições finais",
+        "numbering": {
+          "policy": "sequential",
+          "value": 13
+        },
+        "children": [
+          {
+            "id": "102d1623-9cb5-4def-8366-d000313e4b3d",
+            "type": "article",
+            "numbering": {
+              "policy": "sequential",
+              "value": 13
+            },
+            "children": [
+              {
+                "id": "6a62fbf7-c2c3-45e3-a32a-a0587950cf9d",
+                "type": "caput",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "chapter_13_text",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ddff3606-974c-4cab-86f0-dd079976c463",
+        "type": "signature_group",
+        "body": [
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "type": "placeholder",
+                "key": "closing_if_applicable",
+                "resolved": false,
+                "label": "Preencher e conferir; não é cláusula jurídica pronta"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

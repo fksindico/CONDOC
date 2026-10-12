@@ -1,0 +1,2086 @@
+{
+  "version": "DB-1.0",
+  "scope": "initial_cadastral_document_core_not_full_product",
+  "tables": [
+    {
+      "schema": "app_acl",
+      "name": "accounts",
+      "fields": [
+        "id uuid PRIMARY KEY",
+        "auth_user_id uuid UNIQUE",
+        "status text NOT NULL DEFAULT 'active'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [],
+      "fks": [
+        [
+          [
+            "auth_user_id"
+          ],
+          "auth.users",
+          [
+            "id"
+          ],
+          "SET NULL"
+        ]
+      ],
+      "checks": [
+        "status IN ('active','suspended','archived')",
+        "auth_user_id IS NULL OR auth_user_id = id"
+      ],
+      "read_permission": null,
+      "write_permission": null,
+      "immutable": false
+    },
+    {
+      "schema": "app_acl",
+      "name": "permissions",
+      "fields": [
+        "code text PRIMARY KEY",
+        "description text NOT NULL"
+      ],
+      "uniques": [],
+      "fks": [],
+      "checks": [],
+      "read_permission": null,
+      "write_permission": null,
+      "immutable": false
+    },
+    {
+      "schema": "app_acl",
+      "name": "roles",
+      "fields": [
+        "code text PRIMARY KEY",
+        "description text NOT NULL"
+      ],
+      "uniques": [],
+      "fks": [],
+      "checks": [],
+      "read_permission": null,
+      "write_permission": null,
+      "immutable": false
+    },
+    {
+      "schema": "app_acl",
+      "name": "role_permissions",
+      "fields": [
+        "role_code text NOT NULL",
+        "permission_code text NOT NULL",
+        "PRIMARY KEY (role_code, permission_code)"
+      ],
+      "uniques": [],
+      "fks": [
+        [
+          [
+            "role_code"
+          ],
+          "app_acl.roles",
+          [
+            "code"
+          ]
+        ],
+        [
+          [
+            "permission_code"
+          ],
+          "app_acl.permissions",
+          [
+            "code"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": null,
+      "write_permission": null,
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "condominiums",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "name text NOT NULL",
+        "status text NOT NULL DEFAULT 'active'",
+        "timezone text NOT NULL DEFAULT 'America/Sao_Paulo'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [],
+      "fks": [],
+      "checks": [
+        "length(btrim(name)) > 0",
+        "status IN ('active','inactive')"
+      ],
+      "read_permission": "tenant.read",
+      "write_permission": "tenant.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app_acl",
+      "name": "role_assignments",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "account_id uuid NOT NULL",
+        "role_code text NOT NULL",
+        "valid_from timestamptz NOT NULL DEFAULT now()",
+        "valid_until timestamptz",
+        "status text NOT NULL DEFAULT 'active'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "account_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "role_code"
+          ],
+          "app_acl.roles",
+          [
+            "code"
+          ]
+        ]
+      ],
+      "checks": [
+        "status IN ('active','revoked')",
+        "valid_until IS NULL OR valid_until > valid_from"
+      ],
+      "read_permission": null,
+      "write_permission": null,
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "buildings",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "code text NOT NULL",
+        "name text NOT NULL",
+        "kind text NOT NULL DEFAULT 'tower'",
+        "status text NOT NULL DEFAULT 'active'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "code"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "code = upper(btrim(code)) AND length(code)>0",
+        "kind IN ('tower','block','single')",
+        "status IN ('active','inactive')"
+      ],
+      "read_permission": "unit.read",
+      "write_permission": "unit.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "units",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "building_id uuid NOT NULL",
+        "code text NOT NULL",
+        "floor_label text",
+        "status text NOT NULL DEFAULT 'active'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "building_id",
+          "code"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "building_id"
+          ],
+          "app.buildings",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "code = upper(btrim(code)) AND length(code)>0",
+        "status IN ('active','inactive')"
+      ],
+      "read_permission": "unit.read",
+      "write_permission": "unit.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "residents",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "account_id uuid NOT NULL",
+        "full_name text NOT NULL",
+        "status text NOT NULL DEFAULT 'pending'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "account_id"
+        ],
+        [
+          "condominium_id",
+          "id",
+          "account_id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "account_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "length(btrim(full_name))>0",
+        "status IN ('pending','active','suspended','archived')"
+      ],
+      "read_permission": "identity.read",
+      "write_permission": "resident.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "unit_memberships",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "resident_id uuid NOT NULL",
+        "unit_id uuid NOT NULL",
+        "relationship_type text NOT NULL",
+        "verification_status text NOT NULL DEFAULT 'declared'",
+        "membership_status text NOT NULL DEFAULT 'active'",
+        "validation_method text",
+        "review_reason text",
+        "reviewed_by uuid",
+        "reviewed_at timestamptz",
+        "started_at timestamptz NOT NULL DEFAULT now()",
+        "ended_at timestamptz",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "resident_id"
+          ],
+          "app_private.residents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "unit_id"
+          ],
+          "app.units",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "reviewed_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "relationship_type IN ('owner','tenant','family_resident','other_authorized')",
+        "verification_status IN ('declared','under_review','validated','rejected')",
+        "membership_status IN ('active','suspended','ended')",
+        "(membership_status='ended') = (ended_at IS NOT NULL)",
+        "ended_at IS NULL OR ended_at >= started_at",
+        "verification_status NOT IN ('validated','rejected') OR (validation_method IS NOT NULL AND review_reason IS NOT NULL AND length(btrim(review_reason))>0 AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL)"
+      ],
+      "read_permission": "identity.read",
+      "write_permission": "resident.validate",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "resident_registrations",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "unit_id uuid NOT NULL",
+        "full_name text NOT NULL",
+        "contact_email text",
+        "contact_phone text",
+        "relationship_type text NOT NULL DEFAULT 'other_authorized'",
+        "source text NOT NULL",
+        "external_reference text",
+        "status text NOT NULL DEFAULT 'pending'",
+        "linked_resident_id uuid",
+        "preverified_by uuid",
+        "preverified_at timestamptz",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "unit_id"
+          ],
+          "app.units",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "linked_resident_id"
+          ],
+          "app_private.residents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "preverified_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "length(btrim(full_name))>0",
+        "status IN ('pending','ready','linked','archived')"
+      ],
+      "read_permission": "identity.read",
+      "write_permission": "resident.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "projects",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "name text NOT NULL",
+        "kind text NOT NULL",
+        "status text NOT NULL DEFAULT 'preparation'",
+        "coordinator_id uuid",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "coordinator_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "kind IN ('creation','revision','joint_revision')",
+        "length(btrim(name))>0"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "files",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "bucket text NOT NULL",
+        "object_key text NOT NULL",
+        "mime_type text NOT NULL",
+        "size_bytes bigint NOT NULL",
+        "sha256 text NOT NULL",
+        "status text NOT NULL DEFAULT 'active'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "bucket",
+          "object_key"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "size_bytes >= 0",
+        "sha256 ~ '^[0-9a-f]{64}$'",
+        "status IN ('active','quarantined','deleted')"
+      ],
+      "read_permission": "file.read",
+      "write_permission": "file.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "file_metadata",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "file_id uuid NOT NULL",
+        "original_filename text NOT NULL",
+        "uploaded_by uuid NOT NULL",
+        "restricted_metadata jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "file_id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "file_id"
+          ],
+          "app.files",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "uploaded_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "jsonb_typeof(restricted_metadata)='object'"
+      ],
+      "read_permission": "identity.read",
+      "write_permission": "file.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "configuration_versions",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "family_id uuid NOT NULL",
+        "kind text NOT NULL",
+        "version integer NOT NULL",
+        "name text NOT NULL",
+        "payload jsonb NOT NULL",
+        "sha256 text NOT NULL",
+        "created_by uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "family_id",
+          "version"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "created_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "kind IN ('style','layout','table_style','template','block_catalog','numbering','font_manifest')",
+        "version>0",
+        "jsonb_typeof(payload)='object'",
+        "sha256 ~ '^[0-9a-f]{64}$'"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "documents",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "project_id uuid NOT NULL",
+        "kind text NOT NULL",
+        "title text NOT NULL",
+        "editorial_status text NOT NULL DEFAULT 'draft'",
+        "revision_lock bigint NOT NULL DEFAULT 1",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "project_id"
+          ],
+          "app.projects",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "kind IN ('convention','internal_regulation')",
+        "revision_lock > 0",
+        "editorial_status IN ('draft','in_review','final_working','archived')"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "source_transcriptions",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "file_id uuid",
+        "version integer NOT NULL",
+        "content jsonb NOT NULL",
+        "checked_by uuid",
+        "checked_at timestamptz",
+        "sha256 text NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "version"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "file_id"
+          ],
+          "app.files",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "checked_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "version>0",
+        "jsonb_typeof(content)='object'",
+        "sha256 ~ '^[0-9a-f]{64}$'",
+        "(checked_by IS NULL) = (checked_at IS NULL)"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "source_blocks",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "transcription_id uuid NOT NULL",
+        "parent_id uuid",
+        "kind text NOT NULL",
+        "label text",
+        "position integer NOT NULL",
+        "body jsonb NOT NULL",
+        "page_refs jsonb NOT NULL DEFAULT '[]'::jsonb",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "transcription_id"
+          ],
+          "app.source_transcriptions",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "parent_id"
+          ],
+          "app.source_blocks",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "position>=0",
+        "jsonb_typeof(body)='object'",
+        "jsonb_typeof(page_refs)='array'"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "document_nodes",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "kind text NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "node_revisions",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "node_id uuid NOT NULL",
+        "revision integer NOT NULL",
+        "parent_node_id uuid",
+        "position integer NOT NULL",
+        "label text",
+        "body jsonb NOT NULL",
+        "numbering jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "style_ref jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "change_type text NOT NULL",
+        "created_by uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "node_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "node_id",
+          "revision"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "node_id"
+          ],
+          "app.document_nodes",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "parent_node_id"
+          ],
+          "app.document_nodes",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "created_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "revision>0 AND position>=0",
+        "parent_node_id IS NULL OR parent_node_id<>node_id",
+        "jsonb_typeof(body)='object'",
+        "jsonb_typeof(numbering)='object' AND jsonb_typeof(style_ref)='object'",
+        "change_type IN ('maintained','changed','included','excluded','moved','renumbered','split','merged','restructured')"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "origin_mappings",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "node_revision_id uuid NOT NULL",
+        "source_block_id uuid NOT NULL",
+        "relation_type text NOT NULL",
+        "excerpt jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "node_revision_id"
+          ],
+          "app.node_revisions",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "source_block_id"
+          ],
+          "app.source_blocks",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "jsonb_typeof(excerpt)='object'"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "cross_references",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "source_document_id uuid NOT NULL",
+        "source_revision_id uuid NOT NULL",
+        "target_document_id uuid NOT NULL",
+        "target_node_id uuid NOT NULL",
+        "body_pointer text NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "source_document_id",
+            "source_revision_id"
+          ],
+          "app.node_revisions",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "target_document_id",
+            "target_node_id"
+          ],
+          "app.document_nodes",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "document_notes",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "kind text NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "kind IN ('footnote','endnote')"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "note_revisions",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "note_id uuid NOT NULL",
+        "revision integer NOT NULL",
+        "body jsonb NOT NULL",
+        "created_by uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "note_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "note_id",
+          "revision"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "note_id"
+          ],
+          "app.document_notes",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "created_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "revision>0",
+        "jsonb_typeof(body)='object'"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "note_references",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "source_revision_id uuid NOT NULL",
+        "note_id uuid NOT NULL",
+        "body_pointer text NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "source_revision_id"
+          ],
+          "app.node_revisions",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "note_id"
+          ],
+          "app.document_notes",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "region_revisions",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "region_family_id uuid NOT NULL",
+        "revision integer NOT NULL",
+        "kind text NOT NULL",
+        "variant text NOT NULL",
+        "state text NOT NULL",
+        "body jsonb",
+        "created_by uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "region_family_id",
+          "revision"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "created_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "revision>0",
+        "kind IN ('header','footer')",
+        "variant IN ('default','first','odd','even')",
+        "state IN ('template','explicit','cleared')",
+        "body IS NULL OR jsonb_typeof(body)='object'",
+        "state<>'explicit' OR body IS NOT NULL"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": true
+    },
+    {
+      "schema": "app",
+      "name": "document_snapshots",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "version_label text NOT NULL",
+        "status text NOT NULL DEFAULT 'building'",
+        "manifest jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "sha256 text",
+        "frozen_by uuid",
+        "frozen_at timestamptz",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "document_id",
+          "version_label"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "frozen_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "status IN ('building','frozen')",
+        "jsonb_typeof(manifest)='object'",
+        "status<>'frozen' OR (sha256 ~ '^[0-9a-f]{64}$' AND frozen_by IS NOT NULL AND frozen_at IS NOT NULL)"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.freeze",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "snapshot_nodes",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "snapshot_id uuid NOT NULL",
+        "node_id uuid NOT NULL",
+        "revision_id uuid NOT NULL",
+        "rendered_label text",
+        "position integer NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "snapshot_id",
+          "node_id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "snapshot_id"
+          ],
+          "app.document_snapshots",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "node_id",
+            "revision_id"
+          ],
+          "app.node_revisions",
+          [
+            "condominium_id",
+            "document_id",
+            "node_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "position>=0"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.freeze",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "snapshot_notes",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "snapshot_id uuid NOT NULL",
+        "note_id uuid NOT NULL",
+        "revision_id uuid NOT NULL",
+        "rendered_number text NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "snapshot_id",
+          "note_id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "snapshot_id"
+          ],
+          "app.document_snapshots",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "note_id",
+            "revision_id"
+          ],
+          "app.note_revisions",
+          [
+            "condominium_id",
+            "document_id",
+            "note_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "document.read",
+      "write_permission": "document.freeze",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "snapshot_configurations",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "snapshot_id uuid NOT NULL",
+        "slot text NOT NULL",
+        "configuration_id uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "snapshot_id",
+          "slot"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "snapshot_id"
+          ],
+          "app.document_snapshots",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "configuration_id"
+          ],
+          "app.configuration_versions",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "document.read",
+      "write_permission": "document.freeze",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "snapshot_regions",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "snapshot_id uuid NOT NULL",
+        "region_revision_id uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "snapshot_id",
+          "region_revision_id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "snapshot_id"
+          ],
+          "app.document_snapshots",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "region_revision_id"
+          ],
+          "app.region_revisions",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "document.read",
+      "write_permission": "document.freeze",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "internal_annotations",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid NOT NULL",
+        "node_id uuid",
+        "author_id uuid NOT NULL",
+        "visibility text NOT NULL",
+        "content text NOT NULL",
+        "resolved_at timestamptz",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "document_id",
+            "node_id"
+          ],
+          "app.document_nodes",
+          [
+            "condominium_id",
+            "document_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "author_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "visibility IN ('author_only','review_team','management')"
+      ],
+      "read_permission": "annotation.read",
+      "write_permission": "annotation.write",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "import_batches",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "file_id uuid NOT NULL",
+        "kind text NOT NULL",
+        "status text NOT NULL",
+        "revision integer NOT NULL DEFAULT 1",
+        "mapping jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "created_by uuid NOT NULL",
+        "confirmed_at timestamptz",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "file_id"
+          ],
+          "app.files",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "created_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "kind IN ('residents','document')",
+        "revision>0",
+        "jsonb_typeof(mapping)='object'"
+      ],
+      "read_permission": "import.read",
+      "write_permission": "import.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app_private",
+      "name": "import_rows",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "batch_id uuid NOT NULL",
+        "row_number integer NOT NULL",
+        "data jsonb NOT NULL",
+        "classification text NOT NULL",
+        "selected boolean NOT NULL DEFAULT false",
+        "action text",
+        "errors jsonb NOT NULL DEFAULT '[]'::jsonb",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "batch_id",
+          "row_number"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "batch_id"
+          ],
+          "app_private.import_batches",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "row_number>0",
+        "jsonb_typeof(data)='object' AND jsonb_typeof(errors)='array'"
+      ],
+      "read_permission": "import.read",
+      "write_permission": "import.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "render_jobs",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "snapshot_id uuid NOT NULL",
+        "requested_by uuid NOT NULL",
+        "profile text NOT NULL",
+        "status text NOT NULL DEFAULT 'queued'",
+        "options jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "idempotency_key text NOT NULL",
+        "started_at timestamptz",
+        "finished_at timestamptz",
+        "error_code text",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "requested_by",
+          "idempotency_key"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "snapshot_id"
+          ],
+          "app.document_snapshots",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "requested_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "profile IN ('draft','clean_working','final_presentation','de_para','internal','preservation')",
+        "status IN ('queued','preflight','rendering','finalizing','validating','ready','failed','cancelled')",
+        "jsonb_typeof(options)='object'",
+        "finished_at IS NULL OR started_at IS NULL OR finished_at>=started_at"
+      ],
+      "read_permission": "export.read",
+      "write_permission": "document.export",
+      "immutable": false
+    },
+    {
+      "schema": "app",
+      "name": "export_artifacts",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "render_job_id uuid NOT NULL",
+        "file_id uuid NOT NULL",
+        "kind text NOT NULL",
+        "manifest jsonb NOT NULL",
+        "created_by uuid NOT NULL",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ],
+        [
+          "condominium_id",
+          "render_job_id",
+          "kind"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "render_job_id"
+          ],
+          "app.render_jobs",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "file_id"
+          ],
+          "app.files",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "created_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "kind IN ('docx','pdf','json','validation_report')",
+        "jsonb_typeof(manifest)='object'"
+      ],
+      "read_permission": "export.read",
+      "write_permission": "document.export",
+      "immutable": true
+    },
+    {
+      "schema": "app_private",
+      "name": "compatibility_issues",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "document_id uuid",
+        "import_batch_id uuid",
+        "kind text NOT NULL",
+        "severity text NOT NULL",
+        "status text NOT NULL DEFAULT 'open'",
+        "location jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "detail jsonb NOT NULL",
+        "decision_by uuid",
+        "decision_reason text",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "document_id"
+          ],
+          "app.documents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "import_batch_id"
+          ],
+          "app_private.import_batches",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ],
+        [
+          [
+            "decision_by"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "severity IN ('info','warning','blocking')",
+        "status IN ('open','resolved','accepted_exception')",
+        "jsonb_typeof(location)='object' AND jsonb_typeof(detail)='object'"
+      ],
+      "read_permission": "document.read",
+      "write_permission": "document.edit",
+      "immutable": false
+    },
+    {
+      "schema": "app_audit",
+      "name": "events",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "actor_id uuid",
+        "action text NOT NULL",
+        "resource_type text NOT NULL",
+        "resource_id uuid",
+        "request_id text",
+        "metadata jsonb NOT NULL DEFAULT '{}'::jsonb",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "actor_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ]
+      ],
+      "checks": [
+        "jsonb_typeof(metadata)='object'"
+      ],
+      "read_permission": "audit.read",
+      "write_permission": "audit.append",
+      "immutable": true
+    },
+    {
+      "schema": "app_audit",
+      "name": "identity_access",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "actor_id uuid NOT NULL",
+        "resident_id uuid",
+        "resource_id uuid",
+        "purpose text",
+        "request_id text",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "actor_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "condominium_id",
+            "resident_id"
+          ],
+          "app_private.residents",
+          [
+            "condominium_id",
+            "id"
+          ]
+        ]
+      ],
+      "checks": [],
+      "read_permission": "audit.read",
+      "write_permission": "audit.append",
+      "immutable": true
+    },
+    {
+      "schema": "app_private",
+      "name": "resident_contacts",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "resident_id uuid NOT NULL",
+        "account_id uuid NOT NULL",
+        "phone_e164 text NOT NULL",
+        "contact_email text",
+        "phone_verified_at timestamptz",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "resident_id"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id",
+            "resident_id",
+            "account_id"
+          ],
+          "app_private.residents",
+          [
+            "condominium_id",
+            "id",
+            "account_id"
+          ]
+        ]
+      ],
+      "checks": [
+        "phone_e164 ~ '^\\+[1-9][0-9]{1,14}$'"
+      ],
+      "read_permission": "contact.read",
+      "write_permission": "resident.manage",
+      "immutable": false
+    },
+    {
+      "schema": "app_acl",
+      "name": "account_permission_grants",
+      "fields": [
+        "id uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+        "condominium_id uuid NOT NULL",
+        "account_id uuid NOT NULL",
+        "permission_code text NOT NULL",
+        "valid_until timestamptz",
+        "status text NOT NULL DEFAULT 'active'",
+        "created_at timestamptz NOT NULL DEFAULT now()"
+      ],
+      "uniques": [
+        [
+          "condominium_id",
+          "account_id",
+          "permission_code"
+        ]
+      ],
+      "fks": [
+        [
+          [
+            "condominium_id"
+          ],
+          "app.condominiums",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "account_id"
+          ],
+          "app_acl.accounts",
+          [
+            "id"
+          ]
+        ],
+        [
+          [
+            "permission_code"
+          ],
+          "app_acl.permissions",
+          [
+            "code"
+          ]
+        ]
+      ],
+      "checks": [
+        "status IN ('active','revoked')"
+      ],
+      "read_permission": null,
+      "write_permission": null,
+      "immutable": false
+    }
+  ],
+  "runtime_direct_frontend_access": false,
+  "database_execution_verified": false
+}

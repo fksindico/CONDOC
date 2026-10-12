@@ -1,0 +1,302 @@
+{
+  "version": "ED-OSS-2.0",
+  "kind": "development_contract_not_executable",
+  "open_source_runtime_required": true,
+  "types": [
+    {
+      "type": "document_root",
+      "label": "Documento",
+      "children": [
+        "cover_block",
+        "document_heading",
+        "preamble",
+        "scope_block",
+        "toc_block",
+        "legal_part",
+        "legal_book",
+        "legal_title",
+        "chapter",
+        "legal_section",
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "annex",
+        "signature_group"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "cover_block",
+      "label": "Capa",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "document_heading",
+      "label": "Identificação",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "preamble",
+      "label": "Preâmbulo",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "scope_block",
+      "label": "Objeto",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "toc_block",
+      "label": "Sumário",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "legal_part",
+      "label": "Parte",
+      "children": [
+        "legal_book",
+        "legal_title",
+        "chapter",
+        "legal_section",
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "legal_book",
+      "label": "Livro",
+      "children": [
+        "legal_title",
+        "chapter",
+        "legal_section",
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "legal_title",
+      "label": "Título normativo",
+      "children": [
+        "chapter",
+        "legal_section",
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "chapter",
+      "label": "Capítulo",
+      "children": [
+        "legal_section",
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "legal_section",
+      "label": "Seção normativa",
+      "children": [
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "subsection",
+      "label": "Subseção",
+      "children": [
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "article",
+      "label": "Artigo",
+      "children": [
+        "caput",
+        "inciso",
+        "legal_paragraph"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": [
+        "one caput first"
+      ]
+    },
+    {
+      "type": "caput",
+      "label": "Caput",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "legal_paragraph",
+      "label": "Parágrafo jurídico",
+      "children": [
+        "inciso"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "inciso",
+      "label": "Inciso",
+      "children": [
+        "alinea"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "alinea",
+      "label": "Alínea",
+      "children": [
+        "item"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "item",
+      "label": "Item",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "legacy_clause",
+      "label": "Cláusula legada",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "narrative_block",
+      "label": "Texto auxiliar",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": true,
+      "notes": []
+    },
+    {
+      "type": "normative_table",
+      "label": "Tabela",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "figure",
+      "label": "Figura",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "annex",
+      "label": "Anexo normativo",
+      "children": [
+        "chapter",
+        "legal_section",
+        "subsection",
+        "article",
+        "legacy_clause",
+        "narrative_block",
+        "normative_table",
+        "figure",
+        "signature_group"
+      ],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "signature_group",
+      "label": "Assinaturas",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    },
+    {
+      "type": "unsupported_preserved",
+      "label": "Preservado sem suporte",
+      "children": [],
+      "stable_identity": "uuid",
+      "rich_body_supported": false,
+      "notes": []
+    }
+  ],
+  "forbidden_runtime_dependencies": [
+    "@tiptap-pro/*",
+    "external_document_conversion_saas"
+  ],
+  "note": "Rich-text paragraphs and layout regions are not legal hierarchy; legacy exceptions require audit."
+}

@@ -179,12 +179,19 @@ CREATE INDEX IF NOT EXISTS idx_sug_attachments_sug ON app.suggestion_attachments
 
 -- 9. Habilitação de RLS para as novas tabelas
 ALTER TABLE app.consultation_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.consultation_campaigns FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.campaign_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.campaign_participants FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.suggestions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_revisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.suggestion_revisions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.published_suggestion_revisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.published_suggestion_revisions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_editorial_decisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.suggestion_editorial_decisions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_attachments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.suggestion_attachments FORCE ROW LEVEL SECURITY;
 
 -- 10. Políticas RLS de Isolamento Multi-Tenancy
 DO $$ BEGIN

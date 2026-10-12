@@ -199,15 +199,25 @@ CREATE INDEX IF NOT EXISTS idx_snapshot_items_snap ON app.snapshot_items(snapsho
 -- HABILITAÇÃO E POLÍTICAS DE ROW LEVEL SECURITY (RLS)
 -- ============================================================================
 ALTER TABLE app.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.projects FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.documents FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.source_files ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.source_files FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.source_transcriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.source_transcriptions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.source_provisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.source_provisions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.provisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.provisions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.provision_revisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.provision_revisions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.internal_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.internal_notes FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.document_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.document_snapshots FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.snapshot_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.snapshot_items FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY rls_projects_tenant ON app.projects
     FOR ALL

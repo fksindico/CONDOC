@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
 import {
@@ -28,10 +28,26 @@ import {
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
-  const { user, logout, isSindico, activeRole } = useAuth();
+  const { user, logout, isSindico, activeRole, isAuthenticated, isLoading } = useAuth();
   const { condominiums, activeCondominium, selectCondominium } = useTenant();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm">Carregando painel administrativo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não autenticado no BFF, redireciona para login preservando URL de retorno
+  if (!isAuthenticated && !user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   const menuSections = [
     {

@@ -474,15 +474,26 @@ class ImportService:
                 )
 
         created_count = 0
+        updated_count = 0
         skipped_count = batch.rows.filter(selected=False).count()
 
-        # Cache de unidades do condomínio
-        units_cache = {u.code.upper(): u for u in Unit.objects.filter(condominium_id=condominium_id)}
+        # Cache de unidades do condomínio (por código simples e por par código/torre)
+        all_units = list(Unit.objects.filter(condominium_id=condominium_id).select_related('building'))
+        units_by_code_and_building = {
+            (u.code.upper(), u.building.code.upper()): u for u in all_units if u.building
+        }
+        units_by_code = {u.code.upper(): u for u in all_units}
 
         for r in selected_rows:
             norm = r.normalized_data
             unidade_code = norm.get('unidade', '').upper()
-            unit = units_cache.get(unidade_code)
+            bloco_code = norm.get('torre_bloco', '').upper()
+
+            unit = None
+            if bloco_code and (unidade_code, bloco_code) in units_by_code_and_building:
+                unit = units_by_code_and_building[(unidade_code, bloco_code)]
+            elif unidade_code in units_by_code:
+                unit = units_by_code[unidade_code]
 
             if not unit:
                 raise UnknownUnitError(
@@ -504,6 +515,23 @@ class ImportService:
                 r.result_id = reg.id
                 r.save(update_fields=['result_id'])
                 created_count += 1
+            elif r.action == 'update_registration':
+                target_reg_id = r.target_registration_id
+                if target_reg_id:
+                    reg = ResidentRegistration.objects.filter(id=target_reg_id, condominium_id=condominium_id).first()
+                    if reg:
+                        if norm.get('nome'):
+                            reg.full_name = norm['nome']
+                        if norm.get('relacao'):
+                            reg.relationship = norm['relacao']
+                        if norm.get('telefone'):
+                            reg.phone_e164 = norm['telefone']
+                        if norm.get('email'):
+                            reg.email = norm['email']
+                        reg.save()
+                        r.result_id = reg.id
+                        r.save(update_fields=['result_id'])
+                        updated_count += 1
 
         batch.status = 'completed'
         batch.confirmed_by_id = actor_id
@@ -515,6 +543,7 @@ class ImportService:
             "status": "completed",
             "applied_operations": {
                 "created_registrations": created_count,
+                "updated_registrations": updated_count,
                 "skipped_rows": skipped_count
             },
             "sends_invitations": False,

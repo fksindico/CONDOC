@@ -1,7 +1,10 @@
 """
 Exceções de Domínio de Importação Cadastral — CONDC (Fase 2)
 """
-from domain.identity.exceptions import DomainError
+try:
+    from ..identity.exceptions import DomainError
+except (ImportError, ValueError):
+    from domain.identity.exceptions import DomainError
 
 class FormulaInjectionDetectedError(DomainError):
     """Tentativa de injeção de fórmula maliciosa em campo de planilha (CWE-1236, V21-07)."""

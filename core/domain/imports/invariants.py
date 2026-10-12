@@ -3,7 +3,10 @@ Invariantes de Domínio para Importação Cadastral — CONDC (Fase 2)
 Regras de segurança, mitigação de injeção de fórmulas e preservação textual.
 """
 from typing import Any, Optional
-from domain.identity.invariants import assert_no_electoral_intent
+try:
+    from ..identity.invariants import assert_no_electoral_intent
+except (ImportError, ValueError):
+    from domain.identity.invariants import assert_no_electoral_intent
 from .exceptions import (
     FormulaInjectionDetectedError,
     ImportPreviewOutdatedError,

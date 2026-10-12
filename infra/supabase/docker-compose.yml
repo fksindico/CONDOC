@@ -43,7 +43,7 @@ services:
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD_URLENC:-%40%40Condoc%23}@db:5432/${POSTGRES_DB:-condc_dev}?sslmode=disable
       GOTRUE_SITE_URL: ${SITE_URL:-https://condoc.fk.adm.br}
-      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_URI_ALLOW_LIST: ${SITE_URL:-https://condoc.fk.adm.br},http://localhost:5173,http://localhost:3000
       GOTRUE_DISABLE_SIGNUP: "false"
       GOTRUE_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
       GOTRUE_JWT_EXP: 3600
@@ -90,8 +90,8 @@ services:
       - "3001:3000"
     environment:
       PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD_URLENC:-%40%40Condoc%23}@db:5432/${POSTGRES_DB:-condc_dev}
-      PGRST_DB_SCHEMAS: public,storage,app
-      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
 
   # ============================================================================

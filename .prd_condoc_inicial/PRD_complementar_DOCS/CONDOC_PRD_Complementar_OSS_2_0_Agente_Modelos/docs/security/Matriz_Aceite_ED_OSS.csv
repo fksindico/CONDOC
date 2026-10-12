@@ -1,0 +1,95 @@
+id,criterio,fase,implementacao,teste,evidencia,status
+EDOSS-OSS-01,Nenhuma dependência @tiptap-pro ou registry privado no build/runtime,,,,,nao_executado
+EDOSS-OSS-02,Nenhum envio documental a serviço externo em operação,,,,,nao_executado
+EDOSS-OSS-03,SBOM e licenças de dependências/imagens/fontes verificadas,,,,,nao_executado
+EDOSS-OSS-04,Tiptap público e extensões sem duplicação,,,,,nao_executado
+EDOSS-OSS-05,Supabase self-hosted é alvo autorizado,,,,,nao_executado
+EDOSS-OSS-06,Fluxo documental funciona com saída internet bloqueada,,,,,nao_executado
+EDOSS-OSS-07,Assets e fontes servidos localmente,,,,,nao_executado
+EDOSS-OSS-08,Nenhum código proprietário copiado para substituição,,,,,nao_executado
+EDOSS-BL-01,Tipos jurídicos e paragraphs textuais separados,,,,,nao_executado
+EDOSS-BL-02,Um caput inicial por artigo sem duplicar texto,,,,,nao_executado
+EDOSS-BL-03,UUID estável em mover e renumerar,,,,,nao_executado
+EDOSS-BL-04,Origem antigo/novo muitos-para-muitos preservada,,,,,nao_executado
+EDOSS-BL-05,Gramática normalizada e modo legado suportados,,,,,nao_executado
+EDOSS-BL-06,Enter e Backspace não criam/fundem dispositivos silenciosamente,,,,,nao_executado
+EDOSS-BL-07,Colagem/importação exige conferência de segmentação,,,,,nao_executado
+EDOSS-BL-08,Projeção visual não cria segunda fonte de texto,,,,,nao_executado
+EDOSS-BL-09,Renumeração e único/vários com prévia,,,,,nao_executado
+EDOSS-BL-10,Referência por UUID/namespace com rótulo atualizado,,,,,nao_executado
+EDOSS-BL-11,Número ordinal/cardinal/romano/letra/item correto,,,,,nao_executado
+EDOSS-BL-12,Templates geram UUID novos uma vez e placeholders tipados,,,,,nao_executado
+EDOSS-ST-01,Estilos semânticos versionados e separados do tipo jurídico,,,,,nao_executado
+EDOSS-ST-02,Fontes/tamanhos/cores/recuos/spaces persistidos,,,,,nao_executado
+EDOSS-ST-03,pt e px não confundidos,,,,,nao_executado
+EDOSS-ST-04,Fonte ausente bloqueia final,,,,,nao_executado
+EDOSS-ST-05,Normalização de importado não é silenciosa,,,,,nao_executado
+EDOSS-ST-06,Override local mapeado no DOCX/PDF,,,,,nao_executado
+EDOSS-ST-07,Zoom/gap visual não viram propriedade normativa,,,,,nao_executado
+EDOSS-ST-08,Snapshot resolve versão de estilo e layout exata,,,,,nao_executado
+EDOSS-PG-01,Quebra manual salva e exportada como instrução,,,,,nao_executado
+EDOSS-PG-02,Paginação automática não cria nó/revisão jurídica,,,,,nao_executado
+EDOSS-PG-03,Artigo longo continua sem caixa indivisível,,,,,nao_executado
+EDOSS-PG-04,"Objeto maior que página exige tratamento, não loop",,,,,nao_executado
+EDOSS-PG-05,Preview final é PDF local do renderer,,,,,nao_executado
+EDOSS-PG-06,Live layout opcional sem dependência Pro,,,,,nao_executado
+EDOSS-PG-07,Seção jurídica não é layout Word,,,,,nao_executado
+EDOSS-PG-08,Margens/orientação/segmentos preservados,,,,,nao_executado
+EDOSS-HF-01,Regiões padrão/first/odd/even salvas e restauradas,,,,,nao_executado
+EDOSS-HF-02,Vazio explícito não recebe fallback,,,,,nao_executado
+EDOSS-HF-03,Header/body/layout salvos consistentemente por revisão,,,,,nao_executado
+EDOSS-HF-04,Permissão servidor para edição de regiões,,,,,nao_executado
+EDOSS-HF-05,PageNumber/PageCount e dados do snapshot resolvidos,,,,,nao_executado
+EDOSS-HF-06,Ocultar número na capa não reinicia implicitamente,,,,,nao_executado
+EDOSS-HF-07,Cursor não muda header global como capítulo corrente,,,,,nao_executado
+EDOSS-HF-08,Regiões sem autoria de sugestões ou notas internas,,,,,nao_executado
+EDOSS-NT-01,Notas do documento separadas de observações privadas,,,,,nao_executado
+EDOSS-NT-02,Marcador noteId e corpo persistidos consistentemente,,,,,nao_executado
+EDOSS-NT-03,Numeração por ordem do snapshot independente de UUID,,,,,nao_executado
+EDOSS-NT-04,Editor auxiliar próprio respeita permissão,,,,,nao_executado
+EDOSS-NT-05,Undo/history preservados sem cleanup indiscriminado,,,,,nao_executado
+EDOSS-NT-06,Export usa notas referenciadas e detecta ausência/órfã,,,,,nao_executado
+EDOSS-NT-07,DOCX tem notas reais e relações OOXML válidas,,,,,nao_executado
+EDOSS-NT-08,Nota longa sem corte; incompatibilidade bloqueia final,,,,,nao_executado
+EDOSS-NT-09,Nenhum comando Pro presumido existente,,,,,nao_executado
+EDOSS-NT-10,Notas sem nesting/ciclo ambíguo,,,,,nao_executado
+EDOSS-TB-01,Tabela pública OSS em editor contínuo,,,,,nao_executado
+EDOSS-TB-02,Mescla/colWidth/altura/padding/align persistidos,,,,,nao_executado
+EDOSS-TB-03,Header semântico e repetição são propriedades distintas,,,,,nao_executado
+EDOSS-TB-04,"Preset/bordas/shading versionados, não só CSS",,,,,nao_executado
+EDOSS-TB-05,Linha fragmentada no renderer não duplica JSON,,,,,nao_executado
+EDOSS-TB-06,Altura exata que corta bloqueia final,,,,,nao_executado
+EDOSS-TB-07,Imagem em célula não cortada/empurrada infinitamente,,,,,nao_executado
+EDOSS-TB-08,Continuação de mescla mantém bordas/fundos conferidos,,,,,nao_executado
+EDOSS-TB-09,Cabeçalho repetido homologado no PDF,,,,,nao_executado
+EDOSS-TB-10,Fragmentação live não depende de PagesTableKit Pro,,,,,nao_executado
+EDOSS-TB-11,Redimensionamento preserva conteúdo e alerta largura inválida,,,,,nao_executado
+EDOSS-TB-12,Export não contém clones/spacers de view,,,,,nao_executado
+EDOSS-IM-01,Original privado com hash e versão preservados,,,,,nao_executado
+EDOSS-IM-02,DOCX parsing inclui estilos/layout/notas/refs/tabelas,,,,,nao_executado
+EDOSS-IM-03,Track changes com escolha explícita da visão,,,,,nao_executado
+EDOSS-IM-04,Comentários importados privados,,,,,nao_executado
+EDOSS-IM-05,Recurso unsupported com diagnóstico sem perda silenciosa,,,,,nao_executado
+EDOSS-IM-06,PDF/OCR não declarado reconstrução universal perfeita,,,,,nao_executado
+EDOSS-IM-07,Fontes/dados registrais não inventados na importação,,,,,nao_executado
+EDOSS-IM-08,Relacionamentos remotos/macros/fields perigosos não executados,,,,,nao_executado
+EDOSS-EX-01,PDF gerado do DOCX definitivo entregue,,,,,nao_executado
+EDOSS-EX-02,Fields/sumário resolvidos antes de final,,,,,nao_executado
+EDOSS-EX-03,Snapshot único durante job inteiro,,,,,nao_executado
+EDOSS-EX-04,Placeholder/perda/ref bloqueante impede pronto,,,,,nao_executado
+EDOSS-EX-05,Par DOCX/PDF tem manifesto e hashes,,,,,nao_executado
+EDOSS-EX-06,Rerender de conferência e regressão semântica/visual,,,,,nao_executado
+EDOSS-EX-07,Público sem PII/notas/comments/deleted/hidden metadata,,,,,nao_executado
+EDOSS-EX-08,Font/template/renderer fixos e registrados,,,,,nao_executado
+EDOSS-EX-09,"Cache inclui versões, opções e tenant",,,,,nao_executado
+EDOSS-EX-10,Falha não entrega arquivo parcial como final,,,,,nao_executado
+EDOSS-OP-01,Worker com perfil/temp isolados por job,,,,,nao_executado
+EDOSS-OP-02,Serviço sem rede externa livre e XML/ZIP seguro,,,,,nao_executado
+EDOSS-OP-03,Runtime DB limitado e tenant checado no worker,,,,,nao_executado
+EDOSS-OP-04,StoragePort remoto sem filesystem compartilhado presumido,,,,,nao_executado
+EDOSS-OP-05,Migração preserva IDs/sugestões/revisões e permite rollback,,,,,nao_executado
+EDOSS-OP-06,Backup/restore inclui banco/objetos/templates/config,,,,,nao_executado
+EDOSS-OP-07,Duas LXC homologadas sem mudança de domínio,,,,,nao_executado
+EDOSS-OP-08,Instalador preserva volumes/segredos sem seed produtivo,,,,,nao_executado
+EDOSS-OP-09,AGENTS módulo e prompt não relaxam privacidade,,,,,nao_executado
+EDOSS-OP-10,Ausência de voto/quórum funcional e texto jurídico correspondente permitido,,,,,nao_executado

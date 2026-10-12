@@ -50,6 +50,9 @@ from .views import (
     DocumentRenumberingView,
     DocumentExportCleanView,
     DocumentExportDeParaView,
+    DocumentPreflightView,
+    DocumentCanonicalExportView,
+    DocumentInstantiateTemplateView,
     # Fase 5
     ConsultationCampaignListCreateView,
     ConsultationCampaignDetailView,
@@ -77,6 +80,7 @@ from .views import (
     DocumentAssemblyReadingView,
     ExportArtifactDetailView,
     ManifestVerifyView,
+    AuditLogsListView,
 )
 
 urlpatterns = [
@@ -109,6 +113,9 @@ urlpatterns = [
 
     # Atribuição de Papéis e Permissões (CA-28)
     path('condominiums/<uuid:condominium_id>/roles', RoleAssignmentListCreateView.as_view(), name='api_v1_roles'),
+
+    # Trilha Imutável de Auditoria (S21A, CA-33)
+    path('condominiums/<uuid:condominium_id>/audit-logs', AuditLogsListView.as_view(), name='api_v1_audit_logs'),
 
     # =========================================================================
     # FASE 2: IMPORTAÇÃO CADASTRAL
@@ -152,9 +159,12 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/compare', DocumentCompareView.as_view(), name='api_v1_document_compare'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/depara', DocumentDeParaReportView.as_view(), name='api_v1_document_depara'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/cross-references', DocumentCrossReferenceListCreateView.as_view(), name='api_v1_document_cross_references'),
+    path('condominiums/<uuid:condominium_id>/projects/<uuid:project_id>/documents/instantiate-template', DocumentInstantiateTemplateView.as_view(), name='api_v1_document_instantiate_template'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/renumber', DocumentRenumberingView.as_view(), name='api_v1_document_renumber'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/preflight', DocumentPreflightView.as_view(), name='api_v1_document_preflight'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/clean', DocumentExportCleanView.as_view(), name='api_v1_document_export_clean'),
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/depara', DocumentExportDeParaView.as_view(), name='api_v1_document_export_depara'),
+    path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/export/canonical', DocumentCanonicalExportView.as_view(), name='api_v1_document_export_canonical'),
 
     # =========================================================================
     # FASE 5: CONSULTA PÚBLICA, PARTICIPAÇÃO E MODERAÇÃO EDITORIAL

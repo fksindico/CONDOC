@@ -1,0 +1,606 @@
+[
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "39daf9f6-9d5a-4ab1-a906-4dc625b97714",
+      "type": "article",
+      "variant": "simple",
+      "numbering": {
+        "policy": "sequential",
+        "value": null
+      },
+      "children": [
+        {
+          "id": "62960522-e122-4144-85a6-4e7c31ff6b78",
+          "type": "caput",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "article_caput",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "b12ab47b-092e-4679-baad-853f1b406b54",
+      "type": "article",
+      "variant": "with_single_paragraph",
+      "numbering": {
+        "policy": "sequential",
+        "value": null
+      },
+      "children": [
+        {
+          "id": "2e567218-a8b2-4a09-9ce5-4040b06da72d",
+          "type": "caput",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "article_caput",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "c1463d3f-9c36-4eb6-a6f4-d5b82c26ebc0",
+          "type": "legal_paragraph",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "single_paragraph",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "2ecff98d-0e11-4443-9fb1-45eea91585d7",
+      "type": "article",
+      "variant": "with_multiple_paragraphs",
+      "numbering": {
+        "policy": "sequential",
+        "value": null
+      },
+      "children": [
+        {
+          "id": "93366a9d-f8ec-438e-85b3-5a4bcdebd771",
+          "type": "caput",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "article_caput",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "74240e95-b6ef-4df7-883c-7f28d0619f39",
+          "type": "legal_paragraph",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "paragraph_1",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "c3e3d123-7f6c-4c0d-87aa-de5cf9c3c253",
+          "type": "legal_paragraph",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "paragraph_2",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "08307ea0-d3b9-4346-8985-16a7ad3524f5",
+      "type": "article",
+      "variant": "with_direct_incisos",
+      "numbering": {
+        "policy": "sequential",
+        "value": null
+      },
+      "children": [
+        {
+          "id": "0bc818f9-8f53-4534-84d1-2ca438829f48",
+          "type": "caput",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "article_caput",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "9174c8ae-f1fa-49c8-ab16-772d6cfa4ce3",
+          "type": "inciso",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "inciso_1",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "60a26bf7-c594-4ea1-ade1-7ee1d1f82b99",
+          "type": "inciso",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "inciso_2",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "8c257b9d-292b-4442-8fd9-09f4155b6b10",
+      "type": "legal_paragraph",
+      "variant": "paragraph_with_incisos",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "paragraph",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ],
+      "children": [
+        {
+          "id": "82a22914-065a-4a20-96d9-ec165ef31311",
+          "type": "inciso",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "inciso_1",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "6fc45742-4b73-4151-8f42-d27d1e7adc1b",
+          "type": "inciso",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "inciso_2",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "33a18877-5326-4717-9bc3-ff0f84ecf7e1",
+      "type": "inciso",
+      "variant": "inciso_with_alineas",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "inciso",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ],
+      "children": [
+        {
+          "id": "e34b5b30-69fd-403e-83ad-7ebb5c3f6bff",
+          "type": "alinea",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "alinea_a",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "743328e1-4673-432b-a1be-6d42d0bc0c7f",
+          "type": "alinea",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "alinea_b",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "8e004e51-1788-416d-8d52-326b256fc267",
+      "type": "alinea",
+      "variant": "alinea_with_items",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "alinea",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ],
+      "children": [
+        {
+          "id": "b93ede35-b28b-4804-93b9-3fdd15a4ad37",
+          "type": "item",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "item_1",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "571851dd-c409-4008-a9f1-68ec43a6cd78",
+          "type": "item",
+          "body": [
+            {
+              "type": "paragraph",
+              "runs": [
+                {
+                  "type": "placeholder",
+                  "key": "item_2",
+                  "resolved": false,
+                  "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "8aca7c52-3b27-4e02-8951-9d3243f71d30",
+      "type": "legacy_clause",
+      "variant": "legacy_preserved",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "legacy_preserved",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "14be6a18-913b-47b5-8a6d-1d866ae00668",
+      "type": "chapter",
+      "variant": "chapter",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "chapter",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "da6cad80-c91e-4c07-8176-a89b80e3e021",
+      "type": "annex",
+      "variant": "annex",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "annex",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "f9dce11d-0c6b-4b76-aa63-9381632a2ae8",
+      "type": "normative_table",
+      "variant": "table",
+      "table": {
+        "column_widths_mm": [
+          50,
+          70,
+          50
+        ],
+        "repeat_header": true,
+        "row_split": "allowed",
+        "style_preset": "classic-v1",
+        "rows": [
+          {
+            "id": "1c6dfabc-6b8d-46d7-a979-6c3038bfecc2",
+            "header": true,
+            "cells": [
+              {
+                "id": "f807009e-3a46-4a4a-8e8d-53fbc57d404c",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "header_0",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "adc8b0e4-cc65-43be-a8ad-cc033bf0dc39",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "header_1",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "74a66522-07b3-45d3-bfca-b3c0309c5f6a",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "header_2",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "79e51923-2cea-412b-ad00-bd8dd7988ee1",
+            "header": false,
+            "cells": [
+              {
+                "id": "43996d86-c4f7-448d-9e36-280fa3659862",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "value_0",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "ea41a57a-bfa6-4204-b009-b4c2b840c16e",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "value_1",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "bc9a6e85-ce3a-4c31-a2f4-b38cc6c17267",
+                "body": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "type": "placeholder",
+                        "key": "value_2",
+                        "resolved": false,
+                        "label": "Preencher e conferir; não é cláusula jurídica pronta"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "template_version": "ED-OSS-2.0",
+    "instantiate_new_uuids": true,
+    "root": {
+      "id": "4e7c305d-6531-4d62-b0c9-f79e838b6113",
+      "type": "signature_group",
+      "variant": "signature",
+      "body": [
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "type": "placeholder",
+              "key": "signature",
+              "resolved": false,
+              "label": "Preencher e conferir; não é cláusula jurídica pronta"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

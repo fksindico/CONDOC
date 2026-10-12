@@ -1,0 +1,11 @@
+# Prompt OSS-F7 — Homologação e migração
+
+Leia AGENTS raiz/Core/módulo e o PRD complementar inteiro. Dependências: F0 a F5; F6 somente se contratado. F6 é opcional; não requisito escondido de exportação.
+
+Entregas: Corpus semântico/visual, licenças/privacidade/rede/restore, migração/rollback e duas LXC.
+
+Inventarie implementação real e matriz EDOSS; planeje incremento, preserve IDs/dados, faça ADR quando necessário. Use componentes OSS aprovados e nenhum @tiptap-pro/SaaS. Implemente→teste→corrija→registre evidência; após cinco tentativas sem convergência registre bloqueio.
+
+Sem dados reais/envio/produção/destrutivos/Proxmox/DNS sem autorização. Verifique tenant/identidade/publicação; nenhum voto funcional. Scripts planejados não são executáveis existentes.
+
+Saída: arquivos/migrations, critérios cobertos, comandos/resultados reais, gaps/risco, corpus/artefatos quando pertinente e gate. Mock deve ser declarado. Não confundir documentação/ZIP validado com aplicação homologada.

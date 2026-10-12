@@ -415,3 +415,11 @@ class IdentityAuditService:
             target_id=target_id,
             purpose=purpose.strip()
         )
+
+    @staticmethod
+    def list_access_events(condominium_id: uuid.UUID, limit: int = 50) -> List[IdentityAccessEvent]:
+        return list(
+            IdentityAccessEvent.objects.filter(condominium_id=condominium_id)
+            .select_related('actor_account')
+            .order_by('-created_at')[:limit]
+        )

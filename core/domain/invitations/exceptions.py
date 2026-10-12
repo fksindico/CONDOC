@@ -1,7 +1,10 @@
 """
 Exceções de Domínio para Convites de Acesso — CONDC (Fase 2)
 """
-from domain.identity.exceptions import DomainError
+try:
+    from ..identity.exceptions import DomainError
+except (ImportError, ValueError):
+    from domain.identity.exceptions import DomainError
 
 class InvitationExpiredOrExhaustedError(DomainError):
     """Convite expirou por data ou atingiu o número máximo de resgates permitidos."""

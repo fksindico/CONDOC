@@ -2,7 +2,7 @@
 
 ## Missão e fonte de verdade
 
-Construir a plataforma de gestão de criação/modificação de Convenção e Regimento Interno, preservando rastreabilidade e privacidade. Ler docs/prd/PRD_Mestre_v3.md inteiro antes de implementar. Documentos de API/UI e fases são extrações; em conflito, o PRD mestre prevalece.
+Construir a plataforma de gestão de criação/modificação de Convenção e Regimento Interno, preservando rastreabilidade e privacidade. Ler docs/prd/PRD_Mestre_v3.md e docs/prd/PRD_Complementar_ED_OSS_2_0.md inteiros antes de implementar. Documentos de API/UI e fases são extrações; em conflito, o PRD mestre e as diretrizes mandatórias de self-hosted/open source prevalecem.
 
 Respeitar políticas da ferramenta e autorizações do ambiente. Ordem interna do projeto: PRD vigente, AGENTS raiz, AGENTS local e ADRs compatíveis. Instrução local só adiciona detalhe; não pode relaxar proibição global. Não alegar que estes arquivos sobrepõem instruções de segurança da ferramenta.
 
@@ -10,6 +10,7 @@ Respeitar políticas da ferramenta e autorizações do ambiente. Ordem interna d
 
 - Nenhum voto, eleição, apuração, quórum, peso eleitoral ou aprovação vinculante.
 - Não chamar concordância de aprovação/voto.
+- Proibição estrita de pacotes @tiptap-pro, registros npm privados ou serviços externos SaaS de conversão/exportação.
 - Não publicar por automação ou admin sem papel de síndico ativo.
 - Não expor autoria a moradores, conselho, comissão ou jurídico sem papel administrativo explicitamente autorizado.
 - Não validar residência por posse de link ou mera confirmação de e-mail.
@@ -20,7 +21,7 @@ Respeitar políticas da ferramenta e autorizações do ambiente. Ordem interna d
 
 ## Arquitetura e organização
 
-React/TS/Vite/Tiptap; Core Django/DRF; Supabase PostgreSQL/Auth/Storage; Celery/Redis; OCR/conversão isolados. Auth Supabase único. Sem credenciais Django paralelas. BFF com cookie seguro; tabelas de negócio não diretamente acessíveis pelo browser.
+React/TS/Vite/Tiptap Core (100% OSS MIT); Core Django/DRF; Supabase PostgreSQL/Auth/Storage; Celery/Redis; OCR/conversão isolados. Pipeline de renderização canônica local (python-docx + LibreOffice headless gerando par DOCX e PDF derivado idêntico). Auth Supabase único. Sem credenciais Django paralelas. BFF com cookie seguro; tabelas de negócio não diretamente acessíveis pelo browser.
 
 SQL em supabase/migrations é fonte única; models domínio managed=False. Sem migrations Django criando as mesmas tabelas. Role de runtime limitado, separado de migration; contexto RLS local à transação após autenticação/autorização. Segredo administrativo não é solução de erro de política e ignora RLS.
 

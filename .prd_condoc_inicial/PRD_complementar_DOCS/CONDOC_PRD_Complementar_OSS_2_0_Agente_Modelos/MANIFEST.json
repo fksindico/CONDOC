@@ -1,0 +1,102 @@
+{
+  "version": "ED-OSS-2.0",
+  "date": "2026-10-11",
+  "scope": "specification_not_software",
+  "numbered_sections": 34,
+  "acceptance_criteria": 94,
+  "block_types": 25,
+  "block_templates": 12,
+  "phase_prompts": 8,
+  "files": [
+    {
+      "path": "docs/prd/PRD_Complementar_ED_OSS_2_0.md",
+      "bytes": 45266,
+      "sha256": "df9e46a9b736c0bbd2439ca44bee80239c82534a8cfe6baea6bf4215bda1e2ae"
+    },
+    {
+      "path": "core/domain/documents/AGENTS.md",
+      "bytes": 2255,
+      "sha256": "6f594735b5196ff36a4960be978ad733f64ca8f4f4c34bdf0e6cc958d50c42fd"
+    },
+    {
+      "path": "Prompt_Start_Atualizacao_OSS.md",
+      "bytes": 2615,
+      "sha256": "d02b0aac8a6ae6ea7a7c32714e8f48c74ee14420d592fbeefe555221073a5169"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1007,
+      "sha256": "9b4c8207fab4715d124d6a58b5c78e28830731d380e85ea78c38ad50fca468b4"
+    },
+    {
+      "path": "modelos/Catalogo_Blocos_OSS.json",
+      "bytes": 6653,
+      "sha256": "0d7203fdbbd5118047cbad7f1e17c7ebf14b35c582438d22f585fff3f8194ade"
+    },
+    {
+      "path": "modelos/Convencao_Esqueleto_OSS.json",
+      "bytes": 16069,
+      "sha256": "1216c2b90115f02369afa266e0d2986e63459bf78dbea0d8f6df9ec553ce3725"
+    },
+    {
+      "path": "modelos/Regimento_Esqueleto_OSS.json",
+      "bytes": 16013,
+      "sha256": "dfb13d43b37889d9ef9437ab30de7b0cb8edd5c6e5f0c0d2209d685ffcd63e03"
+    },
+    {
+      "path": "modelos/Templates_Blocos_OSS.json",
+      "bytes": 16369,
+      "sha256": "d60067170a523f13ce28e3f2df79cd227a443d463912300b8c13b3b79d246671"
+    },
+    {
+      "path": "modelos/Perfil_Estilos_Layout_OSS.json",
+      "bytes": 1156,
+      "sha256": "21726fcbec7843c652cb6aa4d926d2bd8fd4684f335b4743ee62a62e4b856805"
+    },
+    {
+      "path": "docs/phases/OSS_F0_Prompt.md",
+      "bytes": 977,
+      "sha256": "e4b0a86a1d4e2117851490c1ebb1dcf9fe9ea8a474ba484bb99f839f593b9306"
+    },
+    {
+      "path": "docs/phases/OSS_F1_Prompt.md",
+      "bytes": 985,
+      "sha256": "57c86c346a6e2fd928ffa61b3f66e9a4630b6a7a0d0d84219fb6c5cdb0f99851"
+    },
+    {
+      "path": "docs/phases/OSS_F2_Prompt.md",
+      "bytes": 1009,
+      "sha256": "7ef91e05c10e66c30e980d0ce63efd226f8a2c51cb99da620e3e9e3d848ce6ee"
+    },
+    {
+      "path": "docs/phases/OSS_F3_Prompt.md",
+      "bytes": 980,
+      "sha256": "fbee64ed19d4644c64e550cb31c60b0ad6c7afc3ff3e4c17358a0f977e225a60"
+    },
+    {
+      "path": "docs/phases/OSS_F4_Prompt.md",
+      "bytes": 983,
+      "sha256": "25221629028a2c38b3083c8afc69987b7cfc8c73e5a23743ec5bebb1886f9427"
+    },
+    {
+      "path": "docs/phases/OSS_F5_Prompt.md",
+      "bytes": 993,
+      "sha256": "c33ad9c2383c8a89cb14793fc7d76f8c09cca94757eb989194a1b05d3765db4e"
+    },
+    {
+      "path": "docs/phases/OSS_F6_Prompt.md",
+      "bytes": 1015,
+      "sha256": "a2d2cd2373e6855d4f7e2fb419cf326cbe96524c83dbf77a437fa58cc0451b78"
+    },
+    {
+      "path": "docs/phases/OSS_F7_Prompt.md",
+      "bytes": 1034,
+      "sha256": "b6980a5c116a2ed4f71e5f882249306b79e22e14d4280819c63196650be2bd0f"
+    },
+    {
+      "path": "docs/security/Matriz_Aceite_ED_OSS.csv",
+      "bytes": 7618,
+      "sha256": "a93b854282c8ca18021b6d96166fac058a0ec387869861ce01a4521883b487a8"
+    }
+  ]
+}

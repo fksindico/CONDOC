@@ -75,9 +75,13 @@ CREATE INDEX IF NOT EXISTS idx_consultation_snaps_camp ON app.consultation_snaps
 
 -- 6. Habilitação de RLS para todas as tabelas
 ALTER TABLE app.consultative_agreements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.consultative_agreements FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.agreement_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.agreement_events FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.suggestion_incorporations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.suggestion_incorporations FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.consultation_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.consultation_snapshots FORCE ROW LEVEL SECURITY;
 
 -- 7. Políticas RLS de Isolamento Multi-Tenancy
 DO $$ BEGIN

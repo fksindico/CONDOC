@@ -1,0 +1,64 @@
+{
+  "version": "DB-1.0",
+  "tables": 41,
+  "migrations": 6,
+  "database_execution_verified": false,
+  "structural_checks": "FK column/target keys and package hashes",
+  "files": [
+    {
+      "path": "docs/Modelo_Dados_Supabase_DB_1_0.md",
+      "bytes": 17461,
+      "sha256": "90cc185711e6b3739c4e8a0bebe9672004f5dd1901da9a06b9971686938fadd1"
+    },
+    {
+      "path": "docs/Dicionario_Tabelas_DB_1_0.json",
+      "bytes": 48882,
+      "sha256": "82c636fd7db9ab52bf9957d06a6c76d6aa17d69c845f11df8892a4594fa155fe"
+    },
+    {
+      "path": "supabase/migrations/0001_roles_schemas.sql",
+      "bytes": 1604,
+      "sha256": "1c70dbe18eeb1a13d12e0186e90b7a76e3b11c3892abf44d8156e6d946a18ae1"
+    },
+    {
+      "path": "supabase/migrations/0002_core_model.sql",
+      "bytes": 32783,
+      "sha256": "ab0c5e28ca24dc360c8a22487060a1740b8e903d560d2085f3b7547f5be911bd"
+    },
+    {
+      "path": "supabase/migrations/0003_acl_seed.sql",
+      "bytes": 8945,
+      "sha256": "139a0d3104b7ec5802ab793db9112666ea90f2c221e2c89960e67ed1ee49b7ab"
+    },
+    {
+      "path": "supabase/migrations/0004_rls.sql",
+      "bytes": 35041,
+      "sha256": "506935e7e31606e722adcd8a02db9e5afccd8ce942f52f5d5808266d4403eb12"
+    },
+    {
+      "path": "supabase/migrations/0005_immutability.sql",
+      "bytes": 4060,
+      "sha256": "b5aa24e6ba6051e5c455a00b1c7eaf964caf776203d9f86e93e9d5cd05e713e7"
+    },
+    {
+      "path": "supabase/migrations/0006_identity_guards.sql",
+      "bytes": 3595,
+      "sha256": "271b318dbb626b48d326d189bfbb889c4faef9338159582352380d44805475fb"
+    },
+    {
+      "path": "supabase/tests/smoke_without_context.sql",
+      "bytes": 1182,
+      "sha256": "fe646d0303c27bddec3f761ce3419ee8f154f48bdb997d7f7af7c486be9099f3"
+    },
+    {
+      "path": "Prompt_Agente_Modelo_Dados.md",
+      "bytes": 1900,
+      "sha256": "0173e57cd537e5933a3ad69b5fd6ea14ef0483f2f50c11e94056c5464cfe7653"
+    },
+    {
+      "path": "README.md",
+      "bytes": 394,
+      "sha256": "b6e0289fb3e82acb4a7e41db387825cf3dcd328ad4dbbab15200c846afd91b44"
+    }
+  ]
+}

@@ -5,12 +5,16 @@ sem reexecução, e que payloads diferentes com a mesma chave retornem conflito 
 """
 import hashlib
 import json
+import logging
 import uuid
 from datetime import timedelta
 from typing import Optional, Tuple, Any, Callable
+from django.db import IntegrityError
 from django.utils import timezone
 from infrastructure.models import IdempotencyRecord
 from domain.imports.exceptions import IdempotencyConflictError
+
+logger = logging.getLogger("condoc.idempotency")
 
 class IdempotencyService:
     @staticmethod
@@ -79,8 +83,18 @@ class IdempotencyService:
                 response_body=response_data if isinstance(response_data, (dict, list)) else {"result": response_data},
                 expires_at=expires_at
             )
-        except Exception:
-            # Em caso de corrida ou erro de gravação do registro, não aborta a resposta
-            pass
+        except IntegrityError:
+            # Concorrência detectada: outra thread gravou o registro simultaneamente
+            existing = IdempotencyRecord.objects.filter(
+                tenant_id=tenant_id,
+                operation=operation,
+                key=key
+            ).first()
+            if existing and existing.payload_hash != payload_hash:
+                raise IdempotencyConflictError(
+                    f"A chave de idempotência '{key}' já foi utilizada para a operação '{operation}' com outro payload."
+                )
+        except Exception as e:
+            logger.warning("Falha ao persistir registro de idempotência [%s]: %s", key, e)
 
         return status_code, response_data

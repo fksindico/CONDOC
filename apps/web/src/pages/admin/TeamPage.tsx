@@ -35,6 +35,26 @@ export const TeamPage: React.FC = () => {
     }
   };
 
+  const handleAssignRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeCondominiumId || !accountId.trim()) return;
+    setIsAssigning(true);
+    setError('');
+    try {
+      await api.post(`/condominiums/${activeCondominiumId}/roles`, {
+        account_id: accountId.trim(),
+        role,
+      });
+      setIsModalOpen(false);
+      setAccountId('');
+      await fetchRoles();
+    } catch (err: any) {
+      setError(err.message || 'Erro ao atribuir papel à equipe.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
   }, [activeCondominiumId]);
@@ -47,6 +67,16 @@ export const TeamPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Gestão de papéis com mandatos delimitados e segregação de autoridade (S20, CA-28).
           </p>
+        </div>
+        <div>
+          <Button
+            variant="primary"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Atribuir Papel</span>
+          </Button>
         </div>
       </div>
 
@@ -109,6 +139,66 @@ export const TeamPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Atribuir Papel à Equipe"
+      >
+        <form onSubmit={handleAssignRole} className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Conceda mandatos e responsabilidades a membros da gestão condominial.
+          </p>
+          <div>
+            <label htmlFor="accountIdInput" className="block text-xs font-semibold text-slate-700 mb-1">
+              ID da Conta (UUID do Usuário)
+            </label>
+            <input
+              id="accountIdInput"
+              type="text"
+              required
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              placeholder="Ex: 550e8400-e29b-41d4-a716-446655440000"
+              className="w-full text-xs px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="roleSelect" className="block text-xs font-semibold text-slate-700 mb-1">
+              Papel / Função
+            </label>
+            <select
+              id="roleSelect"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full text-xs px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value="comissao">Membro da Comissão (comissao)</option>
+              <option value="conselho">Conselheiro Fiscal / Consultivo (conselho)</option>
+              <option value="subsindico">Subsíndico (subsindico)</option>
+              <option value="sindico">Síndico (sindico)</option>
+              <option value="juridico">Assessor Jurídico (juridico)</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isAssigning}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isAssigning || !accountId.trim()}
+            >
+              {isAssigning ? 'Atribuindo...' : 'Confirmar Atribuição'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
