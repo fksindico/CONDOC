@@ -14,13 +14,14 @@
   }
 }
 
-/* Customização do Editor Tiptap / ProseMirror */
+/* Customização do Editor Tiptap / ProseMirror - Padrão Jurídico */
 .ProseMirror {
-  @apply outline-none min-h-[160px] p-3 text-slate-800 text-sm leading-relaxed;
+  @apply outline-none min-h-[160px] p-3 text-slate-800 text-sm leading-relaxed font-serif;
 }
 
 .ProseMirror p {
-  @apply mb-2;
+  @apply mb-2 leading-relaxed;
+  text-wrap: pretty;
 }
 
 .ProseMirror p:last-child {
@@ -29,6 +30,34 @@
 
 .ProseMirror:focus {
   @apply outline-none ring-0;
+}
+
+/* Folha Oficial de Redação Normativa (Swiss / Legal Sheet) */
+.legal-sheet {
+  @apply bg-white border border-slate-200/90 rounded-xl shadow-xs transition-shadow duration-200;
+}
+
+.legal-sheet:hover {
+  @apply shadow-sm;
+}
+
+/* Barra de rolagem sutil para colunas do editor */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Tipografia Legal - text-wrap para evitar orphans */

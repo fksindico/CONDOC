@@ -185,11 +185,21 @@ export const AdminLayout: React.FC = () => {
         <div className="p-3 border-t border-slate-800 flex items-center justify-between text-xs">
           <div className="truncate pr-2">
             <p className="font-semibold text-white truncate">{user?.full_name || 'Usuário Gestão'}</p>
-            <p className="text-xs text-slate-500 capitalize">{activeRole}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span
+                className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border ${
+                  isSindico
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-700/80 font-bold'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}
+              >
+                {isSindico ? 'Síndico Ativo' : activeRole}
+              </span>
+            </div>
           </div>
           <button
             onClick={logout}
-            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             title="Encerrar Sessão"
             aria-label="Encerrar Sessão"
           >

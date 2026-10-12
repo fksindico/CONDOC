@@ -23,30 +23,30 @@ export const DashboardPage: React.FC = () => {
     {
       label: 'Projetos Normativos',
       value: '2',
-      detail: 'Convenção e Regimento em revisão',
+      detail: 'Convenção e Regimento em revisão ativa',
       icon: FolderGit2,
-      color: 'text-blue-600 bg-blue-50 border-blue-200',
+      color: 'text-brand-800 bg-brand-50 border-brand-200',
     },
     {
       label: 'Campanhas em Consulta',
       value: '1 Ativa',
       detail: 'Consulta Pública Marco v1.0',
       icon: Sliders,
-      color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+      color: 'text-brand-700 bg-blue-50 border-blue-200',
     },
     {
       label: 'Participantes Habilitados',
       value: '142',
       detail: 'Moradores com vínculo validado',
       icon: Users,
-      color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
+      color: 'text-emerald-800 bg-emerald-50 border-emerald-200',
     },
     {
       label: 'Fila de Moderação (4D)',
       value: '8 Pendentes',
       detail: 'Sugestões aguardando análise',
       icon: MessageSquare,
-      color: 'text-amber-600 bg-amber-50 border-amber-200',
+      color: 'text-gold-700 bg-gold-50 border-gold-200',
     },
   ];
 
@@ -102,29 +102,48 @@ export const DashboardPage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Ações do Síndico e Gestão</CardTitle>
-            <CardDescription>Atalhos rápidos para fluxos de trabalho frequentes.</CardDescription>
+            <CardDescription>Atalhos rápidos para fluxos de trabalho normativos e prediais.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
             <Link
+              to="/painel/projetos"
+              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
+            >
+              <div className="flex items-center gap-2.5">
+                <FolderGit2 className="w-4 h-4 text-brand-800" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-brand-900">Estação de Redação Normativa (Minutas)</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+            </Link>
+            <Link
               to="/painel/sugestoes"
-              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm"
+              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
             >
-              <span className="font-medium text-slate-800">Moderação de Sugestões em 4 Dimensões</span>
-              <ArrowRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <div className="flex items-center gap-2.5">
+                <MessageSquare className="w-4 h-4 text-gold-700" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-gold-900">Moderação de Sugestões em 4 Dimensões</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
             <Link
-              to="/painel/moradores/validacoes"
-              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm"
+              to="/painel/condominios"
+              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
             >
-              <span className="font-medium text-slate-800">Fila de Validação Documental de Moradores</span>
-              <ArrowRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <div className="flex items-center gap-2.5">
+                <Users className="w-4 h-4 text-emerald-700" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-emerald-900">Gestão Predial & Saneamento Cadastral</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
             <Link
-              to="/painel/convites"
-              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm"
+              to="/painel/exportacoes"
+              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
             >
-              <span className="font-medium text-slate-800">Emissão e Gestão de Convites de Acesso</span>
-              <ArrowRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <div className="flex items-center gap-2.5">
+                <Download className="w-4 h-4 text-blue-700" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-blue-900">Central de Exportações & Selo SHA-256</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
           </CardContent>
         </Card>

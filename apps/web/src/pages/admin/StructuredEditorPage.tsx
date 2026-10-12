@@ -17,6 +17,9 @@ import {
   Eye,
   StickyNote,
   GitBranch,
+  Search,
+  Check,
+  Filter,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -36,6 +39,10 @@ export const StructuredEditorPage: React.FC = () => {
   const [editLabel, setEditLabel] = useState('');
   const [changeType, setChangeType] = useState('alterado');
   const [activeEtag, setActiveEtag] = useState<string | null>(null);
+
+  // Filtros da Árvore Normativa
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('todos');
 
   // Status de Salvamento (UI-13: "Salvo" depende estritamente da resposta 200 do servidor)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'conflict' | 'error'>('idle');
@@ -168,6 +175,16 @@ export const StructuredEditorPage: React.FC = () => {
     }
   };
 
+  // Filtros aplicados sobre a árvore normativa
+  const filteredProvisions = provisions.filter((prov) => {
+    const matchesSearch =
+      !searchTerm.trim() ||
+      (prov.label && prov.label.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (prov.text && prov.text.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesType = typeFilter === 'todos' || prov.change_type === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
   return (
     <div className="space-y-4 animate-fade-in">
       <Breadcrumb
@@ -182,14 +199,19 @@ export const StructuredEditorPage: React.FC = () => {
       {/* Topbar do Editor */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <Link to={`/painel/projetos`} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Voltar aos projetos">
+          <Link to={`/painel/projetos`} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors" aria-label="Voltar aos projetos">
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </Link>
           <div>
-            <h1 className="text-base font-bold text-slate-900 tracking-tight">
-              Editor Estruturado de Dispositivos (Tiptap)
-            </h1>
-            <p className="text-xs text-slate-500">Minuta de Trabalho — Concorrência Otimista com ETag ativa.</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-bold text-slate-900 tracking-tight">
+                Estação de Redação Normativa
+              </h1>
+              <Badge variant="outline" className="font-mono text-[10px]">
+                {provisions.length} dispositivos
+              </Badge>
+            </div>
+            <p className="text-xs text-slate-500">Minuta Oficial em Elaboração — Concorrência Otimista com ETag ativa.</p>
           </div>
         </div>
 
@@ -198,7 +220,7 @@ export const StructuredEditorPage: React.FC = () => {
           <Link to={`/painel/documentos/${docId}/compare`}>
             <Button size="sm" variant="outline">
               <GitBranch className="w-3.5 h-3.5 mr-1 text-slate-500" aria-hidden="true" />
-              <span>DePara</span>
+              <span>Relatório DePara</span>
             </Button>
           </Link>
           <Link to={`/painel/documentos/${docId}/versoes`}>
@@ -207,12 +229,30 @@ export const StructuredEditorPage: React.FC = () => {
               <span>Snapshots</span>
             </Button>
           </Link>
-          <span className="text-xs font-medium px-2">
-            {saveStatus === 'saving' && <span className="text-amber-600 animate-pulse font-semibold">Salvando...</span>}
-            {saveStatus === 'saved' && <span className="text-emerald-700 font-semibold">Salvo no servidor</span>}
-            {saveStatus === 'conflict' && <span className="text-rose-600 font-bold">Conflito 409!</span>}
-            {saveStatus === 'error' && <span className="text-rose-600 font-semibold">Falha ao salvar</span>}
-          </span>
+          <div className="text-xs font-medium px-2">
+            {saveStatus === 'saving' && (
+              <span className="inline-flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 animate-pulse font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Gravando...
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 font-semibold">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                Salvo no servidor
+              </span>
+            )}
+            {saveStatus === 'conflict' && (
+              <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200 font-bold">
+                Conflito 409!
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200 font-semibold">
+                Falha ao salvar
+              </span>
+            )}
+          </div>
           <Button size="sm" onClick={handleSaveProvision} isLoading={saveStatus === 'saving'}>
             <Save className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
             <span>Salvar Dispositivo</span>
@@ -220,45 +260,90 @@ export const StructuredEditorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Tripartido do Editor (PRD 27.3) */}
+      {/* Grid Tripartido do Editor (PRD 27.3 / Swiss Pro Max Layout) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Coluna 1: Árvore Hierárquica de Dispositivos (3 colunas) */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col max-h-[780px]">
-          <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col max-h-[820px]">
+          <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-brand-600" aria-hidden="true" />
+              <Layers className="w-3.5 h-3.5 text-brand-700" aria-hidden="true" />
               <span>Árvore Normativa</span>
             </span>
-            <button
-              onClick={() => setIsNewModalOpen(true)}
-              className="p-1 text-brand-600 hover:bg-brand-50 rounded"
-              title="Adicionar Dispositivo"
-              aria-label="Adicionar Dispositivo"
-            >
-              <Plus className="w-4 h-4" aria-hidden="true" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsNewModalOpen(true)}
+                className="p-1.5 text-brand-700 hover:bg-brand-50 rounded-lg transition-colors"
+                title="Adicionar Dispositivo"
+                aria-label="Adicionar Dispositivo"
+              >
+                <Plus className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
-          <div className="overflow-y-auto p-2 space-y-1 flex-1 text-xs">
-            {provisions.length === 0 ? (
-              <p className="p-4 text-center text-slate-500">Nenhum dispositivo cadastrado.</p>
+
+          {/* Barra de Busca e Filtro Rápido */}
+          <div className="p-2 border-b border-slate-100 bg-white space-y-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" aria-hidden="true" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar artigo ou termo..."
+                className="w-full text-xs pl-8 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-brand-500 focus:bg-white transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[11px]">
+              {['todos', 'alterado', 'incluido', 'mantido', 'excluido'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setTypeFilter(type)}
+                  className={`px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
+                    typeFilter === type
+                      ? 'bg-brand-800 text-white font-medium shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Lista de Dispositivos */}
+          <div className="overflow-y-auto p-2 space-y-1 flex-1 text-xs custom-scrollbar">
+            {filteredProvisions.length === 0 ? (
+              <div className="p-6 text-center text-slate-400">
+                <p className="text-xs">Nenhum dispositivo encontrado.</p>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="mt-1 text-[11px] text-brand-600 hover:underline"
+                  >
+                    Limpar busca
+                  </button>
+                )}
+              </div>
             ) : (
-              provisions.map((prov) => {
+              filteredProvisions.map((prov) => {
                 const isSelected = selectedProvision?.id === prov.id;
                 return (
                   <button
                     key={prov.id}
                     onClick={() => selectProvision(prov)}
-                    className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-center justify-between ${
+                    className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-center justify-between group ${
                       isSelected
-                        ? 'border-brand-500 bg-brand-50/50 shadow-xs'
+                        ? 'border-brand-700 bg-brand-50/70 shadow-xs border-l-4 border-l-brand-800'
                         : 'border-transparent hover:bg-slate-50'
                     }`}
                   >
                     <div className="truncate pr-2">
-                      <span className="font-bold text-slate-900 block truncate">{prov.label || 'Sem rótulo'}</span>
-                      <span className="text-xs text-slate-500 block truncate">{prov.text}</span>
+                      <span className={`block truncate ${isSelected ? 'font-bold text-brand-900' : 'font-semibold text-slate-800'}`}>
+                        {prov.label || 'Sem rótulo'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 block truncate font-serif">{prov.text}</span>
                     </div>
-                    <Badge variant={(prov.change_type as any) || 'default'} className="text-xs shrink-0">
+                    <Badge variant={(prov.change_type as any) || 'default'} dot={isSelected} className="text-[10px] shrink-0">
                       {prov.change_type || 'mantido'}
                     </Badge>
                   </button>
@@ -269,21 +354,31 @@ export const StructuredEditorPage: React.FC = () => {
         </div>
 
         {/* Coluna 2: Documento-Base Original (Somente Leitura - UI-12) (4 colunas) */}
-        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col max-h-[780px]">
-          <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col max-h-[820px]">
+          <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
-              <span>Documento-Base Original</span>
+              <span>Base Histórica de Referência</span>
             </span>
-            <span className="text-xs text-slate-500 font-medium">Somente Leitura</span>
+            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-200/70 text-slate-700 font-medium">
+              Somente Leitura
+            </span>
           </div>
-          <div className="p-4 overflow-y-auto text-xs font-serif leading-relaxed text-slate-700 bg-slate-50/30 flex-1 space-y-3">
-            <p className="italic text-slate-500 border-b pb-2">
-              Texto da convenção/regimento anterior para confronto direto e rastreabilidade de origens.
-            </p>
-            <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-2xs">
-              <span className="font-bold text-slate-900 block mb-1">Redação Anterior de Referência</span>
-              <p className="text-slate-600">
+          <div className="p-4 overflow-y-auto text-xs font-serif leading-relaxed text-slate-700 bg-slate-50/30 flex-1 space-y-3 custom-scrollbar">
+            <div className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-lg text-amber-900 text-[11px]">
+              <p className="font-sans font-semibold mb-0.5">Texto Anterior da Convenção / Regimento</p>
+              <p className="font-serif">
+                Utilizado para confronto direto e rastreabilidade estrita de origens (CA-19 / CA-20). Nenhuma alteração nesta coluna sobrescreve a base histórica.
+              </p>
+            </div>
+            <div className="legal-sheet p-4 space-y-2">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="font-sans font-bold text-slate-900 text-xs">
+                  {selectedProvision?.label ? `Referência: ${selectedProvision.label}` : 'Dispositivo'}
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Original</span>
+              </div>
+              <p className="text-slate-800 text-sm leading-relaxed font-serif pt-1">
                 {selectedProvision?.text || 'Selecione um dispositivo na árvore à esquerda para conferência.'}
               </p>
             </div>
@@ -331,27 +426,27 @@ export const StructuredEditorPage: React.FC = () => {
 
           {/* Abas de Contexto: Notas Internas (CA-24) e Mapeamento de Origens */}
           <Card>
-            <div className="flex border-b border-slate-100 text-xs font-semibold bg-slate-50">
+            <div className="flex border-b border-slate-100 text-xs font-semibold bg-slate-50/80">
               <button
                 onClick={() => setActiveTab('notas')}
                 className={`flex-1 py-2.5 px-3 text-center border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
                   activeTab === 'notas'
-                    ? 'border-brand-600 text-brand-700 bg-white'
+                    ? 'border-brand-800 text-brand-900 bg-white font-bold shadow-2xs'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <StickyNote className="w-3.5 h-3.5" aria-hidden="true" />
+                <StickyNote className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
                 <span>Notas Internas ({notes.length})</span>
               </button>
               <button
                 onClick={() => setActiveTab('origens')}
                 className={`flex-1 py-2.5 px-3 text-center border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
                   activeTab === 'origens'
-                    ? 'border-brand-600 text-brand-700 bg-white'
+                    ? 'border-brand-800 text-brand-900 bg-white font-bold shadow-2xs'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
+                <GitBranch className="w-3.5 h-3.5 text-brand-600" aria-hidden="true" />
                 <span>Mapeamento de Origem</span>
               </button>
             </div>
@@ -359,16 +454,19 @@ export const StructuredEditorPage: React.FC = () => {
             <CardContent className="p-4 text-xs">
               {activeTab === 'notas' ? (
                 <div className="space-y-3">
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                  <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
                     {notes.length === 0 ? (
-                      <p className="text-slate-500 italic">Nenhuma nota interna vinculada a este artigo.</p>
+                      <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center text-slate-400">
+                        <p className="italic">Nenhuma nota interna restrita vinculada a este dispositivo.</p>
+                      </div>
                     ) : (
                       notes.map((n) => (
-                        <div key={n.id} className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-900">
-                          <p>{n.content}</p>
-                          <span className="text-xs text-amber-700/80 mt-1 block">
-                            Visibilidade: {n.visibility} • Categoria: {n.category}
-                          </span>
+                        <div key={n.id} className="p-2.5 bg-amber-50/60 border border-amber-200/70 rounded-lg text-amber-950 shadow-2xs">
+                          <p className="leading-relaxed font-sans">{n.content}</p>
+                          <div className="flex items-center justify-between text-[10px] text-amber-800/80 mt-1.5 pt-1 border-t border-amber-200/40">
+                            <span className="font-mono uppercase tracking-wider font-semibold">Restrito • {n.category}</span>
+                            <span className="capitalize">{n.visibility}</span>
+                          </div>
                         </div>
                       ))
                     )}
@@ -376,13 +474,13 @@ export const StructuredEditorPage: React.FC = () => {
                   <form onSubmit={handleAddNote} className="flex gap-2 pt-2 border-t border-slate-100">
                     <input
                       type="text"
-                      className="flex-1 text-xs border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-brand-500"
+                      className="flex-1 text-xs border border-slate-200 rounded-lg p-2 outline-none focus:ring-1 focus:ring-brand-700 bg-slate-50 focus:bg-white transition-all"
                       placeholder="Adicionar nota restrita da equipe jurídica/comissão..."
                       value={newNoteContent}
                       onChange={(e) => setNewNoteContent(e.target.value)}
                     />
                     <Button type="submit" size="sm" variant="outline">
-                      Adicionar
+                      Registrar
                     </Button>
                   </form>
                 </div>
