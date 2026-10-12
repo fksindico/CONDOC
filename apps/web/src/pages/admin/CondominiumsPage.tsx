@@ -235,8 +235,9 @@ export const CondominiumsPage: React.FC = () => {
 
   const handlePurgeConfirm = async () => {
     if (!selectedCondo) return;
-    if (purgeConfirmName.trim() !== selectedCondo.name.trim()) {
-      toast.error('O nome digitado não corresponde ao nome exato do condomínio.');
+    const normalized = purgeConfirmName.trim().toUpperCase();
+    if (normalized !== 'CONFIRMAR EXCLUSÃO' && normalized !== 'CONFIRMAR EXCLUSAO') {
+      toast.error('Digite "CONFIRMAR EXCLUSÃO" para prosseguir com o saneamento definitivo.');
       return;
     }
 
@@ -896,27 +897,51 @@ export const CondominiumsPage: React.FC = () => {
         title="Saneamento Definitivo de Condomínio"
       >
         <div className="space-y-4">
-          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3 text-rose-900 text-xs">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3 text-rose-900 text-xs">
             <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
             <div>
               <p className="font-bold uppercase tracking-wider text-rose-700">Ação Irreversível de Saneamento</p>
               <p className="mt-1 leading-relaxed">
-                O condomínio <strong>"{selectedCondo?.name}"</strong> está arquivado e será <strong>removido definitivamente</strong> da base de dados, expurgando em cascata todas as suas torres, unidades, documentos, minutas e registros associados sem uso.
+                Este procedimento removerá permanentemente o condomínio e expurgará em cascata todas as suas torres, unidades, documentos, minutas e registros associados sem uso.
               </p>
             </div>
           </div>
 
+          {/* Cartão de Identificação em Destaque do Condomínio */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-slate-200/80 text-slate-700 rounded-lg shrink-0">
+                <Building2 className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  Condomínio a ser Excluído
+                </span>
+                <span className="font-bold text-slate-900 text-sm block">
+                  {selectedCondo?.name}
+                </span>
+                <span className="text-xs text-slate-500 font-mono block">
+                  CNPJ: {selectedCondo?.cnpj || 'Não informado'}
+                </span>
+              </div>
+            </div>
+            <Badge variant="danger" dot>Arquivado</Badge>
+          </div>
+
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700">
-              Para confirmar a exclusão permanente, digite exatamente o nome do condomínio:
+              Para confirmar a exclusão permanente, digite exatamente <span className="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">CONFIRMAR EXCLUSÃO</span>:
             </label>
             <input
               type="text"
               value={purgeConfirmName}
               onChange={(e) => setPurgeConfirmName(e.target.value)}
-              placeholder={selectedCondo?.name}
-              className="w-full text-xs font-mono p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+              placeholder="CONFIRMAR EXCLUSÃO"
+              className="w-full text-xs font-mono p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500 uppercase tracking-wider"
             />
+            <p className="text-[11px] text-slate-500">
+              A palavra-chave padrão em maiúsculas assegura a confirmação consciente sem exigir que você decore ou copie o nome completo do condomínio.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
@@ -926,7 +951,11 @@ export const CondominiumsPage: React.FC = () => {
             <Button
               type="button"
               variant="destructive"
-              disabled={isSubmitting || purgeConfirmName.trim() !== selectedCondo?.name?.trim()}
+              disabled={
+                isSubmitting ||
+                (purgeConfirmName.trim().toUpperCase() !== 'CONFIRMAR EXCLUSÃO' &&
+                 purgeConfirmName.trim().toUpperCase() !== 'CONFIRMAR EXCLUSAO')
+              }
               onClick={handlePurgeConfirm}
             >
               {isSubmitting ? 'Expurgando...' : 'Excluir Definitivamente'}

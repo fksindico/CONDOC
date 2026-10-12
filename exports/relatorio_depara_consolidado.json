@@ -1,5 +1,5 @@
 {
-  "document_id": "a1b0fb4f-9ebe-4abd-9161-6607dae6e5a6",
+  "document_id": "f7ce500c-bb04-401b-ad76-bb6b4a4a7646",
   "document_title": "Regimento Interno do Condomínio Parque Real",
   "total_entries": 23,
   "total_new_provisions": 0,
@@ -7,7 +7,7 @@
   "entries": [
     {
       "entry_type": "mantido",
-      "draft_provision_id": "e8067281-ae17-476a-8078-dc62ce7353bc",
+      "draft_provision_id": "60ef0b29-0316-4c10-aec1-4e564e80b6f7",
       "draft_label": "Título I",
       "draft_text": "Do Condomínio e sua Destinação Residencial",
       "draft_position": 1,
@@ -17,7 +17,7 @@
     },
     {
       "entry_type": "mantido",
-      "draft_provision_id": "007a5969-ed2a-41ad-a037-f6993b32b908",
+      "draft_provision_id": "5f47df23-80a7-4f17-8cec-dbcd48250f97",
       "draft_label": "Capítulo I",
       "draft_text": "Dos Direitos e Deveres Gerais dos Condôminos",
       "draft_position": 2,
@@ -27,7 +27,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "b3d700b1-9c04-404d-b618-b42704a18273",
+      "draft_provision_id": "e10645c7-5444-41d7-8979-95d6c01b1b45",
       "draft_label": "Capítulo II",
       "draft_text": "Do Sossego e Horário de Silêncio das 22h às 08h",
       "draft_position": 3,
@@ -37,7 +37,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "727d2214-cb48-4fd9-881e-b3733a3b7374",
+      "draft_provision_id": "9132212a-440e-49df-8425-4fbe8abbedd3",
       "draft_label": "Capítulo III",
       "draft_text": "Da Convivência e Trânsito de Animais de Estimação - Pets",
       "draft_position": 4,
@@ -47,7 +47,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "992c3224-9f5c-4a59-9f3b-5a28a30da815",
+      "draft_provision_id": "86ea0041-981b-4ec6-ae09-cbc6131df9b6",
       "draft_label": "Capítulo IV",
       "draft_text": "Do Uso das Áreas Comuns - Salão de Festas, Piscina e Churrasqueira",
       "draft_position": 5,
@@ -57,7 +57,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "cf9f9bce-a48f-4bea-acba-313cd901289f",
+      "draft_provision_id": "0d1aa562-bcab-4cc8-8c61-15aac4bd33ec",
       "draft_label": "Capítulo V",
       "draft_text": "Das Penalidades, Advertências e Recursos Administrativos",
       "draft_position": 6,
@@ -67,7 +67,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "ef9f6bca-c73b-4d0e-b496-6863038ef1a8",
+      "draft_provision_id": "c7bfa443-509a-49d7-b5a0-304c28c99229",
       "draft_label": "Art. 1º",
       "draft_text": "O Condomínio Residencial Parque Real destina-se exclusivamente para fins residenciais familiares, sendo terminantemente vedada a exploração comercial, industrial ou profissional com atendimento presencial que desvirtue sua finalidade.",
       "draft_position": 7,
@@ -77,7 +77,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "018858f6-7a05-4ef0-a3fe-4f9d7a7739ae",
+      "draft_provision_id": "7159b211-e11f-492f-b5cb-bbd8487891b2",
       "draft_label": "Art. 2º",
       "draft_text": "São direitos dos condôminos e moradores usar, gozar e dispor livremente de suas unidades autônomas, bem como utilizar as áreas comuns de acordo com a sua destinação, desde que respeitadas as normas de segurança, sossego, saúde e boa convivência comunitária.",
       "draft_position": 8,
@@ -87,7 +87,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "63056873-5c3a-4fd8-ae5b-fed6e09ebcb6",
+      "draft_provision_id": "ed9a38a1-a7ec-496c-a85c-478386e21720",
       "draft_label": "Art. 3º",
       "draft_text": "São deveres dos condôminos e posseiros: contribuir pontualmente com as despesas ordinárias e extraordinárias; manter inalterada a fachada arquitetônica e a cor das esquadrias; e cumprir rigorosamente as normas da Convenção Condominial e deste Regimento.",
       "draft_position": 9,
@@ -97,7 +97,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "ccba5729-0abd-47cd-b03f-b10078df03ae",
+      "draft_provision_id": "3ac57ea7-7e79-4e25-b674-5618d84b263b",
       "draft_label": "Art. 4º",
       "draft_text": "Fica instituído o horário de silêncio no condomínio das 22h00 às 08h00 nos dias úteis, e até às 09h00 aos sábados, domingos e feriados, período no qual é expressamente proibido produzir ruídos, algazarras, música alta ou festas que perturbem o repouso dos vizinhos.",
       "draft_position": 10,
@@ -107,7 +107,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "b118881c-bbc2-46bd-9e8e-80e58a8c7f98",
+      "draft_provision_id": "36780ad0-960b-4f42-b4eb-4ef4c6b8728e",
       "draft_label": "Art. 5º",
       "draft_text": "Obras, reparos, montagem de móveis e quaisquer reformas ruidosas nas unidades privativas somente são permitidas de segunda a sexta-feira, das 08h00 às 17h00, e aos sábados, das 09h00 às 13h00, sendo estritamente vedadas aos domingos e feriados.",
       "draft_position": 11,
@@ -117,7 +117,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "137b0d3a-51d5-4364-ada1-739e73a359fe",
+      "draft_provision_id": "06224f91-1da4-4e84-82af-b296ac560f91",
       "draft_label": "Art. 6º",
       "draft_text": "É plenamente assegurado aos moradores o direito de manter animais de estimação (pets) de qualquer porte no interior de suas unidades, desde que não representem ameaça à integridade física, saúde ou sossego dos demais habitantes do condomínio.",
       "draft_position": 12,
@@ -127,14 +127,14 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "3fe2f42a-9e74-43ec-80ec-3f72bc654d70",
+      "draft_provision_id": "fde828c8-ec92-4405-893e-7b8677fca06e",
       "draft_label": "Art. 7º",
       "draft_text": "O trânsito de animais domésticos pelas áreas comuns e elevadores é livre com o uso de coleira e guia curta, sendo permitido o uso de qualquer elevador quando o animal estiver no colo do tutor, e do elevador social em caso de inoperância do elevador de serviço, mantida a obrigação de recolhimento imediato de dejetos.",
       "draft_position": 13,
       "change_type": "renumerado",
       "sources": [
         {
-          "source_provision_id": "7bee0620-73c4-48fd-b199-9dee27f71dd8",
+          "source_provision_id": "024e319c-4f4b-48f2-86fd-8db37cdcee0d",
           "source_label": "Art. 7º Antigo",
           "source_text": "Proibição de animais de qualquer espécie sem autorização do síndico.",
           "relation_type": "alterado",
@@ -145,7 +145,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "a98ce8c9-3425-4797-bbbf-73dfeab985b7",
+      "draft_provision_id": "b8867689-e0e8-429e-b2b2-c3ee81bb2d87",
       "draft_label": "Art. 8º",
       "draft_text": "A utilização do Salão de Festas depende de reserva prévia formalizada junto à administração condominial e do recolhimento da respectiva taxa de limpeza e conservação, observando-se a capacidade máxima de 60 pessoas e o horário de encerramento às 02h00.",
       "draft_position": 14,
@@ -155,7 +155,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "52a5c176-cc46-412e-afb5-90493f47f5da",
+      "draft_provision_id": "6ef5f3f2-14a8-4544-9b45-cd5751f5eba6",
       "draft_label": "Art. 9º",
       "draft_text": "A área da Piscina é de uso exclusivo dos condôminos e moradores residentes, funcionando de terça a domingo das 07h00 às 22h00, sendo terminantemente proibido o consumo ou porte de garrafas, copos ou recipientes de vidro em todo o seu perímetro.",
       "draft_position": 15,
@@ -165,7 +165,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "a6433a66-f136-4e31-8cd9-21b75e27f5a7",
+      "draft_provision_id": "bffc145f-9dc2-4bfb-97b7-89d306e1fe91",
       "draft_label": "Art. 10",
       "draft_text": "A Churrasqueira comunitária poderá ser reservada para eventos de moradores, cabendo ao requisitante zelar pelo asseio, conservação das grelhas e equipamentos elétricos, e destinação adequada do carvão e resíduos ao término do uso.",
       "draft_position": 16,
@@ -175,7 +175,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "30a9125c-80c2-4d6f-becc-38c3c70eab75",
+      "draft_provision_id": "234e8e8b-9b1e-4d9f-a2af-d3bfbc862c50",
       "draft_label": "Art. 11",
       "draft_text": "O bicicletário coletivo destina-se exclusivamente à guarda de bicicletas ativas dos moradores.",
       "draft_position": 17,
@@ -185,7 +185,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "aa689089-22d4-470a-bf91-19ff6f274e82",
+      "draft_provision_id": "df0b3f52-7451-452a-88b3-090ba8e49696",
       "draft_label": "Art. 12",
       "draft_text": "É expressamente vedada a cessão ou locação de quaisquer áreas comuns do condomínio a terceiros não residentes para eventos com cobrança de ingressos, manifestações político-partidárias ou cultos religiosos públicos.",
       "draft_position": 18,
@@ -195,7 +195,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "d5d5d5b3-02c9-48ed-b2e8-7ad632f6f2a8",
+      "draft_provision_id": "f5ea496b-2595-464b-bd27-1006f8ed3ec7",
       "draft_label": "Art. 13",
       "draft_text": "A inobservância de qualquer obrigação prevista neste Regimento Interno ensejará notificação e advertência formal por escrito expedida pelo Síndico ou administradora ao condômino infrator.",
       "draft_position": 19,
@@ -205,7 +205,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "4454e95c-b76b-4faf-a4a2-dfacb609483f",
+      "draft_provision_id": "2c8ed7c0-efd2-4f28-a905-a341576ce852",
       "draft_label": "Art. 14",
       "draft_text": "A reincidência na mesma infração no período de 12 (doze) meses acarretará aplicação de multa punitiva no valor de 1 (uma) cota condominial ordinária vigente, dobrando-se o valor nas reincidências subsequentes até o teto legal de 5 (cinco) cotas.",
       "draft_position": 20,
@@ -215,7 +215,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "017fab87-43eb-4e32-9567-9cd2611eda11",
+      "draft_provision_id": "d322437d-214f-43e5-9a28-9e8fdf07ae98",
       "draft_label": "Art. 15",
       "draft_text": "Das penalidades de multa aplicadas caberá recurso administrativo sem efeito suspensivo ao Conselho Consultivo, no prazo improrrogável de 10 (dez) dias corridos a contar da confirmação do recebimento da notificação de infração.",
       "draft_position": 21,
@@ -225,7 +225,7 @@
     },
     {
       "entry_type": "renumerado",
-      "draft_provision_id": "7900435d-495e-4579-92f5-9d0a776e5a0e",
+      "draft_provision_id": "1f94534a-7b88-4b56-bc8d-269cdd713ac4",
       "draft_label": "Art. 16",
       "draft_text": "Os casos omissos ou situações não contempladas neste Regimento Interno serão resolvidos pelo Síndico em conjunto com o Conselho Consultivo, ad referendum da Assembleia Geral dos Condôminos e nos termos da Lei Federal 10.406/2002 (Código Civil).",
       "draft_position": 22,
@@ -235,7 +235,7 @@
     },
     {
       "entry_type": "excluido",
-      "draft_provision_id": "948723f6-fc68-4887-9638-c4f9d43e4d23",
+      "draft_provision_id": "06980f8b-91cd-47e5-a42a-b160a33c7f1e",
       "draft_label": "[EXCLUÍDO] Art. 99",
       "draft_text": "É obrigatório o uso de trajes formais nas reuniões do hall social.",
       "draft_position": 50,
