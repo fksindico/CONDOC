@@ -71,6 +71,54 @@ class CondominiumService:
         condo.save()
         return condo
 
+    @staticmethod
+    def purge_condominium(condominium_id: uuid.UUID) -> None:
+        """
+        Saneamento / Expurgo Definitivo de Condomínio:
+        Exclui permanentemente o condomínio arquivado e seus registros em cascata.
+        Regra mandatória: O condomínio DEVE estar previamente arquivado ou inativo.
+        """
+        condo = Condominium.objects.get(id=condominium_id)
+        if condo.status not in ('archived', 'inactive'):
+            raise DomainError(
+                "Apenas condomínios previamente arquivados ou inativos podem ser excluídos definitivamente no saneamento."
+            )
+        condo.delete()
+
+    @staticmethod
+    def purge_building(condominium_id: uuid.UUID, building_id: uuid.UUID) -> None:
+        """
+        Saneamento / Expurgo Definitivo de Torre/Bloco:
+        Exclui permanentemente a torre arquivada/inativa se não possuir unidades ativas vinculadas.
+        """
+        building = Building.objects.get(id=building_id, condominium_id=condominium_id)
+        if building.status not in ('inactive', 'archived'):
+            raise DomainError(
+                "Apenas torres/blocos previamente inativados podem ser excluídos definitivamente no saneamento."
+            )
+        if Unit.objects.filter(building_id=building.id, status='active').exists():
+            raise DomainError(
+                "Não é possível excluir definitivamente uma torre que ainda possui unidades ativas vinculadas."
+            )
+        building.delete()
+
+    @staticmethod
+    def purge_unit(condominium_id: uuid.UUID, unit_id: uuid.UUID) -> None:
+        """
+        Saneamento / Expurgo Definitivo de Unidade Autônoma:
+        Exclui permanentemente a unidade arquivada/inativa se não possuir vínculos de moradores ativos.
+        """
+        unit = Unit.objects.get(id=unit_id, condominium_id=condominium_id)
+        if unit.status not in ('inactive', 'archived'):
+            raise DomainError(
+                "Apenas unidades previamente inativadas podem ser excluídas definitivamente no saneamento."
+            )
+        if UnitMembership.objects.filter(unit_id=unit.id, membership_status='active').exists():
+            raise DomainError(
+                "Não é possível excluir definitivamente uma unidade que ainda possui vínculos de moradores ativos."
+            )
+        unit.delete()
+
 
     @staticmethod
     def create_building(condominium_id: uuid.UUID, code: str, name: str, kind: str = 'tower', display_order: int = 0) -> Building:
@@ -293,6 +341,25 @@ class UnitMembershipService:
                 actor_account_id=actor_account_id
             )
         return membership
+
+    @staticmethod
+    def purge_membership(
+        condominium_id: uuid.UUID,
+        membership_id: uuid.UUID,
+    ) -> None:
+        """
+        Saneamento / Expurgo Definitivo de Vínculo de Morador:
+        Exclui permanentemente o vínculo se já estiver encerrado, inativo ou revogado.
+        """
+        membership = UnitMembership.objects.get(
+            id=membership_id,
+            condominium_id=condominium_id
+        )
+        if membership.membership_status == 'active' and membership.verification_status not in ('revogado', 'recusado'):
+            raise DomainError(
+                "Apenas vínculos de moradores previamente encerrados, desativados ou revogados podem ser excluídos definitivamente no saneamento."
+            )
+        membership.delete()
 
 
 

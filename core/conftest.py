@@ -141,6 +141,27 @@ CREATE TABLE IF NOT EXISTS app.role_assignments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS app.permission_grants (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    role_assignment_id TEXT NOT NULL REFERENCES role_assignments(id) ON DELETE CASCADE,
+    permission TEXT NOT NULL,
+    scope TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.core_sessions (
+    id TEXT PRIMARY KEY,
+    session_token_hash TEXT NOT NULL UNIQUE,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    active_condominium_id TEXT REFERENCES condominiums(id) ON DELETE SET NULL,
+    expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP,
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS app.identity_access_events (
     id TEXT PRIMARY KEY,
     condominium_id TEXT REFERENCES condominiums(id) ON DELETE CASCADE,

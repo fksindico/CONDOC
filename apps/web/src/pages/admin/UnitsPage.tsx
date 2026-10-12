@@ -50,6 +50,7 @@ export const UnitsPage: React.FC = () => {
   // Modais de Edição e Exclusão de Torre/Bloco
   const [isEditBuildingOpen, setIsEditBuildingOpen] = useState(false);
   const [isDeleteBuildingOpen, setIsDeleteBuildingOpen] = useState(false);
+  const [isPurgeBuildingOpen, setIsPurgeBuildingOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [editBuildingName, setEditBuildingName] = useState('');
   const [editBuildingCode, setEditBuildingCode] = useState('');
@@ -57,6 +58,7 @@ export const UnitsPage: React.FC = () => {
   // Modais de Edição e Exclusão de Unidade
   const [isEditUnitOpen, setIsEditUnitOpen] = useState(false);
   const [isDeleteUnitOpen, setIsDeleteUnitOpen] = useState(false);
+  const [isPurgeUnitOpen, setIsPurgeUnitOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [editUnitCode, setEditUnitCode] = useState('');
   const [editUnitBuildingId, setEditUnitBuildingId] = useState('');
@@ -155,6 +157,37 @@ export const UnitsPage: React.FC = () => {
       toast.error(err.message || 'Erro ao desativar torre/bloco.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenPurgeBuilding = (b: Building) => {
+    setEditingBuilding(b);
+    setIsPurgeBuildingOpen(true);
+  };
+
+  const handlePurgeBuildingConfirm = async () => {
+    if (!activeCondominiumId || !editingBuilding) return;
+    setIsSubmitting(true);
+    try {
+      await api.delete(`/condominiums/${activeCondominiumId}/buildings/${editingBuilding.id}?permanent=true`);
+      setIsPurgeBuildingOpen(false);
+      toast.success(`Torre/Bloco "${editingBuilding.name}" excluído definitivamente no saneamento.`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir definitivamente torre/bloco.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReactivateBuilding = async (b: Building) => {
+    if (!activeCondominiumId) return;
+    try {
+      await api.patch(`/condominiums/${activeCondominiumId}/buildings/${b.id}`, { status: 'active' });
+      toast.success(`Torre/Bloco "${b.name}" reativado com sucesso!`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao reativar torre/bloco.');
     }
   };
 
@@ -275,6 +308,26 @@ export const UnitsPage: React.FC = () => {
     }
   };
 
+  const handleOpenPurgeUnit = (unit: Unit) => {
+    setEditingUnit(unit);
+    setIsPurgeUnitOpen(true);
+  };
+
+  const handlePurgeUnitConfirm = async () => {
+    if (!activeCondominiumId || !editingUnit) return;
+    setIsSubmitting(true);
+    try {
+      await api.delete(`/condominiums/${activeCondominiumId}/units/${editingUnit.id}?permanent=true`);
+      setIsPurgeUnitOpen(false);
+      toast.success(`Unidade "${editingUnit.code}" excluída definitivamente no saneamento.`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir definitivamente unidade.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Filtragem de Unidades
   const filteredUnits = units.filter((u) => {
     const code = (u.code || u.unit_number || '').toLowerCase();
@@ -358,22 +411,45 @@ export const UnitsPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenEditBuilding(b)}
-                        className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Editar Torre/Bloco"
-                        aria-label="Editar Torre/Bloco"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleOpenDeleteBuilding(b)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Desativar Torre/Bloco"
-                        aria-label="Desativar Torre/Bloco"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {b.status === 'inactive' ? (
+                        <>
+                          <button
+                            onClick={() => handleReactivateBuilding(b)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Reativar Torre/Bloco"
+                            aria-label="Reativar Torre/Bloco"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenPurgeBuilding(b)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-100 rounded-lg transition-colors"
+                            title="Saneamento / Excluir Definitivamente"
+                            aria-label="Saneamento / Excluir Definitivamente"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleOpenEditBuilding(b)}
+                            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Editar Torre/Bloco"
+                            aria-label="Editar Torre/Bloco"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenDeleteBuilding(b)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Desativar Torre/Bloco"
+                            aria-label="Desativar Torre/Bloco"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -520,14 +596,24 @@ export const UnitsPage: React.FC = () => {
                             </button>
 
                             {isInactive ? (
-                              <button
-                                onClick={() => handleReactivateUnit(u)}
-                                className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                title="Reativar unidade"
-                                aria-label="Reativar unidade"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleReactivateUnit(u)}
+                                  className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                  title="Reativar unidade"
+                                  aria-label="Reativar unidade"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenPurgeUnit(u)}
+                                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                  title="Saneamento / Excluir Definitivamente"
+                                  aria-label="Saneamento / Excluir Definitivamente"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
                             ) : (
                               <button
                                 onClick={() => handleOpenDeleteUnit(u)}
@@ -828,6 +914,70 @@ export const UnitsPage: React.FC = () => {
               onClick={handleDeleteUnit}
             >
               {isSubmitting ? 'Desativando...' : 'Confirmar Desativação'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Saneamento / Excluir Definitivamente Torre */}
+      <Modal
+        isOpen={isPurgeBuildingOpen}
+        onClose={() => setIsPurgeBuildingOpen(false)}
+        title="Saneamento Definitivo de Torre / Bloco"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3 text-rose-900 text-xs">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+            <div>
+              <p className="font-bold uppercase tracking-wider text-rose-700">Ação Irreversível de Saneamento</p>
+              <p className="mt-1 leading-relaxed">
+                A torre <strong>"{editingBuilding?.name}"</strong> está inativa e será <strong>removida permanentemente</strong> da base de dados.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setIsPurgeBuildingOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isSubmitting}
+              onClick={handlePurgeBuildingConfirm}
+            >
+              {isSubmitting ? 'Expurgando...' : 'Excluir Definitivamente'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Saneamento / Excluir Definitivamente Unidade */}
+      <Modal
+        isOpen={isPurgeUnitOpen}
+        onClose={() => setIsPurgeUnitOpen(false)}
+        title="Saneamento Definitivo de Unidade Autônoma"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3 text-rose-900 text-xs">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+            <div>
+              <p className="font-bold uppercase tracking-wider text-rose-700">Ação Irreversível de Saneamento</p>
+              <p className="mt-1 leading-relaxed">
+                A unidade <strong>"{editingUnit?.code}"</strong> está inativa e será <strong>removida permanentemente</strong> da base de dados.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setIsPurgeUnitOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isSubmitting}
+              onClick={handlePurgeUnitConfirm}
+            >
+              {isSubmitting ? 'Expurgando...' : 'Excluir Definitivamente'}
             </Button>
           </div>
         </div>

@@ -47,6 +47,7 @@ export const ResidentsPage: React.FC = () => {
   // Modais de Edição e Exclusão / Revogação
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isPurgeOpen, setIsPurgeOpen] = useState(false);
   const [selectedMembership, setSelectedMembership] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -172,6 +173,27 @@ export const ResidentsPage: React.FC = () => {
       fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Erro ao revogar vínculo do morador.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenPurge = (m: any) => {
+    setSelectedMembership(m);
+    setIsPurgeOpen(true);
+  };
+
+  const handlePurgeConfirm = async () => {
+    if (!activeCondominiumId || !selectedMembership) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.delete(`/condominiums/${activeCondominiumId}/memberships/${selectedMembership.id}?permanent=true`);
+      toast.success(`Vínculo de "${selectedMembership.resident_name}" excluído definitivamente no saneamento.`);
+      setIsPurgeOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir definitivamente o vínculo do morador.');
     } finally {
       setIsSubmitting(false);
     }
@@ -336,14 +358,25 @@ export const ResidentsPage: React.FC = () => {
                               {isArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                             </button>
 
-                            <button
-                              onClick={() => handleOpenDelete(m)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                              title="Revogar / Excluir vínculo"
-                              aria-label="Revogar / Excluir vínculo"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {isArchived ? (
+                              <button
+                                onClick={() => handleOpenPurge(m)}
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Saneamento / Excluir Definitivamente"
+                                aria-label="Saneamento / Excluir Definitivamente"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenDelete(m)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                title="Revogar / Encerrar vínculo"
+                                aria-label="Revogar / Encerrar vínculo"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -549,6 +582,38 @@ export const ResidentsPage: React.FC = () => {
               onClick={handleDeleteConfirm}
             >
               {isSubmitting ? 'Revogando...' : 'Confirmar Revogação'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Saneamento / Excluir Definitivamente Vínculo */}
+      <Modal
+        isOpen={isPurgeOpen}
+        onClose={() => setIsPurgeOpen(false)}
+        title="Saneamento Definitivo de Vínculo"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3 text-rose-900 text-xs">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+            <div>
+              <p className="font-bold uppercase tracking-wider text-rose-700">Ação Irreversível de Saneamento</p>
+              <p className="mt-1 leading-relaxed">
+                O vínculo de <strong>"{selectedMembership?.resident_name}"</strong> com a unidade <strong>"{selectedMembership?.unit_code}"</strong> já está inativo/revogado e será <strong>removido definitivamente</strong> da base de dados.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setIsPurgeOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isSubmitting}
+              onClick={handlePurgeConfirm}
+            >
+              {isSubmitting ? 'Expurgando...' : 'Excluir Definitivamente'}
             </Button>
           </div>
         </div>

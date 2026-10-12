@@ -12,9 +12,13 @@ from infrastructure.models import (
     Condominium,
     Building,
     Unit,
+    Account,
+    Resident,
+    UnitMembership,
 )
-from application.identity.services import CondominiumService
+from application.identity.services import CondominiumService, UnitMembershipService
 from domain.identity.exceptions import (
+    DomainError,
     DuplicateBuildingError,
     DuplicateUnitError,
     TenantMismatchError,
@@ -432,3 +436,133 @@ class TestCondominiumUnitsIntegrity:
         assert resp_del.status_code == 204
         unit_101_tb.refresh_from_db()
         assert unit_101_tb.status == "inactive"
+
+    def test_sanitation_purge_lifecycle(self):
+        """
+        Ciclo Completo de Saneamento / Expurgo Definitivo:
+        1. Condomínio Ativo -> tentativa de expurgo permanente DEVE FALHAR (400).
+        2. Condomínio Arquivado -> expurgo permanente SUCCEDE (204) e remove do banco.
+        3. Torre/Bloco Ativo -> tentativa de expurgo permanente DEVE FALHAR (400).
+        4. Torre Inativada -> expurgo permanente SUCCEDE (204) e remove do banco.
+        5. Unidade Ativa -> tentativa de expurgo permanente DEVE FALHAR (400).
+        6. Unidade Inativada -> expurgo permanente SUCCEDE (204) e remove do banco.
+        7. Vínculo de Morador Ativo -> tentativa de expurgo permanente DEVE FALHAR (400).
+        8. Vínculo Revogado/Encerrado -> expurgo permanente SUCCEDE (204) e remove do banco.
+        """
+        client = Client()
+
+        # --- A. Condomínio ---
+        condo = CondominiumService.create_condominium(
+            name="Condomínio Teste Saneamento",
+            timezone="America/Sao_Paulo"
+        )
+        assert condo.status == "active"
+
+        # Tentativa de expurgo em condomínio ativo deve retornar 400
+        resp_purge_active = client.delete(f'/api/v1/condominiums/{condo.id}?permanent=true')
+        assert resp_purge_active.status_code == 400
+        assert "Apenas condomínios previamente arquivados ou inativos" in resp_purge_active.json()["error"]
+        assert Condominium.objects.filter(id=condo.id).exists()
+
+        # Arquiva o condomínio
+        resp_archive = client.delete(f'/api/v1/condominiums/{condo.id}')
+        assert resp_archive.status_code == 204
+        condo.refresh_from_db()
+        assert condo.status == "archived"
+
+        # Expurgo permanente com sucesso
+        resp_purge_archived = client.delete(f'/api/v1/condominiums/{condo.id}?permanent=true')
+        assert resp_purge_archived.status_code == 204
+        assert not Condominium.objects.filter(id=condo.id).exists()
+
+        # --- B. Torre / Bloco ---
+        condo2 = CondominiumService.create_condominium(name="Condomínio Torres Saneamento")
+        torre = CondominiumService.create_building(
+            condominium_id=condo2.id,
+            code="T-SAN",
+            name="Torre Saneamento"
+        )
+        assert torre.status == "active"
+
+        # Tentativa de expurgo em torre ativa deve retornar 400
+        resp_purge_tower_active = client.delete(f'/api/v1/condominiums/{condo2.id}/buildings/{torre.id}?permanent=true')
+        assert resp_purge_tower_active.status_code == 400
+        assert "Apenas torres/blocos previamente inativados" in resp_purge_tower_active.json()["error"]
+        assert Building.objects.filter(id=torre.id).exists()
+
+        # Inativa a torre
+        resp_inactivate_tower = client.delete(f'/api/v1/condominiums/{condo2.id}/buildings/{torre.id}')
+        assert resp_inactivate_tower.status_code == 204
+        torre.refresh_from_db()
+        assert torre.status == "inactive"
+
+        # Expurgo permanente da torre inativada
+        resp_purge_tower_done = client.delete(f'/api/v1/condominiums/{condo2.id}/buildings/{torre.id}?permanent=true')
+        assert resp_purge_tower_done.status_code == 204
+        assert not Building.objects.filter(id=torre.id).exists()
+
+        # --- C. Unidade Autônoma ---
+        unit = CondominiumService.create_unit(
+            condominium_id=condo2.id,
+            code="SAN-101",
+            ideal_fraction=0.01
+        )
+        assert unit.status == "active"
+
+        # Tentativa de expurgo em unidade ativa deve retornar 400
+        resp_purge_unit_active = client.delete(f'/api/v1/condominiums/{condo2.id}/units/{unit.id}?permanent=true')
+        assert resp_purge_unit_active.status_code == 400
+        assert "Apenas unidades previamente inativadas" in resp_purge_unit_active.json()["error"]
+        assert Unit.objects.filter(id=unit.id).exists()
+
+        # Inativa a unidade
+        resp_inactivate_unit = client.delete(f'/api/v1/condominiums/{condo2.id}/units/{unit.id}')
+        assert resp_inactivate_unit.status_code == 204
+        unit.refresh_from_db()
+        assert unit.status == "inactive"
+
+        # Expurgo permanente da unidade inativada
+        resp_purge_unit_done = client.delete(f'/api/v1/condominiums/{condo2.id}/units/{unit.id}?permanent=true')
+        assert resp_purge_unit_done.status_code == 204
+        assert not Unit.objects.filter(id=unit.id).exists()
+
+        # --- D. Vínculo de Morador (UnitMembership) ---
+        unit_morador = CondominiumService.create_unit(
+            condominium_id=condo2.id,
+            code="SAN-202"
+        )
+        account = Account.objects.create(
+            auth_user_id=uuid.uuid4(),
+            email="morador.san@exemplo.com",
+            full_name="Morador Saneamento"
+        )
+        resident = Resident.objects.create(
+            condominium_id=condo2.id,
+            account=account,
+            full_name="Morador Saneamento"
+        )
+        membership = UnitMembership.objects.create(
+            condominium_id=condo2.id,
+            resident=resident,
+            unit=unit_morador,
+            category="proprietario_residente",
+            membership_status="active",
+            verification_status="validado"
+        )
+
+        # Tentativa de expurgo em vínculo ativo deve retornar 400
+        resp_purge_mem_active = client.delete(f'/api/v1/condominiums/{condo2.id}/memberships/{membership.id}?permanent=true')
+        assert resp_purge_mem_active.status_code == 400
+        assert "Apenas vínculos de moradores previamente encerrados" in resp_purge_mem_active.json()["error"]
+        assert UnitMembership.objects.filter(id=membership.id).exists()
+
+        # Revoga/Encerra o vínculo
+        resp_revoke_mem = client.delete(f'/api/v1/condominiums/{condo2.id}/memberships/{membership.id}')
+        assert resp_revoke_mem.status_code == 204
+        membership.refresh_from_db()
+        assert membership.membership_status == "ended"
+
+        # Expurgo permanente do vínculo revogado/encerrado
+        resp_purge_mem_done = client.delete(f'/api/v1/condominiums/{condo2.id}/memberships/{membership.id}?permanent=true')
+        assert resp_purge_mem_done.status_code == 204
+        assert not UnitMembership.objects.filter(id=membership.id).exists()

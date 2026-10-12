@@ -421,13 +421,17 @@ class CondominiumDetailUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, condominium_id):
+        is_permanent = request.query_params.get('permanent', '').lower() in ('true', '1')
         try:
-            condo = Condominium.objects.get(id=condominium_id)
+            if is_permanent:
+                CondominiumService.purge_condominium(condominium_id)
+            else:
+                CondominiumService.archive_condominium(condominium_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Condominium.DoesNotExist:
             return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        condo.status = 'archived'
-        condo.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -468,13 +472,19 @@ class BuildingDetailUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, condominium_id, building_id):
+        is_permanent = request.query_params.get('permanent', '').lower() in ('true', '1')
         try:
-            building = Building.objects.get(id=building_id, condominium_id=condominium_id)
+            if is_permanent:
+                CondominiumService.purge_building(condominium_id, building_id)
+            else:
+                building = Building.objects.get(id=building_id, condominium_id=condominium_id)
+                building.status = 'inactive'
+                building.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Building.DoesNotExist:
             return Response({"error": "Torre/Bloco não encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        building.status = 'inactive'
-        building.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UnitListCreateView(APIView):
@@ -552,13 +562,19 @@ class UnitDetailUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, condominium_id, unit_id):
+        is_permanent = request.query_params.get('permanent', '').lower() in ('true', '1')
         try:
-            unit = Unit.objects.get(id=unit_id, condominium_id=condominium_id)
+            if is_permanent:
+                CondominiumService.purge_unit(condominium_id, unit_id)
+            else:
+                unit = Unit.objects.get(id=unit_id, condominium_id=condominium_id)
+                unit.status = 'inactive'
+                unit.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Unit.DoesNotExist:
             return Response({"error": "Unidade não encontrada."}, status=status.HTTP_404_NOT_FOUND)
-        unit.status = 'inactive'
-        unit.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -640,16 +656,25 @@ class UnitMembershipDetailUpdateView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, condominium_id, membership_id):
+        is_permanent = request.query_params.get('permanent', '').lower() in ('true', '1')
         actor_id = _get_or_create_actor_id(request)
         try:
-            UnitMembershipService.delete_membership(
-                condominium_id=condominium_id,
-                membership_id=membership_id,
-                actor_account_id=actor_id
-            )
+            if is_permanent:
+                UnitMembershipService.purge_membership(
+                    condominium_id=condominium_id,
+                    membership_id=membership_id
+                )
+            else:
+                UnitMembershipService.delete_membership(
+                    condominium_id=condominium_id,
+                    membership_id=membership_id,
+                    actor_account_id=actor_id
+                )
             return Response(status=status.HTTP_204_NO_CONTENT)
         except UnitMembership.DoesNotExist:
             return Response({"error": "Vínculo de morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

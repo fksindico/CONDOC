@@ -70,6 +70,8 @@ export const CondominiumsPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isPurgeOpen, setIsPurgeOpen] = useState(false);
+  const [purgeConfirmName, setPurgeConfirmName] = useState('');
   const [selectedCondo, setSelectedCondo] = useState<Condominium | null>(null);
 
   const [formData, setFormData] = useState<FormData>(initialForm);
@@ -220,6 +222,33 @@ export const CondominiumsPage: React.FC = () => {
       await fetchCondos();
     } catch (err: any) {
       toast.error(err.message || 'Erro ao arquivar/desativar condomínio.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenPurge = (condo: Condominium) => {
+    setSelectedCondo(condo);
+    setPurgeConfirmName('');
+    setIsPurgeOpen(true);
+  };
+
+  const handlePurgeConfirm = async () => {
+    if (!selectedCondo) return;
+    if (purgeConfirmName.trim() !== selectedCondo.name.trim()) {
+      toast.error('O nome digitado não corresponde ao nome exato do condomínio.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.delete(`/condominiums/${selectedCondo.id}?permanent=true`);
+      toast.success(`Condomínio "${selectedCondo.name}" expurgado definitivamente.`);
+      setIsPurgeOpen(false);
+      await refetchCondominiums();
+      await fetchCondos();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao realizar o saneamento do condomínio.');
     } finally {
       setIsSubmitting(false);
     }
@@ -501,14 +530,25 @@ export const CondominiumsPage: React.FC = () => {
                       {isInactive ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                     </button>
 
-                    <button
-                      onClick={() => handleOpenDelete(condo)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-200/60 rounded-lg transition-colors"
-                      title="Excluir / Desativar"
-                      aria-label="Excluir / Desativar"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isInactive ? (
+                      <button
+                        onClick={() => handleOpenPurge(condo)}
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-100 rounded-lg transition-colors"
+                        title="Saneamento / Excluir Definitivamente"
+                        aria-label="Saneamento / Excluir Definitivamente"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenDelete(condo)}
+                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-slate-200/60 rounded-lg transition-colors"
+                        title="Arquivar / Desativar"
+                        aria-label="Arquivar / Desativar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -844,6 +884,52 @@ export const CondominiumsPage: React.FC = () => {
               onClick={handleDeleteConfirm}
             >
               {isSubmitting ? 'Desativando...' : 'Confirmar Desativação'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Saneamento / Exclusão Definitiva */}
+      <Modal
+        isOpen={isPurgeOpen}
+        onClose={() => setIsPurgeOpen(false)}
+        title="Saneamento Definitivo de Condomínio"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3 text-rose-900 text-xs">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+            <div>
+              <p className="font-bold uppercase tracking-wider text-rose-700">Ação Irreversível de Saneamento</p>
+              <p className="mt-1 leading-relaxed">
+                O condomínio <strong>"{selectedCondo?.name}"</strong> está arquivado e será <strong>removido definitivamente</strong> da base de dados, expurgando em cascata todas as suas torres, unidades, documentos, minutas e registros associados sem uso.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700">
+              Para confirmar a exclusão permanente, digite exatamente o nome do condomínio:
+            </label>
+            <input
+              type="text"
+              value={purgeConfirmName}
+              onChange={(e) => setPurgeConfirmName(e.target.value)}
+              placeholder={selectedCondo?.name}
+              className="w-full text-xs font-mono p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-500"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setIsPurgeOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isSubmitting || purgeConfirmName.trim() !== selectedCondo?.name?.trim()}
+              onClick={handlePurgeConfirm}
+            >
+              {isSubmitting ? 'Expurgando...' : 'Excluir Definitivamente'}
             </Button>
           </div>
         </div>
