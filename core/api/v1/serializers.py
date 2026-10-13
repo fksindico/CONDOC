@@ -569,6 +569,7 @@ class IdentityAccessEventSerializer(serializers.ModelSerializer):
 class PublicConsultationDetailSerializer(serializers.ModelSerializer):
     condominium_name = serializers.CharField(source='condominium.name', read_only=True)
     pdf_download_url = serializers.SerializerMethodField()
+    structure = serializers.SerializerMethodField()
 
     class Meta:
         model = PublicConsultation
@@ -576,7 +577,7 @@ class PublicConsultationDetailSerializer(serializers.ModelSerializer):
             'id', 'title', 'document_type', 'description',
             'pdf_original_name', 'pdf_size_bytes', 'public_token',
             'status', 'deadline', 'condominium_name', 'pdf_download_url',
-            'created_at',
+            'structure', 'created_at',
         ]
         read_only_fields = fields
 
@@ -586,6 +587,56 @@ class PublicConsultationDetailSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(relative)
         return relative
+
+    def get_structure(self, obj):
+        from infrastructure.models import Building, Unit
+        buildings = Building.objects.filter(condominium=obj.condominium, status='active').order_by('display_order', 'name')
+        units = Unit.objects.filter(condominium=obj.condominium, status='active').select_related('building')
+
+        units_by_bldg = {}
+        for u in units:
+            bid = str(u.building_id) if u.building_id else "sem_torre"
+            if bid not in units_by_bldg:
+                units_by_bldg[bid] = []
+            units_by_bldg[bid].append({
+                "id": str(u.id),
+                "code": u.code,
+                "floor_label": u.floor_label or "",
+            })
+
+        def sort_units(u_list):
+            def key_func(item):
+                code = item["code"]
+                digits = "".join(filter(str.isdigit, code))
+                if digits:
+                    return (0, int(digits), code)
+                return (1, 0, code)
+            return sorted(u_list, key=key_func)
+
+        bldg_list = []
+        for b in buildings:
+            bid = str(b.id)
+            b_units = sort_units(units_by_bldg.get(bid, []))
+            bldg_list.append({
+                "id": bid,
+                "name": b.name,
+                "code": b.code,
+                "units": b_units,
+            })
+
+        unassigned = sort_units(units_by_bldg.get("sem_torre", []))
+        if unassigned:
+            bldg_list.append({
+                "id": None,
+                "name": "Geral / Sem Torre",
+                "code": "GERAL",
+                "units": unassigned,
+            })
+
+        return {
+            "buildings": bldg_list,
+            "total_units": units.count(),
+        }
 
 
 class PublicSuggestionSubmitSerializer(serializers.Serializer):

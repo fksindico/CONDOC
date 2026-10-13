@@ -1,5 +1,23 @@
 import { api } from '@/lib/api';
 
+export interface StructureUnit {
+  id: string;
+  code: string;
+  floor_label: string;
+}
+
+export interface StructureBuilding {
+  id: string | null;
+  name: string;
+  code: string;
+  units: StructureUnit[];
+}
+
+export interface PublicStructure {
+  buildings: StructureBuilding[];
+  total_units: number;
+}
+
 export interface PublicConsultation {
   id: string;
   title: string;
@@ -12,6 +30,7 @@ export interface PublicConsultation {
   deadline?: string;
   condominium_name: string;
   pdf_download_url: string;
+  structure?: PublicStructure;
   created_at: string;
 }
 

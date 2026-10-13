@@ -655,6 +655,48 @@ class UnitDetailUpdateView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UnitBatchGenerateView(APIView):
+    """
+    Geração em lote de torres e unidades autônomas para um condomínio.
+    Permite configurar andar inicial, andar final e quantidade de apartamentos por andar.
+    Ex: 3º andar ao 15º andar, 6 por andar => 301..306, 401..406...
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, condominium_id):
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            building_id = request.data.get('building_id')
+            new_building_name = request.data.get('new_building_name')
+            new_building_code = request.data.get('new_building_code')
+            start_floor = int(request.data.get('start_floor', 1))
+            end_floor = int(request.data.get('end_floor', 10))
+            units_per_floor = int(request.data.get('units_per_floor', 4))
+            suffix_digits = int(request.data.get('suffix_digits', 2))
+            custom_prefix = request.data.get('custom_prefix')
+
+            result = CondominiumService.batch_generate_units(
+                condominium_id=condominium_id,
+                building_id=uuid.UUID(building_id) if building_id else None,
+                new_building_name=new_building_name,
+                new_building_code=new_building_code,
+                start_floor=start_floor,
+                end_floor=end_floor,
+                units_per_floor=units_per_floor,
+                suffix_digits=suffix_digits,
+                custom_prefix=custom_prefix,
+            )
+            return Response(result, status=status.HTTP_201_CREATED)
+        except (ValueError, TypeError) as e:
+            return Response({"error": f"Parâmetros inválidos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": f"Erro interno ao gerar unidades: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 class ResidentRegistrationListCreateView(APIView):
     permission_classes = [AllowAny]

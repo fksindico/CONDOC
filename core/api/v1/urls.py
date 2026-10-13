@@ -13,6 +13,7 @@ from .views import (
     BuildingDetailUpdateView,
     UnitListCreateView,
     UnitDetailUpdateView,
+    UnitBatchGenerateView,
     ResidentRegistrationListCreateView,
     ResidentRegistrationDetailUpdateView,
     ResidentSuggestionsListView,
@@ -112,6 +113,7 @@ urlpatterns = [
 
     # Unidades Autônomas
     path('condominiums/<uuid:condominium_id>/units', UnitListCreateView.as_view(), name='api_v1_units'),
+    path('condominiums/<uuid:condominium_id>/units/batch-generate', UnitBatchGenerateView.as_view(), name='api_v1_unit_batch_generate'),
     path('condominiums/<uuid:condominium_id>/units/<uuid:unit_id>', UnitDetailUpdateView.as_view(), name='api_v1_unit_detail'),
 
     # Moradores e Sugestões vinculadas

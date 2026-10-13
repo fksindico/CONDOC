@@ -135,9 +135,17 @@ def run_test():
     print(f"[OK] Número de Protocolo gerado: {protocol}")
     assert protocol.startswith('SUG-')
 
-    # 7. Consulta de histórico pelo morador
-    print("\n--- 5. Consulta de Histórico pelo Morador ---")
-    query = urllib.parse.urlencode({'phone': '(11) 98765-4321', 'unit': '604'})
+    # 7. Consulta de histórico pelo morador via protocolo unívoco (Blindagem Anti-IDOR)
+    print("\n--- 5. Consulta de Histórico pelo Morador (Segurança Anti-IDOR) ---")
+    # Tentativa de vazar dados alheios por unidade/telefone retorna vazio
+    query_insegura = urllib.parse.urlencode({'phone': '(11) 98765-4321', 'unit': '604'})
+    status, body, _ = http_get(f"{BASE_URL}/api/v1/public/consultations/{token}/my-suggestions?{query_insegura}")
+    assert status == 200
+    assert json.loads(body.decode('utf-8')) == [], "Blindagem falhou: dados vazados por telefone/unidade!"
+    print("[OK] Blindagem Anti-IDOR confirmada: consulta sem protocolo retorna vazio.")
+
+    # Consulta legítima pelo protocolo unívoco
+    query = urllib.parse.urlencode({'protocol': protocol})
     status, body, _ = http_get(f"{BASE_URL}/api/v1/public/consultations/{token}/my-suggestions?{query}")
     assert status == 200
     my_list = json.loads(body.decode('utf-8'))

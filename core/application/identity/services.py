@@ -205,6 +205,103 @@ class CondominiumService:
         unit.save()
         return unit
 
+    @staticmethod
+    def batch_generate_units(
+        condominium_id: uuid.UUID,
+        building_id: Optional[uuid.UUID] = None,
+        new_building_name: Optional[str] = None,
+        new_building_code: Optional[str] = None,
+        start_floor: int = 1,
+        end_floor: int = 10,
+        units_per_floor: int = 4,
+        suffix_digits: int = 2,
+        custom_prefix: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Gera em lote torres e apartamentos para o condomínio.
+        Exemplo:
+            Torre A, início 3º andar, término 15º andar, 6 apartamentos por andar.
+            Resultará em: 301..306, 401..406, ..., 1501..1506.
+        """
+        condo = Condominium.objects.get(id=condominium_id)
+
+        if start_floor > end_floor:
+            raise DomainError("O andar inicial não pode ser maior que o andar final.")
+        if units_per_floor <= 0 or units_per_floor > 50:
+            raise DomainError("A quantidade de apartamentos por andar deve ser entre 1 e 50.")
+        if (end_floor - start_floor + 1) > 100:
+            raise DomainError("O intervalo de andares não pode exceder 100 andares.")
+
+        with transaction.atomic():
+            building = None
+            if building_id:
+                building = Building.objects.get(id=building_id, condominium=condo)
+            elif new_building_name and new_building_name.strip():
+                b_name = new_building_name.strip()
+                b_code = (new_building_code or b_name).strip()[:50].upper()
+                building, _ = Building.objects.get_or_create(
+                    condominium=condo,
+                    code=b_code,
+                    defaults={"name": b_name, "status": "active"}
+                )
+
+            created_units = []
+            existing_units = []
+            all_codes = []
+
+            for floor in range(start_floor, end_floor + 1):
+                floor_label = "Térreo" if floor == 0 else f"{floor}º Andar"
+                for u_idx in range(1, units_per_floor + 1):
+                    if suffix_digits == 2:
+                        suffix_str = f"{u_idx:02d}"
+                    else:
+                        suffix_str = str(u_idx)
+
+                    if custom_prefix:
+                        unit_code = f"{custom_prefix}{floor}{suffix_str}"
+                    else:
+                        unit_code = f"{floor}{suffix_str}"
+
+                    all_codes.append(unit_code)
+
+                    # Verifica se já existe para este condomínio e prédio
+                    existing = Unit.objects.filter(
+                        condominium=condo,
+                        building=building,
+                        code=unit_code
+                    ).first()
+
+                    if existing:
+                        if existing.status != 'active':
+                            existing.status = 'active'
+                            existing.save(update_fields=['status'])
+                        existing_units.append(unit_code)
+                    else:
+                        Unit.objects.create(
+                            id=uuid.uuid4(),
+                            condominium=condo,
+                            building=building,
+                            code=unit_code,
+                            floor_label=floor_label,
+                            status='active'
+                        )
+                        created_units.append(unit_code)
+
+            return {
+                "building": {
+                    "id": str(building.id) if building else None,
+                    "name": building.name if building else None,
+                    "code": building.code if building else None,
+                } if building else None,
+                "created_count": len(created_units),
+                "existing_count": len(existing_units),
+                "total_units": len(all_codes),
+                "start_floor": start_floor,
+                "end_floor": end_floor,
+                "units_per_floor": units_per_floor,
+                "sample_codes": all_codes[:12],
+            }
+
 
 
 class ResidentRegistrationService:

@@ -28,6 +28,8 @@ import {
   PublicConsultation,
   ConsultationSuggestionItem,
   SuggestionSubmission,
+  StructureUnit,
+  StructureBuilding,
 } from '@/services/consultationService';
 
 interface StoredResidentIdentity {
@@ -68,6 +70,19 @@ export const PublicConsultationPage: React.FC = () => {
   const [mySuggestions, setMySuggestions] = useState<ConsultationSuggestionItem[]>([]);
   const [copiedProtocol, setCopiedProtocol] = useState(false);
   const [isEditingIdentity, setIsEditingIdentity] = useState(false);
+  const [manualUnitEntry, setManualUnitEntry] = useState(false);
+
+  const buildings: StructureBuilding[] = consultation?.structure?.buildings || [];
+  const totalUnits = consultation?.structure?.total_units || 0;
+  const hasBuildings = buildings.length > 0;
+  const hasStructure = hasBuildings && totalUnits > 0;
+
+  // Auto-seleciona a torre se houver apenas uma torre cadastrada no condomínio
+  useEffect(() => {
+    if (buildings.length === 1 && !blockTower) {
+      setBlockTower(buildings[0].name);
+    }
+  }, [buildings, blockTower]);
 
   const handlePhoneChange = (val: string) => {
     const raw = val.replace(/\D/g, '').slice(0, 11);
@@ -626,31 +641,96 @@ export const PublicConsultationPage: React.FC = () => {
 
                       <div className="grid grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">Torre / Bloco</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-xs font-medium text-slate-700">Torre / Bloco</label>
+                            {hasStructure && (
+                              <button
+                                type="button"
+                                onClick={() => setManualUnitEntry(!manualUnitEntry)}
+                                className="text-[10px] text-indigo-600 hover:text-indigo-800 font-medium"
+                              >
+                                {manualUnitEntry ? 'Selecionar da lista' : 'Digitar manual'}
+                              </button>
+                            )}
+                          </div>
                           <div className="relative">
-                            <Layers className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                            <input
-                              type="text"
-                              value={blockTower}
-                              onChange={(e) => setBlockTower(e.target.value)}
-                              placeholder="Ex: Torre A"
-                              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
+                            <Layers className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                            {hasBuildings && !manualUnitEntry ? (
+                              <select
+                                value={blockTower}
+                                onChange={(e) => {
+                                  const newTower = e.target.value;
+                                  setBlockTower(newTower);
+                                  const targetBuilding = buildings.find((b) => b.name === newTower);
+                                  if (targetBuilding && !targetBuilding.units.some((u) => u.code === unitCode)) {
+                                    setUnitCode('');
+                                  }
+                                }}
+                                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              >
+                                <option value="">Selecione a Torre...</option>
+                                {buildings.map((b) => (
+                                  <option key={b.id} value={b.name}>
+                                    {b.name} ({b.units.length} aptos)
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                value={blockTower}
+                                onChange={(e) => setBlockTower(e.target.value)}
+                                placeholder="Ex: Torre A"
+                                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            )}
                           </div>
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-slate-700 mb-1">Unidade / Apto *</label>
                           <div className="relative">
-                            <Home className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                            <input
-                              type="text"
-                              required
-                              value={unitCode}
-                              onChange={(e) => setUnitCode(e.target.value)}
-                              placeholder="Ex: 504"
-                              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
+                            <Home className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                            {hasStructure && !manualUnitEntry ? (
+                              <select
+                                required
+                                value={unitCode}
+                                onChange={(e) => setUnitCode(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              >
+                                <option value="">Selecione o Apto...</option>
+                                {(() => {
+                                  const selectedBuilding = buildings.find((b) => b.name === blockTower);
+                                  const availableUnits: StructureUnit[] = selectedBuilding ? selectedBuilding.units : [];
+
+                                  if (hasBuildings && !selectedBuilding) {
+                                    return <option value="" disabled>Escolha a torre primeiro</option>;
+                                  }
+
+                                  return (
+                                    <>
+                                      {availableUnits.map((u: StructureUnit) => (
+                                        <option key={u.id} value={u.code}>
+                                          Apto {u.code} {u.floor_label ? `(${u.floor_label})` : ''}
+                                        </option>
+                                      ))}
+                                      {unitCode && !availableUnits.some((u: StructureUnit) => u.code === unitCode) && (
+                                        <option value={unitCode}>{unitCode} (atual)</option>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                value={unitCode}
+                                onChange={(e) => setUnitCode(e.target.value)}
+                                placeholder="Ex: 504"
+                                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            )}
                           </div>
                         </div>
                       </div>

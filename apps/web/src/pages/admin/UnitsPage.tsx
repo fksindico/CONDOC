@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
@@ -15,6 +15,7 @@ import {
   Trash2,
   RotateCcw,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -66,6 +67,37 @@ export const UnitsPage: React.FC = () => {
   const [editUnitStatus, setEditUnitStatus] = useState('active');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 4. Modal Gerador de Apartamentos em Lote
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchMode, setBatchMode] = useState<'existing' | 'new'>('new');
+  const [batchBuildingId, setBatchBuildingId] = useState('');
+  const [batchNewBuildingName, setBatchNewBuildingName] = useState('');
+  const [batchNewBuildingCode, setBatchNewBuildingCode] = useState('');
+  const [batchStartFloor, setBatchStartFloor] = useState('3');
+  const [batchEndFloor, setBatchEndFloor] = useState('15');
+  const [batchUnitsPerFloor, setBatchUnitsPerFloor] = useState('6');
+  const [batchSuffixDigits, setBatchSuffixDigits] = useState<'2' | '1'>('2');
+  const [isSubmittingBatch, setIsSubmittingBatch] = useState(false);
+
+  const startF = parseInt(batchStartFloor, 10) || 0;
+  const endF = parseInt(batchEndFloor, 10) || 0;
+  const perF = parseInt(batchUnitsPerFloor, 10) || 0;
+  const totalBatchUnits = endF >= startF && perF > 0 ? (endF - startF + 1) * perF : 0;
+
+  const previewCodes = useMemo(() => {
+    if (totalBatchUnits <= 0) return [];
+    const list: string[] = [];
+    for (let f = startF; f <= endF; f++) {
+      for (let u = 1; u <= perF; u++) {
+        const suf = batchSuffixDigits === '2' ? String(u).padStart(2, '0') : String(u);
+        list.push(`${f}${suf}`);
+        if (list.length >= 12) break;
+      }
+      if (list.length >= 12) break;
+    }
+    return list;
+  }, [startF, endF, perF, batchSuffixDigits, totalBatchUnits]);
 
   const fetchData = async () => {
     if (!activeCondominiumId) return;
@@ -227,6 +259,54 @@ export const UnitsPage: React.FC = () => {
     }
   };
 
+  // Geração em Lote de Apartamentos
+  const handleBatchGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeCondominiumId) return;
+
+    if (batchMode === 'new' && !batchNewBuildingName.trim()) {
+      toast.error('Informe o nome da nova torre ou bloco.');
+      return;
+    }
+    if (batchMode === 'existing' && !batchBuildingId) {
+      toast.error('Selecione uma torre existente ou escolha cadastrar uma nova.');
+      return;
+    }
+    if (startF > endF) {
+      toast.error('O andar inicial não pode ser maior que o andar final.');
+      return;
+    }
+    if (perF <= 0 || perF > 50) {
+      toast.error('A quantidade de apartamentos por andar deve ser entre 1 e 50.');
+      return;
+    }
+
+    setIsSubmittingBatch(true);
+    try {
+      const payload = {
+        building_id: batchMode === 'existing' ? batchBuildingId : undefined,
+        new_building_name: batchMode === 'new' ? batchNewBuildingName.trim() : undefined,
+        new_building_code: batchMode === 'new' ? (batchNewBuildingCode.trim() || batchNewBuildingName.trim().toUpperCase()) : undefined,
+        start_floor: startF,
+        end_floor: endF,
+        units_per_floor: perF,
+        suffix_digits: parseInt(batchSuffixDigits, 10),
+      };
+
+      const res = await api.post<any>(`/condominiums/${activeCondominiumId}/units/batch-generate`, payload);
+      const data = res.data;
+      toast.success(
+        `Sucesso! ${data.created_count} apartamentos gerados com sucesso (${data.existing_count} já existiam). Total: ${data.total_units} unidades.`
+      );
+      setIsBatchModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar apartamentos em lote.');
+    } finally {
+      setIsSubmittingBatch(false);
+    }
+  };
+
   // Edição de Unidade
   const handleOpenEditUnit = (unit: Unit) => {
     setEditingUnit(unit);
@@ -371,12 +451,20 @@ export const UnitsPage: React.FC = () => {
             Estrutura física do condomínio para vinculação, preservação cadastral e auditoria de moradores.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            onClick={() => setIsBatchModalOpen(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+          >
+            <Sparkles className="w-4 h-4 mr-1.5" />
+            <span>Gerar Apartamentos em Lote</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsBuildingModalOpen(true)}>
             <Building2 className="w-4 h-4 mr-1.5" />
             <span>Nova Torre/Bloco</span>
           </Button>
-          <Button size="sm" onClick={() => setIsUnitModalOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => setIsUnitModalOpen(true)}>
             <Plus className="w-4 h-4 mr-1.5" />
             <span>Nova Unidade</span>
           </Button>
@@ -981,6 +1069,191 @@ export const UnitsPage: React.FC = () => {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal Gerador de Apartamentos em Lote */}
+      <Modal
+        isOpen={isBatchModalOpen}
+        onClose={() => setIsBatchModalOpen(false)}
+        title="Gerador de Torres e Apartamentos em Lote"
+      >
+        <form onSubmit={handleBatchGenerate} className="space-y-4">
+          <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 leading-relaxed">
+            <div className="flex items-center gap-1.5 font-bold mb-1">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span>Numeração Padronizada Inteligente</span>
+            </div>
+            Gere todos os apartamentos do prédio de uma só vez. O sistema usa o andar como prefixo e a sequência de apartamentos como sufixo (ex: 3º andar com 6 por andar cria <strong>301, 302, 303, 304, 305, 306</strong>).
+          </div>
+
+          {/* Seleção de Torre: Existente ou Nova */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Torre / Bloco de Destino *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setBatchMode('new')}
+                className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
+                  batchMode === 'new'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                + Criar Nova Torre
+              </button>
+              <button
+                type="button"
+                disabled={buildings.length === 0}
+                onClick={() => setBatchMode('existing')}
+                className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
+                  batchMode === 'existing'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 disabled:opacity-50'
+                }`}
+              >
+                Torre Já Existente {buildings.length > 0 ? `(${buildings.length})` : ''}
+              </button>
+            </div>
+
+            {batchMode === 'new' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Nome da Torre *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Torre Alpha, Bloco A"
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={batchNewBuildingName}
+                    onChange={(e) => setBatchNewBuildingName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Código (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: ALPHA"
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                    value={batchNewBuildingCode}
+                    onChange={(e) => setBatchNewBuildingCode(e.target.value)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="pt-1">
+                <label className="block text-[11px] font-medium text-slate-600 mb-1">Selecione a Torre Existente *</label>
+                <select
+                  required
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={batchBuildingId}
+                  onChange={(e) => setBatchBuildingId(e.target.value)}
+                >
+                  <option value="">Selecione uma torre cadastrada...</option>
+                  {buildings.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} (Código: {b.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Parâmetros dos Andares e Unidades */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Andar Inicial *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                max="100"
+                className="w-full text-xs border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-center"
+                value={batchStartFloor}
+                onChange={(e) => setBatchStartFloor(e.target.value)}
+              />
+              <span className="text-[10px] text-slate-400 block mt-0.5 text-center">Ex: 1 ou 3</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Andar Término *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                max="100"
+                className="w-full text-xs border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-center"
+                value={batchEndFloor}
+                onChange={(e) => setBatchEndFloor(e.target.value)}
+              />
+              <span className="text-[10px] text-slate-400 block mt-0.5 text-center">Ex: 15 ou 20</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Aptos p/ Andar *
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                max="50"
+                className="w-full text-xs border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-center"
+                value={batchUnitsPerFloor}
+                onChange={(e) => setBatchUnitsPerFloor(e.target.value)}
+              />
+              <span className="text-[10px] text-slate-400 block mt-0.5 text-center">Ex: 4 ou 6</span>
+            </div>
+          </div>
+
+          {/* Painel de Live Preview */}
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-700">Total de Apartamentos a Gerar:</span>
+              <span className="font-bold text-sm text-indigo-700 font-mono bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                {totalBatchUnits} Unidades
+              </span>
+            </div>
+
+            {totalBatchUnits > 0 && previewCodes.length > 0 && (
+              <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/80">
+                <span className="font-medium text-slate-700 block mb-1">Amostra de numeração gerada:</span>
+                <div className="flex flex-wrap gap-1">
+                  {previewCodes.map((code) => (
+                    <span
+                      key={code}
+                      className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-slate-800 font-mono text-[10px]"
+                    >
+                      {code}
+                    </span>
+                  ))}
+                  {totalBatchUnits > previewCodes.length && (
+                    <span className="text-slate-400 text-[10px] self-center">... e mais {totalBatchUnits - previewCodes.length}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setIsBatchModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmittingBatch || totalBatchUnits <= 0}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingBatch ? 'Gerando Lote...' : `Criar ${totalBatchUnits} Apartamentos`}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

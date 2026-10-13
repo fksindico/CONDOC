@@ -566,3 +566,79 @@ class TestCondominiumUnitsIntegrity:
         resp_purge_mem_done = client.delete(f'/api/v1/condominiums/{condo2.id}/memberships/{membership.id}?permanent=true')
         assert resp_purge_mem_done.status_code == 204
         assert not UnitMembership.objects.filter(id=membership.id).exists()
+
+    def test_batch_generate_units_and_public_structure(self):
+        """
+        Valida a geração de apartamentos em lote com padrão andar+sufixo (ex: 3º ao 5º andar, 6 por andar)
+        e a disponibilização da estrutura predial no endpoint da consulta pública para o morador.
+        """
+        client = Client()
+        condo = CondominiumService.create_condominium(
+            name="Condomínio Reserva dos Manacás",
+            timezone="America/Sao_Paulo"
+        )
+
+        # 1. Geração em lote via API REST
+        batch_payload = {
+            "new_building_name": "Torre Manacá",
+            "new_building_code": "MANACA",
+            "start_floor": 3,
+            "end_floor": 5,
+            "units_per_floor": 6,
+            "suffix_digits": 2,
+        }
+        resp_batch = client.post(
+            f"/api/v1/condominiums/{condo.id}/units/batch-generate",
+            data=batch_payload,
+            content_type="application/json"
+        )
+        assert resp_batch.status_code == 201
+        data = resp_batch.json()
+        assert data["created_count"] == 18
+        assert data["existing_count"] == 0
+        assert data["total_units"] == 18
+        assert "301" in data["sample_codes"]
+        assert "306" in data["sample_codes"]
+
+        # 2. Confirma persistência e labels de andares no banco
+        units_3rd = Unit.objects.filter(condominium=condo, code__startswith="3").order_by("code")
+        assert units_3rd.count() == 6
+        assert list(units_3rd.values_list("code", flat=True)) == ["301", "302", "303", "304", "305", "306"]
+        assert units_3rd.first().floor_label == "3º Andar"
+
+        # 3. Idempotência: rodar novamente não duplica nem falha
+        resp_batch_idem = client.post(
+            f"/api/v1/condominiums/{condo.id}/units/batch-generate",
+            data=batch_payload,
+            content_type="application/json"
+        )
+        assert resp_batch_idem.status_code == 201
+        data_idem = resp_batch_idem.json()
+        assert data_idem["created_count"] == 0
+        assert data_idem["existing_count"] == 18
+        assert Unit.objects.filter(condominium=condo).count() == 18
+
+        # 4. Cria consulta pública e verifica estrutura no endpoint público
+        from application.consultation.services import SimplifiedConsultationService
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        pdf_file = SimpleUploadedFile("regimento.pdf", b"%PDF-1.4 dummy", content_type="application/pdf")
+        consultation = SimplifiedConsultationService.create_consultation(
+            condominium_id=condo.id,
+            title="Revisão Regimento Interno Manacás",
+            document_type="regimento",
+            pdf_file=pdf_file
+        )
+
+        resp_public = client.get(f"/api/v1/public/consultations/{consultation.public_token}")
+        assert resp_public.status_code == 200
+        pub_data = resp_public.json()
+        assert "structure" in pub_data
+        struct = pub_data["structure"]
+        assert struct["total_units"] == 18
+        assert len(struct["buildings"]) == 1
+        bldg = struct["buildings"][0]
+        assert bldg["name"] == "Torre Manacá"
+        assert len(bldg["units"]) == 18
+        assert bldg["units"][0]["code"] == "301"
+        assert bldg["units"][-1]["code"] == "506"
+
