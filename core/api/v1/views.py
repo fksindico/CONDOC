@@ -2805,6 +2805,79 @@ class AdminConsultationExportView(APIView):
             return Response({"error": f"Erro na exportação: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class CondominiumDashboardMetricsView(APIView):
+    """
+    Retorna métricas consolidadas e 100% reais para o Painel da Gestão do condomínio ativo.
+    Elimina números fictícios/hardcoded e reflete fielmente o estado do banco.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id):
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        # 1. Consultas Públicas em PDF
+        consultations_open = PublicConsultation.objects.filter(
+            condominium_id=condominium_id,
+            status='aberta'
+        ).count()
+        consultations_total = PublicConsultation.objects.filter(
+            condominium_id=condominium_id
+        ).count()
+
+        # 2. Sugestões de moradores recebidas
+        suggestions_count = ConsultationSuggestion.objects.filter(
+            condominium_id=condominium_id
+        ).count()
+        suggestions_pending = ConsultationSuggestion.objects.filter(
+            condominium_id=condominium_id,
+            status__in=['recebida', 'em_analise']
+        ).count()
+
+        # 3. Moradores cadastrados (Pré-cadastros sem vínculo + Vínculos ativos)
+        reg_count = ResidentRegistration.objects.filter(
+            condominium_id=condominium_id,
+            status__in=['pendente', 'aprovado'],
+            linked_membership_id__isnull=True
+        ).count()
+        mem_count = UnitMembership.objects.filter(
+            condominium_id=condominium_id,
+            membership_status='active'
+        ).count()
+        residents_count = reg_count + mem_count
+
+        # 4. Estrutura predial (Torres e Unidades)
+        buildings_count = Building.objects.filter(
+            condominium_id=condominium_id,
+            status='active'
+        ).count()
+        units_count = Unit.objects.filter(
+            condominium_id=condominium_id,
+            status='active'
+        ).count()
+
+        # 5. Projetos normativos (Minutas)
+        projects_count = Project.objects.filter(
+            condominium_id=condominium_id,
+            status='active'
+        ).count()
+
+        return Response({
+            "condominium_id": str(condominium_id),
+            "consultations_open": consultations_open,
+            "consultations_total": consultations_total,
+            "suggestions_count": suggestions_count,
+            "suggestions_pending": suggestions_pending,
+            "residents_count": residents_count,
+            "registrations_count": reg_count,
+            "memberships_count": mem_count,
+            "buildings_count": buildings_count,
+            "units_count": units_count,
+            "projects_count": projects_count,
+        }, status=status.HTTP_200_OK)
+
+
+
 
 
 

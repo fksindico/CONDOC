@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
 import {
   FileText,
@@ -16,37 +17,71 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/Button';
 
 export const DashboardPage: React.FC = () => {
-  const { activeCondominium } = useTenant();
+  const { activeCondominium, activeCondominiumId } = useTenant();
   const { isSindico } = useAuth();
+
+  const [metricsData, setMetricsData] = useState<{
+    consultations_open: number;
+    consultations_total: number;
+    suggestions_count: number;
+    suggestions_pending: number;
+    residents_count: number;
+    registrations_count: number;
+    memberships_count: number;
+    buildings_count: number;
+    units_count: number;
+    projects_count: number;
+  } | null>(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+
+  useEffect(() => {
+    if (!activeCondominiumId) return;
+    setIsLoadingMetrics(true);
+    api.get<any>(`/condominiums/${activeCondominiumId}/dashboard-metrics`)
+      .then((res) => {
+        setMetricsData(res.data);
+      })
+      .catch((err) => {
+        console.error('Falha ao carregar métricas reais:', err);
+        setMetricsData(null);
+      })
+      .finally(() => {
+        setIsLoadingMetrics(false);
+      });
+  }, [activeCondominiumId]);
 
   const metrics = [
     {
-      label: 'Projetos Normativos',
-      value: '2',
-      detail: 'Convenção e Regimento em revisão ativa',
-      icon: FolderGit2,
-      color: 'text-brand-800 bg-brand-50 border-brand-200',
-    },
-    {
-      label: 'Campanhas em Consulta',
-      value: '1 Ativa',
-      detail: 'Consulta Pública Marco v1.0',
+      label: 'Consultas em Andamento (PDF)',
+      value: isLoadingMetrics ? '...' : `${metricsData?.consultations_open ?? 0} Ativa${(metricsData?.consultations_open ?? 0) === 1 ? '' : 's'}`,
+      detail: `${metricsData?.consultations_total ?? 0} consulta(s) no total`,
       icon: Sliders,
-      color: 'text-brand-700 bg-blue-50 border-blue-200',
+      color: 'text-indigo-700 bg-indigo-50 border-indigo-200',
+      link: '/painel/consultas',
     },
     {
-      label: 'Participantes Habilitados',
-      value: '142',
-      detail: 'Moradores com vínculo validado',
+      label: 'Moradores Cadastrados',
+      value: isLoadingMetrics ? '...' : `${metricsData?.residents_count ?? 0}`,
+      detail: `${metricsData?.units_count ?? 0} unidade(s) em ${metricsData?.buildings_count ?? 0} torre(s)`,
       icon: Users,
       color: 'text-emerald-800 bg-emerald-50 border-emerald-200',
+      link: '/painel/moradores',
     },
     {
-      label: 'Fila de Moderação (4D)',
-      value: '8 Pendentes',
-      detail: 'Sugestões aguardando análise',
+      label: 'Fila de Sugestões',
+      value: isLoadingMetrics ? '...' : `${metricsData?.suggestions_pending ?? 0} Pendente${(metricsData?.suggestions_pending ?? 0) === 1 ? '' : 's'}`,
+      detail: `${metricsData?.suggestions_count ?? 0} sugestão(ões) coletada(s)`,
       icon: MessageSquare,
-      color: 'text-gold-700 bg-gold-50 border-gold-200',
+      color: 'text-amber-700 bg-amber-50 border-amber-200',
+      link: '/painel/consultas',
+    },
+    {
+      label: 'Projetos Normativos',
+      value: isLoadingMetrics ? '...' : `${metricsData?.projects_count ?? 0} Minuta${(metricsData?.projects_count ?? 0) === 1 ? '' : 's'}`,
+      detail: 'Convenção e Regimento estruturados',
+      icon: FolderGit2,
+      color: 'text-brand-800 bg-brand-50 border-brand-200',
+      link: '/painel/projetos',
     },
   ];
 
@@ -108,18 +143,20 @@ export const DashboardPage: React.FC = () => {
         {metrics.map((m, idx) => {
           const Icon = m.icon;
           return (
-            <Card key={idx} className="animate-fade-in-up hover:border-slate-300 hover:shadow-md transition-all duration-200">
-              <CardContent className="p-5 flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium text-slate-500">{m.label}</p>
-                  <h3 className="text-2xl font-bold text-slate-900 mt-1">{m.value}</h3>
-                  <p className="text-xs text-slate-500 mt-1">{m.detail}</p>
-                </div>
-                <div className={`p-2.5 rounded-xl border ${m.color}`}>
-                  <Icon className="w-5 h-5 text-current" aria-hidden="true" />
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={idx} to={m.link} className="block group">
+              <Card className="h-full animate-fade-in-up group-hover:border-slate-400 group-hover:shadow-md transition-all duration-200 cursor-pointer">
+                <CardContent className="p-5 flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 group-hover:text-slate-700 transition-colors">{m.label}</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mt-1">{m.value}</h3>
+                    <p className="text-xs text-slate-500 mt-1">{m.detail}</p>
+                  </div>
+                  <div className={`p-2.5 rounded-xl border ${m.color}`}>
+                    <Icon className="w-5 h-5 text-current" aria-hidden="true" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
       </div>

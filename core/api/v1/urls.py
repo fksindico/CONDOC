@@ -91,6 +91,7 @@ from .views import (
     AdminConsultationDetailUpdateDeleteView,
     AdminConsultationSuggestionsListView,
     AdminConsultationExportView,
+    CondominiumDashboardMetricsView,
 )
 
 urlpatterns = [
@@ -102,6 +103,7 @@ urlpatterns = [
     # Condomínios (Tenancy Raiz)
     path('condominiums', CondominiumListCreateView.as_view(), name='api_v1_condominiums'),
     path('condominiums/<uuid:condominium_id>', CondominiumDetailUpdateView.as_view(), name='api_v1_condominium_detail'),
+    path('condominiums/<uuid:condominium_id>/dashboard-metrics', CondominiumDashboardMetricsView.as_view(), name='api_v1_condominium_dashboard_metrics'),
 
     # Torres / Blocos / Prédios
     path('condominiums/<uuid:condominium_id>/buildings', BuildingListCreateView.as_view(), name='api_v1_buildings'),

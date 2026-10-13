@@ -100,15 +100,15 @@ export const CampaignStatsPage: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="flex items-baseline justify-between border-b pb-3">
               <span className="text-xs font-medium text-slate-600">Moradores Concordantes Únicos:</span>
-              <span className="text-2xl font-bold text-slate-900">48</span>
+              <span className="text-2xl font-bold text-slate-900">{snapshotResult?.metrics?.unique_residents_count ?? 0}</span>
             </div>
             <div className="flex items-baseline justify-between border-b pb-3">
               <span className="text-xs font-medium text-slate-600">Denominador de Habilitados:</span>
-              <span className="text-sm font-semibold text-slate-700">142 Moradores</span>
+              <span className="text-sm font-semibold text-slate-700">{snapshotResult?.metrics?.total_eligible_residents ? `${snapshotResult.metrics.total_eligible_residents} Moradores` : '—'}</span>
             </div>
             <div className="flex items-baseline justify-between pt-1">
               <span className="text-xs font-semibold text-blue-900">Taxa de Engajamento Individual:</span>
-              <span className="text-xl font-bold text-blue-700">33.8%</span>
+              <span className="text-xl font-bold text-blue-700">{snapshotResult?.metrics?.individual_rate != null ? `${snapshotResult.metrics.individual_rate}%` : '0.0%'}</span>
             </div>
           </CardContent>
         </Card>
@@ -127,15 +127,15 @@ export const CampaignStatsPage: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="flex items-baseline justify-between border-b pb-3">
               <span className="text-xs font-medium text-slate-600">Unidades Representadas com Apoio:</span>
-              <span className="text-2xl font-bold text-slate-900">36</span>
+              <span className="text-2xl font-bold text-slate-900">{snapshotResult?.metrics?.represented_units_count ?? 0}</span>
             </div>
             <div className="flex items-baseline justify-between border-b pb-3">
               <span className="text-xs font-medium text-slate-600">Total de Unidades Elegíveis:</span>
-              <span className="text-sm font-semibold text-slate-700">120 Unidades</span>
+              <span className="text-sm font-semibold text-slate-700">{snapshotResult?.metrics?.total_eligible_units ? `${snapshotResult.metrics.total_eligible_units} Unidades` : '—'}</span>
             </div>
             <div className="flex items-baseline justify-between pt-1">
               <span className="text-xs font-semibold text-indigo-900">Cobertura de Unidades:</span>
-              <span className="text-xl font-bold text-indigo-700">30.0%</span>
+              <span className="text-xl font-bold text-indigo-700">{snapshotResult?.metrics?.unit_rate != null ? `${snapshotResult.metrics.unit_rate}%` : '0.0%'}</span>
             </div>
           </CardContent>
         </Card>
