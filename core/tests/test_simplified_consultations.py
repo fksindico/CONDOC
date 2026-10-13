@@ -121,6 +121,7 @@ class TestSimplifiedConsultationService:
             token=consultation.public_token,
             resident_name="Ana Paula",
             resident_phone="(11) 91234-5678",
+            resident_email="anapaula@teste.com",
             block_tower="Bloco 2",
             unit_code="104",
             target_reference="Artigo 22",
@@ -140,6 +141,28 @@ class TestSimplifiedConsultationService:
         assert "104" in csv_content
         assert "Artigo 22" in csv_content
         assert "Remover Dispositivo" in csv_content
+
+    def test_reject_suggestion_without_resident_email(self):
+        """Valida que o e-mail do morador é estritamente obrigatório."""
+        consultation = SimplifiedConsultationService.create_consultation(
+            condominium_id=self.condo.id,
+            title="Consulta Obrigatória de Email",
+            document_type="regimento",
+            pdf_file=self.dummy_pdf,
+        )
+
+        with pytest.raises(ValueError) as exc:
+            SimplifiedConsultationService.submit_suggestion(
+                token=consultation.public_token,
+                resident_name="Marcos",
+                resident_phone="(11) 99999-0000",
+                resident_email="",  # Vazio
+                unit_code="301",
+                target_reference="Art. 5",
+                action_type="alterar",
+                suggestion_text="Alteração teste",
+            )
+        assert "e-mail do morador é obrigatório" in str(exc.value)
 
 
 @pytest.mark.django_db
@@ -216,6 +239,7 @@ class TestSimplifiedConsultationApi:
             token=self.consultation.public_token,
             resident_name="Beatriz",
             resident_phone="11911112222",
+            resident_email="beatriz@teste.com",
             unit_code="202",
             target_reference="Art. 10",
             action_type="alterar",
@@ -249,6 +273,7 @@ class TestSimplifiedConsultationApi:
             token=self.consultation.public_token,
             resident_name="Carlos Eduardo Silva",
             resident_phone="(11) 98888-7777",
+            resident_email="carlos.eduardo@teste.com",
             block_tower="Torre Alpha",
             unit_code="501",
             target_reference="Artigo 12",
@@ -261,13 +286,15 @@ class TestSimplifiedConsultationApi:
         reg = regs.first()
         assert reg.full_name == "Carlos Eduardo Silva"
         assert reg.phone_e164 == "11988887777"
+        assert reg.email == "carlos.eduardo@teste.com"
         assert reg.unit.code == "501"
 
-        # 2. Segundo envio pelo mesmo morador na mesma unidade (sem email)
+        # 2. Segundo envio pelo mesmo morador na mesma unidade
         SimplifiedConsultationService.submit_suggestion(
             token=self.consultation.public_token,
             resident_name="Carlos Eduardo Silva",
             resident_phone="11988887777",
+            resident_email="carlos.eduardo@teste.com",
             block_tower="Torre Alpha",
             unit_code="501",
             target_reference="Artigo 18",
@@ -278,12 +305,12 @@ class TestSimplifiedConsultationApi:
         # Continua sendo exatamente 1 cadastro!
         assert ResidentRegistration.objects.filter(condominium=self.condo).count() == 1
 
-        # 3. Terceiro envio pelo mesmo morador agregando e-mail
+        # 3. Terceiro envio pelo mesmo morador atualizando e-mail
         SimplifiedConsultationService.submit_suggestion(
             token=self.consultation.public_token,
             resident_name="Carlos Eduardo Silva",
             resident_phone="11988887777",
-            resident_email="carlos.silva@teste.com",
+            resident_email="carlos.silva.novo@teste.com",
             block_tower="Torre Alpha",
             unit_code="501",
             target_reference="Artigo 25",
@@ -294,7 +321,7 @@ class TestSimplifiedConsultationApi:
         # Continua sendo exatamente 1 cadastro, mas agora com o e-mail atualizado!
         regs_after = ResidentRegistration.objects.filter(condominium=self.condo)
         assert regs_after.count() == 1
-        assert regs_after.first().email == "carlos.silva@teste.com"
+        assert regs_after.first().email == "carlos.silva.novo@teste.com"
 
         # Sugestões totais enviadas: 3
         assert ConsultationSuggestion.objects.filter(condominium=self.condo).count() == 3
@@ -325,6 +352,7 @@ class TestSimplifiedConsultationApi:
             token=self.consultation.public_token,
             resident_name="Carlos Silva",
             resident_phone="11988887777",
+            resident_email="carlos@teste.com",
             unit_code="501",
             target_reference="Art. 1",
             action_type="alterar",
@@ -336,6 +364,7 @@ class TestSimplifiedConsultationApi:
             token=self.consultation.public_token,
             resident_name="Ana Paula",
             resident_phone="11999998888",
+            resident_email="anapaula@teste.com",
             unit_code="502",
             target_reference="Art. 2",
             action_type="incluir",
@@ -355,6 +384,7 @@ class TestSimplifiedConsultationApi:
             token=self.consultation.public_token,
             resident_name="Mariana Vizinha",
             resident_phone="11977771111",
+            resident_email="mariana@teste.com",
             unit_code="701",
             target_reference="Art. 20",
             action_type="alterar",
@@ -394,5 +424,21 @@ class TestSimplifiedConsultationApi:
         # Garante que dados de contato confidenciais (telefone/email) NÃO são expostos nem pelo protocolo
         assert "resident_phone" not in res_data[0]
         assert "resident_email" not in res_data[0]
+
+    def test_public_submit_suggestion_requires_email(self):
+        """Valida que a API pública rejeita requisição sem e-mail do morador."""
+        url = f"/api/v1/public/consultations/{self.consultation.public_token}/suggestions"
+        payload = {
+            "resident_name": "Juliana Santos",
+            "resident_phone": "(11) 96666-5555",
+            # Sem resident_email
+            "unit_code": "102",
+            "target_reference": "Artigo 1",
+            "action_type": "alterar",
+            "suggestion_text": "Alteração no Artigo 1",
+        }
+        response = self.client.post(url, data=payload, content_type="application/json")
+        assert response.status_code == 400
+        assert "resident_email" in response.json()
 
 

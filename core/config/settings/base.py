@@ -142,7 +142,7 @@ CELERY_RESULT_SERIALIZER = "json"
 # SEGURANÇA E HARDENING (ADR-002, PRD Mestre v3.0)
 # ==============================================================================
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "DENY"
+X_FRAME_OPTIONS = "SAMEORIGIN"
 SECURE_REFERRER_POLICY = "same-origin"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

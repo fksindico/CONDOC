@@ -134,11 +134,14 @@ class SimplifiedConsultationService:
         if normalized_action not in valid_actions:
             raise ValueError(f"Tipo de ação inválido: {action_type}. Deve ser uma de: alterar, remover, incluir.")
 
+        if not resident_email or not str(resident_email).strip():
+            raise ValueError("O e-mail do morador é obrigatório.")
+
         with transaction.atomic():
             # 1. Normalização de dados
             clean_name = resident_name.strip()
             clean_phone = "".join(filter(str.isdigit, resident_phone))
-            clean_email = resident_email.strip().lower() if resident_email else None
+            clean_email = resident_email.strip().lower()
             clean_unit = unit_code.strip()
             clean_tower = block_tower.strip() if block_tower else None
 
@@ -205,7 +208,7 @@ class SimplifiedConsultationService:
             if existing_reg:
                 # Reutiliza o cadastro existente! Atualiza campos de contato se o novo for mais completo
                 changed = False
-                if clean_email and not existing_reg.email:
+                if clean_email and existing_reg.email != clean_email:
                     existing_reg.email = clean_email
                     changed = True
                 if clean_phone and (not existing_reg.phone_e164 or len(existing_reg.phone_e164) < len(clean_phone)):

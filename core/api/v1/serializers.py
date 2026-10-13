@@ -642,7 +642,7 @@ class PublicConsultationDetailSerializer(serializers.ModelSerializer):
 class PublicSuggestionSubmitSerializer(serializers.Serializer):
     resident_name = serializers.CharField(max_length=255, required=True)
     resident_phone = serializers.CharField(max_length=50, required=True)
-    resident_email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
+    resident_email = serializers.EmailField(required=True, allow_blank=False, allow_null=False)
     block_tower = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
     unit_code = serializers.CharField(max_length=50, required=True)
     target_reference = serializers.CharField(max_length=255, required=True)

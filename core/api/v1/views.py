@@ -12,6 +12,8 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.renderers import BaseRenderer, JSONRenderer
 from django.http import HttpResponse, FileResponse, Http404
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.conf import settings
 from django.db import models
 import os
@@ -841,9 +843,17 @@ class ResidentRegistrationDetailUpdateView(APIView):
             if 'full_name' in request.data:
                 reg.full_name = request.data['full_name'].strip()
             if 'phone_e164' in request.data:
-                reg.phone_e164 = "".join(filter(str.isdigit, request.data['phone_e164']))
+                raw_phone = str(request.data['phone_e164']).strip()
+                digits = "".join(filter(str.isdigit, raw_phone))
+                reg.phone_e164 = f"+{digits}" if raw_phone.startswith('+') else digits
             if 'email' in request.data:
                 reg.email = request.data['email'].strip().lower() if request.data['email'] else None
+            if 'unit_id' in request.data:
+                unit_id = request.data['unit_id']
+                if unit_id:
+                    reg.unit = Unit.objects.get(id=unit_id, condominium_id=condominium_id)
+                else:
+                    reg.unit = None
             if 'notes' in request.data:
                 reg.notes = request.data['notes']
             reg.save()
@@ -2756,6 +2766,7 @@ class PublicConsultationDetailView(APIView):
             return Response({"error": "Consulta pública não encontrada ou link inválido."}, status=status.HTTP_404_NOT_FOUND)
 
 
+@method_decorator(xframe_options_sameorigin, name='dispatch')
 class PublicConsultationPdfView(APIView):
     """
     Entrega o arquivo PDF da consulta diretamente para o visualizador (iframe) do morador.
@@ -2776,6 +2787,7 @@ class PublicConsultationPdfView(APIView):
 
         response = FileResponse(open(full_path, 'rb'), content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{consultation.pdf_original_name}"'
+        response['X-Frame-Options'] = 'SAMEORIGIN'
         return response
 
 
