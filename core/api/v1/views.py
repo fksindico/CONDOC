@@ -426,6 +426,8 @@ class BuildingListCreateView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id):
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         status_param = request.query_params.get('status')
         if status_param == 'all':
             buildings = Building.objects.filter(condominium_id=condominium_id).order_by('display_order', 'name')
@@ -436,6 +438,8 @@ class BuildingListCreateView(APIView):
         return Response(BuildingSerializer(buildings, many=True).data)
 
     def post(self, request, condominium_id):
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         serializer = BuildingSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -447,6 +451,8 @@ class BuildingListCreateView(APIView):
             except DuplicateBuildingError as e:
                 return Response({"error": "Torre/Bloco com este código já existe para este condomínio."}, status=status.HTTP_400_BAD_REQUEST)
             except DomainError as e:
+                if "não encontrado" in str(e).lower() or "não encontrada" in str(e).lower():
+                    return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -556,6 +562,8 @@ class UnitListCreateView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id):
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         status_param = request.query_params.get('status')
         qs = Unit.objects.filter(condominium_id=condominium_id).select_related('building')
         if status_param == 'all':
@@ -567,6 +575,8 @@ class UnitListCreateView(APIView):
         return Response(UnitSerializer(units, many=True).data)
 
     def post(self, request, condominium_id):
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         serializer = UnitSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data.copy()
@@ -583,6 +593,8 @@ class UnitListCreateView(APIView):
             except TenantMismatchError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             except DomainError as e:
+                if "não encontrado" in str(e).lower() or "não encontrada" in str(e).lower():
+                    return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

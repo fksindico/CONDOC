@@ -48,7 +48,7 @@ def main():
                 if file.endswith(('.pyc', '.pyo')):
                     continue
                 full_path = os.path.join(root, file)
-                rel_path = os.path.join('core', os.path.relpath(full_path, core_dir))
+                rel_path = os.path.join('core', os.path.relpath(full_path, core_dir)).replace('\\', '/')
                 tar.add(full_path, arcname=rel_path)
 
         scripts_dir = os.path.abspath('scripts')
@@ -56,21 +56,21 @@ def main():
             dirs[:] = [d for d in dirs if d not in ('__pycache__', '.venv')]
             for file in files:
                 full_path = os.path.join(root, file)
-                rel_path = os.path.join('scripts', os.path.relpath(full_path, scripts_dir))
+                rel_path = os.path.join('scripts', os.path.relpath(full_path, scripts_dir)).replace('\\', '/')
                 tar.add(full_path, arcname=rel_path)
 
         supabase_dir = os.path.abspath('supabase')
         for root, dirs, files in os.walk(supabase_dir):
             for file in files:
                 full_path = os.path.join(root, file)
-                rel_path = os.path.join('supabase', os.path.relpath(full_path, supabase_dir))
+                rel_path = os.path.join('supabase', os.path.relpath(full_path, supabase_dir)).replace('\\', '/')
                 tar.add(full_path, arcname=rel_path)
 
         docs_dir = os.path.abspath('docs')
         for root, dirs, files in os.walk(docs_dir):
             for file in files:
                 full_path = os.path.join(root, file)
-                rel_path = os.path.join('docs', os.path.relpath(full_path, docs_dir))
+                rel_path = os.path.join('docs', os.path.relpath(full_path, docs_dir)).replace('\\', '/')
                 tar.add(full_path, arcname=rel_path)
     tar_stream.seek(0)
 

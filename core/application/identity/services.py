@@ -122,6 +122,8 @@ class CondominiumService:
 
     @staticmethod
     def create_building(condominium_id: uuid.UUID, code: str, name: str, kind: str = 'tower', display_order: int = 0) -> Building:
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            raise DomainError("Condomínio não encontrado.")
         if Building.objects.filter(condominium_id=condominium_id, code=code).exists():
             raise DuplicateBuildingError(f"Torre/Bloco com código '{code}' já existe neste condomínio.")
         return Building.objects.create(
@@ -147,8 +149,13 @@ class CondominiumService:
 
     @staticmethod
     def create_unit(condominium_id: uuid.UUID, code: str, building_id: Optional[uuid.UUID] = None, ideal_fraction: Optional[float] = None, **kwargs) -> Unit:
+        if not Condominium.objects.filter(id=condominium_id).exists():
+            raise DomainError("Condomínio não encontrado.")
         if building_id:
-            building = Building.objects.get(id=building_id)
+            try:
+                building = Building.objects.get(id=building_id)
+            except Building.DoesNotExist:
+                raise DomainError("Torre/Bloco não encontrada.")
             assert_same_tenant(condominium_id, building.condominium_id, "Prédio/Bloco")
 
         if Unit.objects.filter(condominium_id=condominium_id, building_id=building_id, code=code).exists():
