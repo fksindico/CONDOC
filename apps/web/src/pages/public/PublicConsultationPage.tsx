@@ -67,6 +67,7 @@ export const PublicConsultationPage: React.FC = () => {
   const [lastSubmission, setLastSubmission] = useState<ConsultationSuggestionItem | null>(null);
   const [mySuggestions, setMySuggestions] = useState<ConsultationSuggestionItem[]>([]);
   const [copiedProtocol, setCopiedProtocol] = useState(false);
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
 
   const handlePhoneChange = (val: string) => {
     const raw = val.replace(/\D/g, '').slice(0, 11);
@@ -529,89 +530,128 @@ export const PublicConsultationPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Bloco 1: Identificação Leve do Morador */}
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                      1. Seus Dados de Identificação
-                    </span>
-
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Nome Completo *</label>
-                      <div className="relative">
-                        <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                        <input
-                          type="text"
-                          required
-                          value={residentName}
-                          onChange={(e) => setResidentName(e.target.value)}
-                          placeholder="Ex: João Ferreira de Paula"
-                          className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+                  {/* Bloco 1: Identificação Orgânica do Morador */}
+                  {residentName && residentPhone && unitCode && !isEditingIdentity ? (
+                    <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-xl flex items-center justify-between transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                          {residentName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">{residentName}</span>
+                            <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-100 text-indigo-700 rounded-md">
+                              Identificado
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {blockTower ? `${blockTower} • ` : ''}Apto {unitCode} • WhatsApp: {residentPhone}
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingIdentity(true)}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded-lg hover:bg-indigo-100/60 transition"
+                      >
+                        Alterar Dados
+                      </button>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">WhatsApp / Celular *</label>
-                        <div className="relative">
-                          <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                          <input
-                            type="tel"
-                            required
-                            value={residentPhone}
-                            onChange={(e) => handlePhoneChange(e.target.value)}
-                            placeholder="(11) 99999-9999"
-                            className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
+                  ) : (
+                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                          1. Seus Dados de Contato
+                        </span>
+                        {isEditingIdentity && (
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingIdentity(false)}
+                            className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
+                          >
+                            Concluir Edição
+                          </button>
+                        )}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">E-mail (Opcional)</label>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Nome Completo *</label>
                         <div className="relative">
-                          <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                          <input
-                            type="email"
-                            value={residentEmail}
-                            onChange={(e) => setResidentEmail(e.target.value)}
-                            placeholder="seu@email.com"
-                            className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">Torre / Bloco</label>
-                        <div className="relative">
-                          <Layers className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                          <input
-                            type="text"
-                            value={blockTower}
-                            onChange={(e) => setBlockTower(e.target.value)}
-                            placeholder="Ex: Torre A"
-                            className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">Unidade / Apto *</label>
-                        <div className="relative">
-                          <Home className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                          <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                           <input
                             type="text"
                             required
-                            value={unitCode}
-                            onChange={(e) => setUnitCode(e.target.value)}
-                            placeholder="Ex: 504"
+                            value={residentName}
+                            onChange={(e) => setResidentName(e.target.value)}
+                            placeholder="Ex: João Ferreira de Paula"
                             className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           />
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">WhatsApp / Celular *</label>
+                          <div className="relative">
+                            <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                            <input
+                              type="tel"
+                              required
+                              value={residentPhone}
+                              onChange={(e) => handlePhoneChange(e.target.value)}
+                              placeholder="(11) 99999-9999"
+                              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">E-mail (Opcional)</label>
+                          <div className="relative">
+                            <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                            <input
+                              type="email"
+                              value={residentEmail}
+                              onChange={(e) => setResidentEmail(e.target.value)}
+                              placeholder="seu@email.com"
+                              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">Torre / Bloco</label>
+                          <div className="relative">
+                            <Layers className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                            <input
+                              type="text"
+                              value={blockTower}
+                              onChange={(e) => setBlockTower(e.target.value)}
+                              placeholder="Ex: Torre A"
+                              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">Unidade / Apto *</label>
+                          <div className="relative">
+                            <Home className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                            <input
+                              type="text"
+                              required
+                              value={unitCode}
+                              onChange={(e) => setUnitCode(e.target.value)}
+                              placeholder="Ex: 504"
+                              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Bloco 2: Tipo de Ação Desejada */}
                   <div>

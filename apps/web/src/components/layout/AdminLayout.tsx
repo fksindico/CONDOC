@@ -51,36 +51,18 @@ export const AdminLayout: React.FC = () => {
 
   const menuSections = [
     {
-      title: 'Visão Geral',
+      title: 'Revisão Participativa',
       items: [
         { label: 'Dashboard', path: '/painel', icon: BarChart3 },
         { label: 'Consultas em PDF', path: '/painel/consultas', icon: FileText },
+        { label: 'Moradores Participantes', path: '/painel/moradores', icon: Users },
       ],
     },
     {
-      title: 'Estrutura & Moradores',
+      title: 'Estrutura Predial',
       items: [
         { label: 'Condomínios', path: '/painel/condominios', icon: Building2 },
         { label: 'Torres & Unidades', path: '/painel/unidades', icon: Layers },
-        { label: 'Moradores', path: '/painel/moradores', icon: Users },
-        { label: 'Importação Cadastral', path: '/painel/moradores/importar', icon: FileSpreadsheet },
-        { label: 'Validação de Vínculos', path: '/painel/moradores/validacoes', icon: UserCheck },
-        { label: 'Convites de Acesso', path: '/painel/convites', icon: Send },
-      ],
-    },
-    {
-      title: 'Núcleo Documental',
-      items: [
-        { label: 'Projetos Normativos', path: '/painel/projetos', icon: FolderGit2 },
-        { label: 'Central de Exportações', path: '/painel/exportacoes', icon: Download },
-      ],
-    },
-    {
-      title: 'Participação & Moderação',
-      items: [
-        { label: 'Campanhas de Consulta', path: '/painel/campanhas', icon: Sliders },
-        { label: 'Fila de Moderação (4D)', path: '/painel/sugestoes', icon: MessageSquare },
-        { label: 'Estatísticas Agregadas', path: '/painel/estatisticas', icon: BarChart3 },
       ],
     },
     {

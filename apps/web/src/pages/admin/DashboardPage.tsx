@@ -10,8 +10,8 @@ import {
   MessageSquare,
   ArrowRight,
   ShieldAlert,
-  Download,
-  FolderGit2,
+  Building2,
+  Layers,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -60,28 +60,28 @@ export const DashboardPage: React.FC = () => {
       link: '/painel/consultas',
     },
     {
-      label: 'Moradores Cadastrados',
+      label: 'Moradores Participantes',
       value: isLoadingMetrics ? '...' : `${metricsData?.residents_count ?? 0}`,
-      detail: `${metricsData?.units_count ?? 0} unidade(s) em ${metricsData?.buildings_count ?? 0} torre(s)`,
+      detail: 'Cadastrados organicamente via sugestão',
       icon: Users,
       color: 'text-emerald-800 bg-emerald-50 border-emerald-200',
       link: '/painel/moradores',
     },
     {
-      label: 'Fila de Sugestões',
-      value: isLoadingMetrics ? '...' : `${metricsData?.suggestions_pending ?? 0} Pendente${(metricsData?.suggestions_pending ?? 0) === 1 ? '' : 's'}`,
-      detail: `${metricsData?.suggestions_count ?? 0} sugestão(ões) coletada(s)`,
+      label: 'Sugestões Coletadas',
+      value: isLoadingMetrics ? '...' : `${metricsData?.suggestions_count ?? 0}`,
+      detail: `${metricsData?.suggestions_pending ?? 0} pendente(s) de análise`,
       icon: MessageSquare,
       color: 'text-amber-700 bg-amber-50 border-amber-200',
       link: '/painel/consultas',
     },
     {
-      label: 'Projetos Normativos',
-      value: isLoadingMetrics ? '...' : `${metricsData?.projects_count ?? 0} Minuta${(metricsData?.projects_count ?? 0) === 1 ? '' : 's'}`,
-      detail: 'Convenção e Regimento estruturados',
-      icon: FolderGit2,
+      label: 'Unidades com Participação',
+      value: isLoadingMetrics ? '...' : `${metricsData?.units_count ?? 0}`,
+      detail: `Em ${metricsData?.buildings_count ?? 0} torre(s)/bloco(s)`,
+      icon: Layers,
       color: 'text-brand-800 bg-brand-50 border-brand-200',
-      link: '/painel/projetos',
+      link: '/painel/moradores',
     },
   ];
 
@@ -92,7 +92,7 @@ export const DashboardPage: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Painel da Gestão</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            {activeCondominium?.name || 'Condomínio Selecionado'} — Governança documental e participação consultiva.
+            {activeCondominium?.name || 'Condomínio Selecionado'} — Revisão documental participativa e direta.
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -102,16 +102,10 @@ export const DashboardPage: React.FC = () => {
               <span>Consultas em PDF</span>
             </Button>
           </Link>
-          <Link to="/painel/projetos">
+          <Link to="/painel/moradores">
             <Button variant="outline" size="sm">
-              <FolderGit2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              <span>Minutas</span>
-            </Button>
-          </Link>
-          <Link to="/painel/exportacoes">
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              <span>Exportações</span>
+              <Users className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              <span>Moradores Participantes</span>
             </Button>
           </Link>
         </div>
@@ -175,27 +169,27 @@ export const DashboardPage: React.FC = () => {
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4 text-indigo-700" aria-hidden="true" />
-                <span className="font-semibold text-indigo-950">Consultas em PDF (Links Compartilháveis)</span>
+                <span className="font-semibold text-indigo-950">Consultas em PDF (Links Compartilháveis via WhatsApp)</span>
               </div>
               <ArrowRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
             <Link
-              to="/painel/projetos"
+              to="/painel/moradores"
               className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
             >
               <div className="flex items-center gap-2.5">
-                <FolderGit2 className="w-4 h-4 text-brand-800" aria-hidden="true" />
-                <span className="font-medium text-slate-800 group-hover:text-brand-900">Estação de Redação Normativa (Minutas)</span>
+                <Users className="w-4 h-4 text-emerald-700" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-emerald-900">Moradores Participantes (Contatos & WhatsApp)</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
             <Link
-              to="/painel/sugestoes"
+              to="/painel/unidades"
               className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
             >
               <div className="flex items-center gap-2.5">
-                <MessageSquare className="w-4 h-4 text-gold-700" aria-hidden="true" />
-                <span className="font-medium text-slate-800 group-hover:text-gold-900">Moderação de Sugestões em 4 Dimensões</span>
+                <Layers className="w-4 h-4 text-brand-800" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-brand-900">Estrutura Predial (Torres & Unidades)</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
@@ -204,18 +198,8 @@ export const DashboardPage: React.FC = () => {
               className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
             >
               <div className="flex items-center gap-2.5">
-                <Users className="w-4 h-4 text-emerald-700" aria-hidden="true" />
-                <span className="font-medium text-slate-800 group-hover:text-emerald-900">Gestão Predial & Saneamento Cadastral</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/painel/exportacoes"
-              className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"
-            >
-              <div className="flex items-center gap-2.5">
-                <Download className="w-4 h-4 text-blue-700" aria-hidden="true" />
-                <span className="font-medium text-slate-800 group-hover:text-blue-900">Central de Exportações & Selo SHA-256</span>
+                <Building2 className="w-4 h-4 text-slate-700" aria-hidden="true" />
+                <span className="font-medium text-slate-800 group-hover:text-slate-900">Configuração do Condomínio</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
             </Link>
