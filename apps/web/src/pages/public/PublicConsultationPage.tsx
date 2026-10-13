@@ -117,20 +117,18 @@ export const PublicConsultationPage: React.FC = () => {
       });
   }, [token]);
 
-  // Carrega histórico de sugestões do morador para esta consulta
-  const loadMyHistory = (phone: string, unit: string) => {
-    if (!token || (!phone && !unit)) return;
-    consultationService
-      .getMySuggestions(token, { phone, unit })
-      .then((list) => setMySuggestions(list))
-      .catch(() => {});
-  };
-
+  // Carrega histórico de sugestões enviadas exclusivamente neste dispositivo (Segurança Anti-IDOR)
   useEffect(() => {
-    if (residentPhone || unitCode) {
-      loadMyHistory(residentPhone, unitCode);
+    if (!token) return;
+    try {
+      const saved = localStorage.getItem(`condoc_my_suggestions_${token}`);
+      if (saved) {
+        setMySuggestions(JSON.parse(saved));
+      }
+    } catch {
+      // Ignora erro de parse
     }
-  }, [residentPhone, unitCode, token]);
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,8 +191,14 @@ export const PublicConsultationPage: React.FC = () => {
       setTargetReference('');
       setSuggestionText('');
       setJustification('');
-      // Atualiza histórico
-      loadMyHistory(residentPhone, unitCode);
+      // Atualiza histórico localmente e persiste no localStorage deste dispositivo
+      setMySuggestions((prev) => {
+        const next = [result, ...prev.filter((s) => s.id !== result.id)];
+        try {
+          localStorage.setItem(`condoc_my_suggestions_${token}`, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
       // Rola para o topo do formulário
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {

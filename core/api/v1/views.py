@@ -2742,8 +2742,13 @@ class PublicSuggestionSubmitView(APIView):
 
 class PublicMySuggestionsListView(APIView):
     """
-    Permite ao morador consultar na sessão atual as sugestões por ele enviadas
-    filtrando por telefone, unidade ou protocolo para manter privacidade.
+    Permite ao morador consultar o status de uma sugestão por ele enviada
+    EXCLUSIVAMENTE mediante apresentação do número de protocolo secreto (SUG-2026-XXXX).
+    
+    MEDIDA DE SEGURANÇA DA INFORMAÇÃO (LGPD & Anti-IDOR):
+    É terminantemente PROIBIDO filtrar por unidade ou telefone neste endpoint público
+    para evitar que terceiros (vizinhos curiosos ou mal-intencionados) visualizem
+    sugestões enviadas por outros moradores apenas digitando o número de outro apartamento.
     """
     permission_classes = [AllowAny]
 
@@ -2753,24 +2758,18 @@ class PublicMySuggestionsListView(APIView):
         except PublicConsultation.DoesNotExist:
             return Response({"error": "Consulta pública não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
-        phone = request.query_params.get('phone')
-        unit = request.query_params.get('unit')
         protocol = request.query_params.get('protocol')
-
-        if not any([phone, unit, protocol]):
+        if not protocol or not protocol.strip():
+            # Sem protocolo secreto, não devolve nenhuma sugestão
             return Response([], status=status.HTTP_200_OK)
 
-        qs = ConsultationSuggestion.objects.filter(consultation=consultation)
-        if protocol:
-            qs = qs.filter(protocol__iexact=protocol.strip())
-        elif phone and unit:
-            qs = qs.filter(resident_phone=phone.strip(), unit_code__iexact=unit.strip())
-        elif phone:
-            qs = qs.filter(resident_phone=phone.strip())
-        elif unit:
-            qs = qs.filter(unit_code__iexact=unit.strip())
+        # Consulta estrita e unívoca pelo protocolo secreto
+        qs = ConsultationSuggestion.objects.filter(
+            consultation=consultation,
+            protocol__iexact=protocol.strip()
+        )
 
-        serializer = PublicConsultationSuggestionConfirmationSerializer(qs.order_by('-created_at'), many=True)
+        serializer = PublicConsultationSuggestionConfirmationSerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

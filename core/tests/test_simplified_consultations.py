@@ -344,3 +344,55 @@ class TestSimplifiedConsultationApi:
 
         assert ResidentRegistration.objects.filter(condominium=self.condo).count() == 2
 
+    def test_security_cannot_view_third_party_suggestions_by_unit_or_phone(self):
+        """
+        SEGURANÇA DA INFORMAÇÃO E PRIVACIDADE (Anti-IDOR):
+        Garante que um morador NÃO consiga visualizar sugestões de outros vizinhos
+        informando o número de unidade ou telefone de terceiros no endpoint público.
+        """
+        # Vizinho 1 (Apto 701) envia uma sugestão legítima
+        sug_vizinho = SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Mariana Vizinha",
+            resident_phone="11977771111",
+            unit_code="701",
+            target_reference="Art. 20",
+            action_type="alterar",
+            suggestion_text="Proibir animais no elevador social.",
+            justification="Higiene e alergias."
+        )
+
+        base_url = f"/api/v1/public/consultations/{self.consultation.public_token}/my-suggestions"
+
+        # 1. Terceiro curioso tenta consultar passando a unidade do vizinho: unit=701
+        resp_by_unit = self.client.get(f"{base_url}?unit=701")
+        assert resp_by_unit.status_code == 200
+        assert resp_by_unit.json() == [], "FALHA DE SEGURANÇA: Endpoint público revelou sugestão de terceiro por unidade!"
+
+        # 2. Terceiro curioso tenta consultar passando o telefone do vizinho
+        resp_by_phone = self.client.get(f"{base_url}?phone=11977771111")
+        assert resp_by_phone.status_code == 200
+        assert resp_by_phone.json() == [], "FALHA DE SEGURANÇA: Endpoint público revelou sugestão de terceiro por telefone!"
+
+        # 3. Terceiro curioso tenta consultar passando unidade E telefone do vizinho
+        resp_by_both = self.client.get(f"{base_url}?unit=701&phone=11977771111")
+        assert resp_by_both.status_code == 200
+        assert resp_by_both.json() == [], "FALHA DE SEGURANÇA: Endpoint público revelou sugestão de terceiro!"
+
+        # 4. Sem parâmetros: também vazio
+        resp_empty = self.client.get(base_url)
+        assert resp_empty.status_code == 200
+        assert resp_empty.json() == []
+
+        # 5. Apenas com o protocolo secreto unívoco (que só quem enviou possui): retorna a sugestão
+        resp_protocol = self.client.get(f"{base_url}?protocol={sug_vizinho.protocol}")
+        assert resp_protocol.status_code == 200
+        res_data = resp_protocol.json()
+        assert len(res_data) == 1
+        assert res_data[0]["protocol"] == sug_vizinho.protocol
+        assert res_data[0]["suggestion_text"] == "Proibir animais no elevador social."
+        # Garante que dados de contato confidenciais (telefone/email) NÃO são expostos nem pelo protocolo
+        assert "resident_phone" not in res_data[0]
+        assert "resident_email" not in res_data[0]
+
+
