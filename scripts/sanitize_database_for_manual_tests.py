@@ -25,8 +25,11 @@ def sanitize_db():
     DELETE FROM app.residents;
     DELETE FROM app.resident_registrations;
     
-    -- 4. Mantem condomínio e limpa unidades temporárias se necessário
-    -- Mantem as unidades base ou limpa
+    -- 4. Expura unidades e torres residuais de testes passados
+    DELETE FROM app.units;
+    DELETE FROM app.buildings;
+    
+    -- 5. Preserva condomínios para testes manuais no contexto selecionado
     """
 
     cmd = f'docker exec supabase_db psql -U postgres -d condc_dev -c "{sql}"'

@@ -566,14 +566,37 @@ class UnitListCreateView(APIView):
         if not Condominium.objects.filter(id=condominium_id).exists():
             return Response({"error": "Condomínio não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         status_param = request.query_params.get('status')
+        building_id_param = request.query_params.get('building_id')
+
         qs = Unit.objects.filter(condominium_id=condominium_id).select_related('building')
+
+        if building_id_param:
+            if building_id_param == 'none':
+                qs = qs.filter(building__isnull=True)
+            else:
+                try:
+                    qs = qs.filter(building_id=uuid.UUID(building_id_param))
+                except (ValueError, TypeError):
+                    pass
+
         if status_param == 'all':
-            units = qs.order_by('code')
+            pass
         elif status_param:
-            units = qs.filter(status=status_param).order_by('code')
+            qs = qs.filter(status=status_param)
         else:
-            units = qs.filter(status='active').order_by('code')
-        return Response(UnitSerializer(units, many=True).data)
+            qs = qs.filter(status='active')
+
+        units_list = list(qs)
+
+        # Ordenação natural numérica de apartamentos (ex: 301, 302 antes de 1001)
+        def natural_sort_key(u):
+            digits = "".join(filter(str.isdigit, u.code))
+            if digits:
+                return (0, int(digits), u.code)
+            return (1, 0, u.code)
+
+        units_list.sort(key=natural_sort_key)
+        return Response(UnitSerializer(units_list, many=True).data)
 
     def post(self, request, condominium_id):
         if not Condominium.objects.filter(id=condominium_id).exists():

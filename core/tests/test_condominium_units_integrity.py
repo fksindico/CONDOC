@@ -642,3 +642,46 @@ class TestCondominiumUnitsIntegrity:
         assert bldg["units"][0]["code"] == "301"
         assert bldg["units"][-1]["code"] == "506"
 
+    def test_units_api_filtering_by_building_and_natural_sorting(self):
+        """
+        Valida que o endpoint GET /api/v1/condominiums/<id>/units:
+        1. Suporta filtragem por building_id específico.
+        2. Suporta filtragem por unidades avulsas (building_id=none).
+        3. Realiza ordenação natural numérica inteligente dos códigos dos apartamentos.
+        """
+        client = Client()
+        condo = CondominiumService.create_condominium(name="Residencial Filtros & Torres")
+        torre_1 = CondominiumService.create_building(condominium_id=condo.id, code="T1", name="Torre 1")
+        torre_2 = CondominiumService.create_building(condominium_id=condo.id, code="T2", name="Torre 2")
+
+        # Cria unidades com numeração que testa a ordenação natural (ex: 201 vs 1001)
+        CondominiumService.create_unit(condominium_id=condo.id, building_id=torre_1.id, code="1001")
+        CondominiumService.create_unit(condominium_id=condo.id, building_id=torre_1.id, code="201")
+        CondominiumService.create_unit(condominium_id=condo.id, building_id=torre_1.id, code="101")
+        CondominiumService.create_unit(condominium_id=condo.id, building_id=torre_2.id, code="301")
+        CondominiumService.create_unit(condominium_id=condo.id, building_id=None, code="G01")
+
+        # 1. Filtro por Torre 1
+        resp_t1 = client.get(f"/api/v1/condominiums/{condo.id}/units?building_id={torre_1.id}")
+        assert resp_t1.status_code == 200
+        codes_t1 = [u["code"] for u in resp_t1.json()]
+        assert codes_t1 == ["101", "201", "1001"], f"Ordenação natural esperada ['101', '201', '1001'], obtido: {codes_t1}"
+
+        # 2. Filtro por Torre 2
+        resp_t2 = client.get(f"/api/v1/condominiums/{condo.id}/units?building_id={torre_2.id}")
+        assert resp_t2.status_code == 200
+        codes_t2 = [u["code"] for u in resp_t2.json()]
+        assert codes_t2 == ["301"]
+
+        # 3. Filtro sem torre
+        resp_none = client.get(f"/api/v1/condominiums/{condo.id}/units?building_id=none")
+        assert resp_none.status_code == 200
+        codes_none = [u["code"] for u in resp_none.json()]
+        assert codes_none == ["G01"]
+
+        # 4. Todas as unidades ordenadas naturalmente
+        resp_all = client.get(f"/api/v1/condominiums/{condo.id}/units")
+        assert resp_all.status_code == 200
+        codes_all = [u["code"] for u in resp_all.json()]
+        assert codes_all == ["G01", "101", "201", "301", "1001"]
+

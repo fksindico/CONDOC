@@ -27,7 +27,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 export const UnitsPage: React.FC = () => {
-  const { activeCondominiumId } = useTenant();
+  const { activeCondominiumId, activeCondominium } = useTenant();
   const { toast } = useToast();
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -118,8 +118,59 @@ export const UnitsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    // Ao trocar de condomínio no contexto, reseta o filtro de torre para visão geral
+    setSelectedTowerFilter('all');
     fetchData();
   }, [activeCondominiumId]);
+
+  // Contagem dinâmica de unidades ativas por torre
+  const unitsByBuildingCount = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let noneCount = 0;
+    units.forEach((u) => {
+      if (u.status !== 'inactive') {
+        if (u.building_id) {
+          counts[u.building_id] = (counts[u.building_id] || 0) + 1;
+        } else {
+          noneCount++;
+        }
+      }
+    });
+    return { counts, noneCount };
+  }, [units]);
+
+  // Torre atualmente selecionada
+  const currentSelectedBuilding = useMemo(() => {
+    if (selectedTowerFilter === 'all' || selectedTowerFilter === 'none') return null;
+    return buildings.find((b) => b.id === selectedTowerFilter) || null;
+  }, [buildings, selectedTowerFilter]);
+
+  // Abertura contextualizada do Modal de Lote
+  const handleOpenBatchModal = (preselectedBuildingId?: string) => {
+    const targetBuildingId =
+      preselectedBuildingId ||
+      (selectedTowerFilter !== 'all' && selectedTowerFilter !== 'none' ? selectedTowerFilter : '');
+
+    if (targetBuildingId) {
+      setBatchMode('existing');
+      setBatchBuildingId(targetBuildingId);
+    } else {
+      setBatchMode(buildings.length > 0 ? 'existing' : 'new');
+      setBatchBuildingId(buildings.length > 0 ? buildings[0].id : '');
+    }
+    setIsBatchModalOpen(true);
+  };
+
+  // Abertura contextualizada do Modal de Nova Unidade
+  const handleOpenNewUnitModal = (preselectedBuildingId?: string) => {
+    const targetBuildingId =
+      preselectedBuildingId ||
+      (selectedTowerFilter !== 'all' && selectedTowerFilter !== 'none' ? selectedTowerFilter : '');
+
+    setSelectedBuildingId(targetBuildingId);
+    setNewUnitCode('');
+    setIsUnitModalOpen(true);
+  };
 
   // Criação de Torre
   const handleCreateBuilding = async (e: React.FormEvent) => {
@@ -408,27 +459,38 @@ export const UnitsPage: React.FC = () => {
     }
   };
 
-  // Filtragem de Unidades
-  const filteredUnits = units.filter((u) => {
-    const code = (u.code || u.unit_number || '').toLowerCase();
-    const matchesCode = searchCode ? code.includes(searchCode.toLowerCase()) : true;
+  // Filtragem e Ordenação Natural de Unidades
+  const filteredUnits = useMemo(() => {
+    const list = units.filter((u) => {
+      const code = (u.code || u.unit_number || '').toLowerCase();
+      const matchesCode = searchCode ? code.includes(searchCode.toLowerCase()) : true;
 
-    const matchesTower =
-      selectedTowerFilter === 'all'
-        ? true
-        : selectedTowerFilter === 'none'
-        ? !u.building_id
-        : u.building_id === selectedTowerFilter;
+      const matchesTower =
+        selectedTowerFilter === 'all'
+          ? true
+          : selectedTowerFilter === 'none'
+          ? !u.building_id
+          : u.building_id === selectedTowerFilter;
 
-    const matchesStatus =
-      statusFilter === 'all'
-        ? true
-        : statusFilter === 'active'
-        ? u.status !== 'inactive'
-        : u.status === 'inactive';
+      const matchesStatus =
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'active'
+          ? u.status !== 'inactive'
+          : u.status === 'inactive';
 
-    return matchesCode && matchesTower && matchesStatus;
-  });
+      return matchesCode && matchesTower && matchesStatus;
+    });
+
+    return list.sort((a, b) => {
+      const codeA = a.code || a.unit_number || '';
+      const codeB = b.code || b.unit_number || '';
+      const numA = parseInt(codeA.replace(/\D/g, '') || '0', 10);
+      const numB = parseInt(codeB.replace(/\D/g, '') || '0', 10);
+      if (numA !== numB) return numA - numB;
+      return codeA.localeCompare(codeB);
+    });
+  }, [units, searchCode, selectedTowerFilter, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -440,21 +502,54 @@ export const UnitsPage: React.FC = () => {
         ]}
       />
 
-      {/* Header */}
+      {/* Banner de Contexto do Condomínio Ativo */}
+      {!activeCondominiumId ? (
+        <Alert variant="warning">
+          Nenhum condomínio selecionado. Por favor, selecione um condomínio no menu superior para gerenciar suas torres e unidades.
+        </Alert>
+      ) : (
+        <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-indigo-950 uppercase tracking-wider">
+                  Condomínio Selecionado
+                </span>
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-200/80 text-indigo-800 rounded-full">
+                  Contexto Ativo
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+                {activeCondominium?.name || 'Condomínio Atual'}
+              </h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-600 bg-white/90 border border-indigo-100 rounded-xl px-3.5 py-2 self-start sm:self-center shadow-2xs">
+            <span><strong>{buildings.length}</strong> {buildings.length === 1 ? 'torre' : 'torres'}</span>
+            <span className="text-slate-300">•</span>
+            <span><strong>{units.filter((u) => u.status !== 'inactive').length}</strong> apartamentos ativos</span>
+          </div>
+        </div>
+      )}
+
+      {/* Header com Ações Principais */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
             <Layers className="w-6 h-6 text-brand-600" />
-            <span>Torres & Unidades Autônomas</span>
+            <span>Estrutura Física: Torres & Apartamentos</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Estrutura física do condomínio para vinculação, preservação cadastral e auditoria de moradores.
+            Clique na torre para filtrar seus apartamentos ou utilize o gerador em lote para criar andares padronizados.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             size="sm"
-            onClick={() => setIsBatchModalOpen(true)}
+            onClick={() => handleOpenBatchModal()}
             className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
           >
             <Sparkles className="w-4 h-4 mr-1.5" />
@@ -464,7 +559,7 @@ export const UnitsPage: React.FC = () => {
             <Building2 className="w-4 h-4 mr-1.5" />
             <span>Nova Torre/Bloco</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsUnitModalOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => handleOpenNewUnitModal()}>
             <Plus className="w-4 h-4 mr-1.5" />
             <span>Nova Unidade</span>
           </Button>
@@ -473,100 +568,234 @@ export const UnitsPage: React.FC = () => {
 
       {error && <Alert variant="error">{error}</Alert>}
 
-      {/* Grid de Torres / Blocos */}
+      {/* Grid de Torres / Blocos Clicáveis com Interação Direta */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-            Torres & Blocos Cadastrados ({buildings.length})
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Torres & Blocos Cadastrados ({buildings.length})
+            </h3>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              — Clique em um card para isolar a visualização dos apartamentos
+            </span>
+          </div>
+          {selectedTowerFilter !== 'all' && (
+            <button
+              onClick={() => setSelectedTowerFilter('all')}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold"
+            >
+              Mostrar Todas as Torres
+            </button>
+          )}
         </div>
+
         {buildings.length === 0 ? (
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 text-center">
-            Nenhuma torre ou bloco cadastrado. Use o botão acima para adicionar blocos ao condomínio.
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center shadow-xs">
+            <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-700">Nenhuma torre ou bloco cadastrado para este condomínio.</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Cadastre a primeira torre para começar a organizar os apartamentos.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <Button size="sm" onClick={() => setIsBuildingModalOpen(true)}>
+                <Building2 className="w-4 h-4 mr-1.5" />
+                Cadastrar Primeira Torre
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleOpenBatchModal()}>
+                <Sparkles className="w-4 h-4 mr-1.5 text-indigo-600" />
+                Criar Torre & Lote de Apartamentos
+              </Button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
             {buildings.map((b) => {
-              const countUnits = units.filter((u) => u.building_id === b.id && u.status !== 'inactive').length;
+              const countUnits = unitsByBuildingCount.counts[b.id] || 0;
+              const isSelected = selectedTowerFilter === b.id;
+
               return (
-                <Card key={b.id} className="relative group">
-                  <CardContent className="p-4 flex items-center justify-between">
+                <div
+                  key={b.id}
+                  onClick={() => setSelectedTowerFilter(isSelected ? 'all' : b.id)}
+                  className={`relative p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                    isSelected
+                      ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/30 shadow-md'
+                      : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-semibold text-slate-900 text-sm truncate">{b.name}</h4>
-                      <p className="text-xs text-slate-500 font-mono mt-0.5">Código: {b.code || '—'}</p>
-                      <p className="text-xs text-slate-600 mt-2 font-medium">
-                        {countUnits} {countUnits === 1 ? 'unidade ativa' : 'unidades ativas'}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-bold text-slate-900 text-sm truncate">{b.name}</h4>
+                        {isSelected && (
+                          <span className="px-1.5 py-0.2 rounded-md bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider shrink-0">
+                            Ativa
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">Código: {b.code || '—'}</p>
                     </div>
-                    <div className="flex items-center gap-1">
+
+                    <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {b.status === 'inactive' ? (
                         <>
                           <button
                             onClick={() => handleReactivateBuilding(b)}
-                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Reativar Torre/Bloco"
-                            aria-label="Reativar Torre/Bloco"
+                            className="p-1 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-slate-100 transition"
+                            title="Reativar Torre"
                           >
-                            <RotateCcw className="w-4 h-4" />
+                            <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleOpenPurgeBuilding(b)}
-                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-100 rounded-lg transition-colors"
-                            title="Saneamento / Excluir Definitivamente"
-                            aria-label="Saneamento / Excluir Definitivamente"
+                            className="p-1 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                            title="Excluir Definitivamente"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       ) : (
                         <>
                           <button
                             onClick={() => handleOpenEditBuilding(b)}
-                            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Editar Torre/Bloco"
-                            aria-label="Editar Torre/Bloco"
+                            className="p-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition"
+                            title="Editar Nome/Código da Torre"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleOpenDeleteBuilding(b)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Desativar Torre/Bloco"
-                            aria-label="Desativar Torre/Bloco"
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition"
+                            title="Desativar Torre"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-slate-100">
+                    <span className="text-xs font-semibold text-slate-700">
+                      {countUnits} {countUnits === 1 ? 'apartamento' : 'apartamentos'}
+                    </span>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenBatchModal(b.id)}
+                        className="px-2 py-0.5 text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded-md transition"
+                        title="Gerar Apartamentos em Lote nesta Torre"
+                      >
+                        + Lote
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenNewUnitModal(b.id)}
+                        className="px-2 py-0.5 text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition"
+                        title="Adicionar Apartamento Individual nesta Torre"
+                      >
+                        + Apto
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Barra de Filtros da Tabela de Unidades */}
+      {/* Navegador em Abas / Pílulas de Torres */}
+      {buildings.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200">
+          <button
+            type="button"
+            onClick={() => setSelectedTowerFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
+              selectedTowerFilter === 'all'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <span>Todas as Torres</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                selectedTowerFilter === 'all' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              {units.length}
+            </span>
+          </button>
+
+          {buildings.map((b) => {
+            const count = unitsByBuildingCount.counts[b.id] || 0;
+            const isSelected = selectedTowerFilter === b.id;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => setSelectedTowerFilter(isSelected ? 'all' : b.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <span>{b.name}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                    isSelected ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+
+          {unitsByBuildingCount.noneCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedTowerFilter('none')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
+                selectedTowerFilter === 'none'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span>Sem Torre</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                  selectedTowerFilter === 'none' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {unitsByBuildingCount.noneCount}
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Barra de Filtros e Busca da Tabela de Unidades */}
       <Card>
         <CardContent className="p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
           <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              className="w-full text-xs pl-9 pr-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 font-mono"
-              placeholder="Buscar unidade (ex: 101, 002)..."
+              className="w-full text-xs pl-9 pr-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+              placeholder="Buscar apartamento (ex: 301, 504)..."
               value={searchCode}
               onChange={(e) => setSearchCode(e.target.value)}
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            {/* Filtro por Torre */}
+            {/* Filtro por Torre (Dropdown auxiliar) */}
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-slate-500 font-medium">Torre:</span>
               <select
-                className="text-xs border border-slate-300 rounded-lg py-1.5 px-2.5 outline-none focus:ring-2 focus:ring-brand-500"
+                className="text-xs border border-slate-300 rounded-lg py-1.5 px-2.5 outline-none focus:ring-2 focus:ring-indigo-500"
                 value={selectedTowerFilter}
                 onChange={(e) => setSelectedTowerFilter(e.target.value)}
               >
@@ -574,7 +803,7 @@ export const UnitsPage: React.FC = () => {
                 <option value="none">Sem Torre (Geral)</option>
                 {buildings.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name}
+                    {b.name} ({unitsByBuildingCount.counts[b.id] || 0} aptos)
                   </option>
                 ))}
               </select>
@@ -608,18 +837,57 @@ export const UnitsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tabela de Unidades */}
+      {/* Tabela de Unidades Contextualizada */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-base">
-                Unidades Autônomas ({filteredUnits.length} exibidas de {units.length})
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base font-bold text-slate-900">
+                  {currentSelectedBuilding
+                    ? `Apartamentos da Torre ${currentSelectedBuilding.name} (${filteredUnits.length} exibidos)`
+                    : selectedTowerFilter === 'none'
+                    ? `Apartamentos Sem Torre (${filteredUnits.length} exibidos)`
+                    : `Todas as Unidades do Condomínio (${filteredUnits.length} de ${units.length})`}
+                </CardTitle>
+                {currentSelectedBuilding && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTowerFilter('all')}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline"
+                  >
+                    ✕ Ver todas as torres
+                  </button>
+                )}
+              </div>
               <CardDescription>
-                Preservação estrita de zeros à esquerda e frações ideais (sem peso eleitoral).
+                {currentSelectedBuilding
+                  ? `Exibindo exclusivamente as unidades pertencentes à torre ${currentSelectedBuilding.name}.`
+                  : 'Exibindo estrutura física cadastrada para este condomínio.'}
               </CardDescription>
             </div>
+
+            {currentSelectedBuilding && (
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleOpenBatchModal(currentSelectedBuilding.id)}
+                  className="text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+                  Gerar em Lote nesta Torre
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleOpenNewUnitModal(currentSelectedBuilding.id)}
+                  className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  + Apartamento
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
