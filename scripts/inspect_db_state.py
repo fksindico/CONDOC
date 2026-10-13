@@ -26,8 +26,8 @@ query("SELECT column_name, data_type FROM information_schema.columns WHERE table
 query("SELECT * FROM app.residents;", "ALL RESIDENTS")
 
 query("SELECT ra.id, c.name as condo, a.email, a.full_name, ra.role, ra.status FROM app.role_assignments ra JOIN app.condominiums c ON ra.condominium_id = c.id JOIN app.accounts a ON ra.account_id = a.id;", "ROLE ASSIGNMENTS")
-query("SELECT id, condominium_id, title, status, access_token FROM app.public_consultations;", "PUBLIC CONSULTATIONS")
-query("SELECT id, public_consultation_id, author_name, author_phone, author_unit, action_type, status FROM app.consultation_suggestions;", "CONSULTATION SUGGESTIONS")
+query("SELECT id, condominium_id, title, public_token, status FROM app.public_consultations;", "PUBLIC CONSULTATIONS")
+query("SELECT id, consultation_id, resident_name, resident_phone, unit_code, protocol, action_type FROM app.consultation_suggestions;", "CONSULTATION SUGGESTIONS")
 
 
 ssh_db.close()

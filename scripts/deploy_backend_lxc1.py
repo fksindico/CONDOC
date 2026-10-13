@@ -146,7 +146,10 @@ WantedBy=multi-user.target
 
     exec_sudo(ssh, password, "mv /tmp/condc-backend.service /etc/systemd/system/condc-backend.service")
     exec_sudo(ssh, password, "systemctl daemon-reload")
-    exec_sudo(ssh, password, "systemctl enable condc-backend && systemctl restart condc-backend")
+    exec_sudo(ssh, password, "systemctl enable condc-backend")
+    exec_sudo(ssh, password, "systemctl restart condc-backend")
+    import time
+    time.sleep(1.5)
 
     # 6. Verifica status do serviço
     code, out, err = exec_sudo(ssh, password, "systemctl is-active condc-backend")

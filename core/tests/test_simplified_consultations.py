@@ -236,3 +236,111 @@ class TestSimplifiedConsultationApi:
         assert resp_export.status_code == 200
         assert "text/csv" in resp_export["Content-Type"]
         assert "Beatriz" in resp_export.content.decode("utf-8")
+
+    def test_resident_deduplication_on_multiple_suggestions(self):
+        """
+        Valida que múltiplos envios de sugestão pelo mesmo morador no link universal
+        NÃO criam registros duplicados no cadastro de moradores, e consolidam o histórico.
+        """
+        from infrastructure.models import ResidentRegistration
+
+        # 1. Primeiro envio
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Carlos Eduardo Silva",
+            resident_phone="(11) 98888-7777",
+            block_tower="Torre Alpha",
+            unit_code="501",
+            target_reference="Artigo 12",
+            action_type="alterar",
+            suggestion_text="Primeira sugestão de teste",
+        )
+
+        regs = ResidentRegistration.objects.filter(condominium=self.condo)
+        assert regs.count() == 1
+        reg = regs.first()
+        assert reg.full_name == "Carlos Eduardo Silva"
+        assert reg.phone_e164 == "11988887777"
+        assert reg.unit.code == "501"
+
+        # 2. Segundo envio pelo mesmo morador na mesma unidade (sem email)
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Carlos Eduardo Silva",
+            resident_phone="11988887777",
+            block_tower="Torre Alpha",
+            unit_code="501",
+            target_reference="Artigo 18",
+            action_type="remover",
+            suggestion_text="Segunda sugestão do mesmo morador",
+        )
+
+        # Continua sendo exatamente 1 cadastro!
+        assert ResidentRegistration.objects.filter(condominium=self.condo).count() == 1
+
+        # 3. Terceiro envio pelo mesmo morador agregando e-mail
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Carlos Eduardo Silva",
+            resident_phone="11988887777",
+            resident_email="carlos.silva@teste.com",
+            block_tower="Torre Alpha",
+            unit_code="501",
+            target_reference="Artigo 25",
+            action_type="incluir",
+            suggestion_text="Terceira sugestão incluindo novo parágrafo",
+        )
+
+        # Continua sendo exatamente 1 cadastro, mas agora com o e-mail atualizado!
+        regs_after = ResidentRegistration.objects.filter(condominium=self.condo)
+        assert regs_after.count() == 1
+        assert regs_after.first().email == "carlos.silva@teste.com"
+
+        # Sugestões totais enviadas: 3
+        assert ConsultationSuggestion.objects.filter(condominium=self.condo).count() == 3
+
+        # 4. Verifica API do Síndico: lista de moradores exibe suggestions_count == 3
+        list_url = f"/api/v1/condominiums/{self.condo.id}/registrations"
+        resp = self.client.get(list_url)
+        assert resp.status_code == 200
+        moradores = resp.json()
+        assert len(moradores) == 1
+        assert moradores[0]["full_name"] == "Carlos Eduardo Silva"
+        assert moradores[0]["suggestions_count"] == 3
+
+        # 5. Verifica endpoint de sugestões do morador
+        reg_id = moradores[0]["id"]
+        sug_url = f"/api/v1/condominiums/{self.condo.id}/registrations/{reg_id}/suggestions"
+        resp_sug = self.client.get(sug_url)
+        assert resp_sug.status_code == 200
+        user_sugs = resp_sug.json()
+        assert len(user_sugs) == 3
+
+    def test_different_resident_creates_second_record(self):
+        """Valida que morador de unidade diferente gera um novo registro legítimo."""
+        from infrastructure.models import ResidentRegistration
+
+        # Morador 1 (Apto 501)
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Carlos Silva",
+            resident_phone="11988887777",
+            unit_code="501",
+            target_reference="Art. 1",
+            action_type="alterar",
+            suggestion_text="Sugestão 1",
+        )
+
+        # Morador 2 (Apto 502)
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Ana Paula",
+            resident_phone="11999998888",
+            unit_code="502",
+            target_reference="Art. 2",
+            action_type="incluir",
+            suggestion_text="Sugestão 2",
+        )
+
+        assert ResidentRegistration.objects.filter(condominium=self.condo).count() == 2
+

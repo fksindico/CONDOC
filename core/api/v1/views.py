@@ -13,6 +13,7 @@ from rest_framework.renderers import BaseRenderer, JSONRenderer
 from django.http import HttpResponse, FileResponse, Http404
 from django.utils import timezone
 from django.conf import settings
+from django.db import models
 import os
 import uuid
 
@@ -661,18 +662,96 @@ class ResidentRegistrationListCreateView(APIView):
     def get(self, request, condominium_id):
         registrations = ResidentRegistration.objects.filter(
             condominium_id=condominium_id
-        ).select_related('unit').order_by('-created_at')
-        return Response(ResidentRegistrationCreateSerializer(registrations, many=True).data)
+        ).select_related('unit', 'unit__building').order_by('-created_at')
+
+        results = []
+        for reg in registrations:
+            unit_code = reg.unit.code if reg.unit else ''
+            building_name = reg.unit.building.name if (reg.unit and reg.unit.building) else (reg.unit.block or '—') if reg.unit else '—'
+            phone_clean = "".join(filter(str.isdigit, reg.phone_e164 or ""))
+
+            sug_qs = ConsultationSuggestion.objects.filter(condominium_id=condominium_id)
+            cond = models.Q(unit_code__iexact=unit_code)
+            if phone_clean:
+                cond &= (models.Q(resident_phone__icontains=phone_clean[-8:]) | models.Q(resident_name__iexact=reg.full_name))
+            else:
+                cond &= models.Q(resident_name__iexact=reg.full_name)
+
+            suggestions = sug_qs.filter(cond)
+            sug_count = suggestions.count()
+            last_sug = suggestions.order_by('-created_at').first()
+
+            results.append({
+                "id": str(reg.id),
+                "unit_id": str(reg.unit_id) if reg.unit_id else None,
+                "unit_code": unit_code or '—',
+                "building_name": building_name,
+                "building_code": reg.unit.building.code if (reg.unit and reg.unit.building) else '',
+                "full_name": reg.full_name,
+                "phone_e164": reg.phone_e164,
+                "email": reg.email,
+                "relationship": reg.relationship,
+                "source": reg.source,
+                "status": reg.status,
+                "notes": reg.notes,
+                "suggestions_count": sug_count,
+                "last_suggestion_date": last_sug.created_at.isoformat() if last_sug else None,
+                "created_at": reg.created_at.isoformat() if reg.created_at else None,
+                "updated_at": reg.updated_at.isoformat() if reg.updated_at else None,
+            })
+        return Response(results, status=status.HTTP_200_OK)
 
     def post(self, request, condominium_id):
-        serializer = ResidentRegistrationCreateSerializer(data=request.data)
+        unit_id = request.data.get('unit_id')
+        unit_code = request.data.get('unit_code')
+        block_tower = request.data.get('block_tower')
+
+        if not unit_id and unit_code:
+            building = None
+            if block_tower:
+                clean_tower = str(block_tower).strip()
+                building = Building.objects.filter(
+                    condominium_id=condominium_id,
+                    status='active'
+                ).filter(
+                    models.Q(code__iexact=clean_tower) | models.Q(name__iexact=clean_tower)
+                ).first()
+                if not building:
+                    building = Building.objects.create(
+                        id=uuid.uuid4(),
+                        condominium_id=condominium_id,
+                        code=clean_tower[:50].upper(),
+                        name=clean_tower[:255],
+                        status='active'
+                    )
+
+            clean_u = str(unit_code).strip()
+            unit = Unit.objects.filter(
+                condominium_id=condominium_id,
+                status='active',
+                code__iexact=clean_u
+            ).first()
+            if not unit:
+                unit = Unit.objects.create(
+                    id=uuid.uuid4(),
+                    condominium_id=condominium_id,
+                    building=building,
+                    code=clean_u[:50],
+                    status='active'
+                )
+            unit_id = unit.id
+
+        data = request.data.copy()
+        data['unit_id'] = unit_id
+
+        serializer = ResidentRegistrationCreateSerializer(data=data)
         if serializer.is_valid():
-            data = serializer.validated_data.copy()
-            unit_id = data.pop('unit_id')
+            v_data = serializer.validated_data.copy()
+            u_id = v_data.pop('unit_id')
             registration = ResidentRegistrationService.create_manual_registration(
                 condominium_id=condominium_id,
-                unit_id=unit_id,
-                **data
+                unit_id=u_id,
+                **v_data
             )
             return Response(ResidentRegistrationCreateSerializer(registration).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -683,38 +762,72 @@ class ResidentRegistrationDetailUpdateView(APIView):
 
     def get(self, request, condominium_id, registration_id):
         try:
-            reg = ResidentRegistration.objects.select_related('unit').get(
+            reg = ResidentRegistration.objects.select_related('unit', 'unit__building').get(
                 id=registration_id,
                 condominium_id=condominium_id
             )
         except ResidentRegistration.DoesNotExist:
-            return Response({"error": "Pré-cadastro não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         return Response(ResidentRegistrationCreateSerializer(reg).data, status=status.HTTP_200_OK)
 
     def patch(self, request, condominium_id, registration_id):
         try:
-            reg = ResidentRegistrationService.update_registration(
-                condominium_id=condominium_id,
-                registration_id=registration_id,
-                **request.data
-            )
+            reg = ResidentRegistration.objects.get(id=registration_id, condominium_id=condominium_id)
+            if 'full_name' in request.data:
+                reg.full_name = request.data['full_name'].strip()
+            if 'phone_e164' in request.data:
+                reg.phone_e164 = "".join(filter(str.isdigit, request.data['phone_e164']))
+            if 'email' in request.data:
+                reg.email = request.data['email'].strip().lower() if request.data['email'] else None
+            if 'notes' in request.data:
+                reg.notes = request.data['notes']
+            reg.save()
             return Response(ResidentRegistrationCreateSerializer(reg).data, status=status.HTTP_200_OK)
         except ResidentRegistration.DoesNotExist:
-            return Response({"error": "Pré-cadastro não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, condominium_id, registration_id):
         try:
-            ResidentRegistrationService.delete_registration(
-                condominium_id=condominium_id,
-                registration_id=registration_id
-            )
+            reg = ResidentRegistration.objects.get(id=registration_id, condominium_id=condominium_id)
+            reg.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ResidentRegistration.DoesNotExist:
-            return Response({"error": "Pré-cadastro não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResidentSuggestionsListView(APIView):
+    """
+    Retorna as sugestões associadas a um morador específico para visualização
+    exclusiva do síndico em caso de dúvidas sobre as propostas enviadas.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, registration_id):
+        try:
+            reg = ResidentRegistration.objects.select_related('unit').get(
+                id=registration_id,
+                condominium_id=condominium_id
+            )
+        except ResidentRegistration.DoesNotExist:
+            return Response({"error": "Morador não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        unit_code = reg.unit.code if reg.unit else ''
+        phone_clean = "".join(filter(str.isdigit, reg.phone_e164 or ""))
+
+        sug_qs = ConsultationSuggestion.objects.filter(condominium_id=condominium_id)
+        cond = models.Q(unit_code__iexact=unit_code)
+        if phone_clean:
+            cond &= (models.Q(resident_phone__icontains=phone_clean[-8:]) | models.Q(resident_name__iexact=reg.full_name))
+        else:
+            cond &= models.Q(resident_name__iexact=reg.full_name)
+
+        suggestions = sug_qs.filter(cond).select_related('consultation').order_by('-created_at')
+        serializer = AdminConsultationSuggestionListSerializer(suggestions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UnitMembershipListView(APIView):
@@ -2834,10 +2947,10 @@ class CondominiumDashboardMetricsView(APIView):
             status__in=['recebida', 'em_analise']
         ).count()
 
-        # 3. Moradores cadastrados (Pré-cadastros sem vínculo + Vínculos ativos)
+        # 3. Moradores cadastrados (Pré-cadastros/Cadastros orgânicos sem vínculo + Vínculos ativos)
         reg_count = ResidentRegistration.objects.filter(
             condominium_id=condominium_id,
-            status__in=['pendente', 'aprovado'],
+            status__in=['pendente', 'pre_aprovado', 'ativado', 'aprovado'],
             linked_membership_id__isnull=True
         ).count()
         mem_count = UnitMembership.objects.filter(

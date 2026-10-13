@@ -15,6 +15,7 @@ from .views import (
     UnitDetailUpdateView,
     ResidentRegistrationListCreateView,
     ResidentRegistrationDetailUpdateView,
+    ResidentSuggestionsListView,
     UnitMembershipListView,
     UnitMembershipDetailUpdateView,
     VerifyMembershipActionView,
@@ -113,9 +114,10 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/units', UnitListCreateView.as_view(), name='api_v1_units'),
     path('condominiums/<uuid:condominium_id>/units/<uuid:unit_id>', UnitDetailUpdateView.as_view(), name='api_v1_unit_detail'),
 
-    # Pré-cadastro manual de moradores (CA-02)
+    # Moradores e Sugestões vinculadas
     path('condominiums/<uuid:condominium_id>/registrations', ResidentRegistrationListCreateView.as_view(), name='api_v1_registrations'),
     path('condominiums/<uuid:condominium_id>/registrations/<uuid:registration_id>', ResidentRegistrationDetailUpdateView.as_view(), name='api_v1_registration_detail'),
+    path('condominiums/<uuid:condominium_id>/registrations/<uuid:registration_id>/suggestions', ResidentSuggestionsListView.as_view(), name='api_v1_registration_suggestions'),
 
     # Vínculos com Unidades (CA-13, CA-14)
     path('condominiums/<uuid:condominium_id>/memberships', UnitMembershipListView.as_view(), name='api_v1_memberships'),

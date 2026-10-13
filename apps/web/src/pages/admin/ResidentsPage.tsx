@@ -2,27 +2,24 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
-import type { Unit, ResidentRegistration, UnitMembership } from '@condc/api-contracts';
 import {
   Users,
-  UserPlus,
   Search,
   Phone,
   Mail,
   Home,
-  ShieldAlert,
-  ShieldCheck,
+  MessageSquare,
+  Download,
+  Plus,
   Edit2,
-  Archive,
   Trash2,
-  RotateCcw,
+  ExternalLink,
+  Calendar,
+  Building2,
+  FileText,
   AlertTriangle,
-  UserCheck,
   Clock,
   Sparkles,
-  Info,
-  CheckCircle2,
-  FileCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -31,736 +28,558 @@ import { Alert } from '@/components/ui/Alert';
 import { Modal } from '@/components/ui/Modal';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Tabs } from '@/components/ui/Tabs';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
-interface UnifiedResidentItem {
+interface ResidentItem {
   id: string;
-  itemType: 'registration' | 'membership';
-  name: string;
-  unitCode: string;
-  unitId: string;
-  phone?: string | null;
-  email?: string | null;
-  category: string;
-  verificationStatus: string;
-  membershipStatus: string;
-  source: 'manual' | 'import' | 'vinculado';
-  notes?: string | null;
-  createdAt: string;
-  raw: any;
+  unit_id: string | null;
+  unit_code: string;
+  building_name: string;
+  building_code: string;
+  full_name: string;
+  phone_e164: string | null;
+  email: string | null;
+  relationship: string;
+  source: string;
+  status: string;
+  notes: string | null;
+  suggestions_count: number;
+  last_suggestion_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SuggestionItem {
+  id: string;
+  protocol: string;
+  target_reference: string;
+  action_type: 'alterar' | 'remover' | 'incluir';
+  suggestion_text: string;
+  justification?: string;
+  status: string;
+  created_at: string;
+  consultation_title?: string;
 }
 
 export const ResidentsPage: React.FC = () => {
-  const { activeCondominiumId } = useTenant();
+  const { activeCondominium, activeCondominiumId } = useTenant();
   const { toast } = useToast();
 
-  const [memberships, setMemberships] = useState<any[]>([]);
-  const [registrations, setRegistrations] = useState<any[]>([]);
-  const [units, setUnits] = useState<any[]>([]);
-
-  const [activeTab, setActiveTab] = useState<'todos' | 'pre_cadastros' | 'validados' | 'pendentes'>('todos');
-  const [search, setSearch] = useState('');
+  const [residents, setResidents] = useState<ResidentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 1. Modal Novo Pré-cadastro Manual (CA-02)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newFullName, setNewFullName] = useState('');
+  // 1. Modal Novo Morador Manual
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newUnitId, setNewUnitId] = useState('');
-  const [newRelationship, setNewRelationship] = useState('proprietario_residente');
+  const [newTower, setNewTower] = useState('');
+  const [newUnit, setNewUnit] = useState('');
   const [newNotes, setNewNotes] = useState('');
+  const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
 
-  // 2. Modal Editar Pré-cadastro
-  const [isEditRegOpen, setIsEditRegOpen] = useState(false);
-  const [selectedReg, setSelectedReg] = useState<any | null>(null);
-  const [editRegFullName, setEditRegFullName] = useState('');
-  const [editRegPhone, setEditRegPhone] = useState('');
-  const [editRegEmail, setEditRegEmail] = useState('');
-  const [editRegUnitId, setEditRegUnitId] = useState('');
-  const [editRegRelationship, setEditRegRelationship] = useState('proprietario_residente');
-  const [editRegNotes, setEditRegNotes] = useState('');
+  // 2. Modal Editar Morador
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingResident, setEditingResident] = useState<ResidentItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
-  // 3. Modal Excluir Pré-cadastro
-  const [isDeleteRegOpen, setIsDeleteRegOpen] = useState(false);
+  // 3. Modal Excluir Morador
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deletingResident, setDeletingResident] = useState<ResidentItem | null>(null);
+  const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
 
-  // 4. Modal Editar Vínculo (Membership)
-  const [isEditMembershipOpen, setIsEditMembershipOpen] = useState(false);
-  const [selectedMembership, setSelectedMembership] = useState<any | null>(null);
-  const [editMemName, setEditMemName] = useState('');
-  const [editMemPhone, setEditMemPhone] = useState('');
-  const [editMemCategory, setEditMemCategory] = useState('proprietario_residente');
-  const [editMemStatus, setEditMemStatus] = useState('active');
+  // 4. Modal Ver Sugestões do Morador
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [selectedResidentForSugs, setSelectedResidentForSugs] = useState<ResidentItem | null>(null);
+  const [residentSuggestions, setResidentSuggestions] = useState<SuggestionItem[]>([]);
+  const [isLoadingSugs, setIsLoadingSugs] = useState(false);
 
-  // 5. Modal Validação Documental de Vínculo (CA-12, CA-15)
-  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
-  const [verifyStatus, setVerifyStatus] = useState('validado');
-  const [verifyMethod, setVerifyMethod] = useState('declaracao_sindico');
-  const [verifyReason, setVerifyReason] = useState('');
-
-  // 6. Modais Revogação e Saneamento de Vínculo
-  const [isDeleteMembershipOpen, setIsDeleteMembershipOpen] = useState(false);
-  const [isPurgeMembershipOpen, setIsPurgeMembershipOpen] = useState(false);
-
-  // Carga paralela de memberships, registrations e units
-  const fetchData = async () => {
+  const fetchResidents = async () => {
     if (!activeCondominiumId) return;
     setIsLoading(true);
     setError('');
     try {
-      const [resM, resR, resU] = await Promise.all([
-        api.get<any[]>(`/condominiums/${activeCondominiumId}/memberships`),
-        api.get<any[]>(`/condominiums/${activeCondominiumId}/registrations`),
-        api.get<any[]>(`/condominiums/${activeCondominiumId}/units`),
-      ]);
-      setMemberships(resM.data || []);
-      setRegistrations(resR.data || []);
-      setUnits(resU.data || []);
+      const res = await api.get<ResidentItem[]>(`/condominiums/${activeCondominiumId}/registrations`);
+      setResidents(res.data || []);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar dados de moradores.');
+      setError(err.message || 'Erro ao carregar lista de moradores.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchResidents();
   }, [activeCondominiumId]);
 
-  // Mapa de unidades para busca rápida por id
-  const unitsMap = useMemo(() => {
-    const map = new Map<string, any>();
-    units.forEach((u) => map.set(u.id, u));
-    return map;
-  }, [units]);
-
-  // Lista unificada consolidando Pré-cadastros e Vínculos
-  const unifiedList = useMemo<UnifiedResidentItem[]>(() => {
-    const linkedMembershipIds = new Set(
-      memberships.map((m) => m.id).filter(Boolean)
-    );
-
-    // 1. Pré-cadastros (ResidentRegistration)
-    const regItems: UnifiedResidentItem[] = registrations
-      .filter((r) => !r.linked_membership_id || !linkedMembershipIds.has(r.linked_membership_id))
-      .map((r) => {
-        const u = unitsMap.get(r.unit_id);
-        const code = r.unit_code || (u ? u.code || u.unit_number : '—');
-        return {
-          id: r.id,
-          itemType: 'registration',
-          name: r.full_name || 'Morador sem nome',
-          unitCode: code,
-          unitId: r.unit_id,
-          phone: r.phone_e164,
-          email: r.email,
-          category: r.relationship || 'proprietario_residente',
-          verificationStatus: 'pendente',
-          membershipStatus: 'pre_cadastro',
-          source: (r.source === 'import' ? 'import' : 'manual'),
-          notes: r.notes,
-          createdAt: r.created_at,
-          raw: r,
-        };
-      });
-
-    // 2. Vínculos efetivos (UnitMembership)
-    const memItems: UnifiedResidentItem[] = memberships.map((m) => {
-      const u = unitsMap.get(m.unit_id);
-      const code = m.unit_code || (u ? u.code || u.unit_number : '—');
-      return {
-        id: m.id,
-        itemType: 'membership',
-        name: m.resident_name || 'Morador',
-        unitCode: code,
-        unitId: m.unit_id,
-        phone: m.phone_e164,
-        email: m.email,
-        category: m.category || 'proprietario_residente',
-        verificationStatus: m.verification_status || 'pendente',
-        membershipStatus: m.membership_status || 'active',
-        source: 'vinculado',
-        notes: null,
-        createdAt: m.created_at,
-        raw: m,
-      };
+  // Filtro reativo por texto
+  const filteredResidents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return residents;
+    return residents.filter((r) => {
+      const nameMatch = r.full_name?.toLowerCase().includes(q);
+      const unitMatch = r.unit_code?.toLowerCase().includes(q);
+      const towerMatch = r.building_name?.toLowerCase().includes(q);
+      const phoneMatch = r.phone_e164?.includes(q);
+      const emailMatch = r.email?.toLowerCase().includes(q);
+      return nameMatch || unitMatch || towerMatch || phoneMatch || emailMatch;
     });
+  }, [residents, search]);
 
-    return [...regItems, ...memItems];
-  }, [registrations, memberships, unitsMap]);
-
-  // Filtragem reativa por aba e por texto
-  const filtered = useMemo(() => {
-    return unifiedList.filter((item) => {
-      let matchesTab = true;
-      if (activeTab === 'pre_cadastros') {
-        matchesTab = item.itemType === 'registration';
-      } else if (activeTab === 'validados') {
-        matchesTab = item.itemType === 'membership' && item.verificationStatus === 'validado';
-      } else if (activeTab === 'pendentes') {
-        matchesTab =
-          item.itemType === 'registration' ||
-          item.verificationStatus === 'pendente' ||
-          item.verificationStatus === 'em_analise';
-      }
-
-      const q = search.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        item.name.toLowerCase().includes(q) ||
-        item.unitCode.toLowerCase().includes(q) ||
-        (item.phone && item.phone.toLowerCase().includes(q)) ||
-        (item.email && item.email.toLowerCase().includes(q));
-
-      return matchesTab && matchesSearch;
-    });
-  }, [unifiedList, activeTab, search]);
-
-  // Contagens para os badges das abas
-  const preCadastrosCount = useMemo(
-    () => unifiedList.filter((i) => i.itemType === 'registration').length,
-    [unifiedList]
-  );
-  const validadosCount = useMemo(
-    () => unifiedList.filter((i) => i.itemType === 'membership' && i.verificationStatus === 'validado').length,
-    [unifiedList]
-  );
-  const pendentesCount = useMemo(
-    () =>
-      unifiedList.filter(
-        (i) =>
-          i.itemType === 'registration' ||
-          i.verificationStatus === 'pendente' ||
-          i.verificationStatus === 'em_analise'
-      ).length,
-    [unifiedList]
-  );
-
-  const tabItems = [
-    { key: 'todos', label: 'Todos', badge: unifiedList.length },
-    { key: 'pre_cadastros', label: 'Pré-cadastros', badge: preCadastrosCount },
-    { key: 'validados', label: 'Validados', badge: validadosCount },
-    { key: 'pendentes', label: 'Pendentes', badge: pendentesCount },
-  ];
+  // Contagens para os cards de destaque
+  const totalMoradores = residents.length;
+  const unidadesUnicas = useMemo(() => {
+    const units = new Set(residents.map((r) => r.unit_code).filter((u) => u && u !== '—'));
+    return units.size;
+  }, [residents]);
+  const totalSugestoes = useMemo(() => {
+    return residents.reduce((acc, r) => acc + (r.suggestions_count || 0), 0);
+  }, [residents]);
 
   // ==========================================
-  // HANDLERS: Pré-cadastro Manual (CA-02)
+  // HANDLERS
   // ==========================================
 
-  const handleCreatePreRegistration = async (e: React.FormEvent) => {
+  const handleOpenCreate = () => {
+    setNewName('');
+    setNewPhone('');
+    setNewEmail('');
+    setNewTower('');
+    setNewUnit('');
+    setNewNotes('');
+    setIsCreateOpen(true);
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeCondominiumId || !newUnitId) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.post(`/condominiums/${activeCondominiumId}/registrations`, {
-        unit_id: newUnitId,
-        full_name: newFullName.trim(),
-        phone_e164: newPhone.trim() || null,
-        email: newEmail.trim() || null,
-        relationship: newRelationship,
-        notes: newNotes.trim() || null,
-      });
-
-      setIsCreateModalOpen(false);
-      setNewFullName('');
-      setNewPhone('');
-      setNewEmail('');
-      setNewUnitId('');
-      setNewRelationship('proprietario_residente');
-      setNewNotes('');
-
-      toast.success('Pré-cadastro de morador realizado com sucesso! O morador já está listado na tabela.');
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao criar pré-cadastro de morador.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleOpenEditReg = (rawReg: any) => {
-    setSelectedReg(rawReg);
-    setEditRegFullName(rawReg.full_name || '');
-    setEditRegPhone(rawReg.phone_e164 || '');
-    setEditRegEmail(rawReg.email || '');
-    setEditRegUnitId(rawReg.unit_id || '');
-    setEditRegRelationship(rawReg.relationship || 'proprietario_residente');
-    setEditRegNotes(rawReg.notes || '');
-    setIsEditRegOpen(true);
-  };
-
-  const handleUpdatePreRegistration = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeCondominiumId || !selectedReg) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.patch(
-        `/condominiums/${activeCondominiumId}/registrations/${selectedReg.id}`,
-        {
-          full_name: editRegFullName.trim(),
-          phone_e164: editRegPhone.trim() || null,
-          email: editRegEmail.trim() || null,
-          unit_id: editRegUnitId || undefined,
-          relationship: editRegRelationship,
-          notes: editRegNotes.trim() || null,
-        }
-      );
-
-      toast.success('Pré-cadastro de morador atualizado com sucesso!');
-      setIsEditRegOpen(false);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao atualizar pré-cadastro.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleOpenDeleteReg = (rawReg: any) => {
-    setSelectedReg(rawReg);
-    setIsDeleteRegOpen(true);
-  };
-
-  const handleDeletePreRegistration = async () => {
-    if (!activeCondominiumId || !selectedReg) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.delete(
-        `/condominiums/${activeCondominiumId}/registrations/${selectedReg.id}`
-      );
-      toast.success(`Pré-cadastro de "${selectedReg.full_name}" removido com sucesso.`);
-      setIsDeleteRegOpen(false);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao excluir pré-cadastro.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // ==========================================
-  // HANDLERS: Vínculos com Conta (Membership)
-  // ==========================================
-
-  const handleOpenEditMembership = (m: any) => {
-    setSelectedMembership(m);
-    setEditMemName(m.resident_name || '');
-    setEditMemPhone(m.phone_e164 || '');
-    setEditMemCategory(m.category || 'proprietario_residente');
-    setEditMemStatus(m.membership_status || 'active');
-    setIsEditMembershipOpen(true);
-  };
-
-  const handleUpdateMembership = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeCondominiumId || !selectedMembership) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.patch(
-        `/condominiums/${activeCondominiumId}/memberships/${selectedMembership.id}`,
-        {
-          resident_name: editMemName.trim(),
-          phone_e164: editMemPhone.trim() || null,
-          category: editMemCategory,
-          membership_status: editMemStatus,
-        }
-      );
-      toast.success('Cadastro do condômino atualizado com sucesso!');
-      setIsEditMembershipOpen(false);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao atualizar dados do condômino.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleToggleArchiveMembership = async (m: any) => {
     if (!activeCondominiumId) return;
-    const isEnded = m.membership_status === 'ended' || m.membership_status === 'inactive';
-    const newStatus = isEnded ? 'active' : 'ended';
-    const actionLabel = newStatus === 'active' ? 'reativado com sucesso' : 'arquivado/desativado com sucesso';
-
-    try {
-      await api.patch(
-        `/condominiums/${activeCondominiumId}/memberships/${m.id}`,
-        { membership_status: newStatus }
-      );
-      toast.success(`Condômino "${m.resident_name}" ${actionLabel}.`);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao alterar situação do condômino.');
-    }
-  };
-
-  const handleOpenVerifyModal = (m: any) => {
-    setSelectedMembership(m);
-    setVerifyStatus('validado');
-    setVerifyMethod('declaracao_sindico');
-    setVerifyReason('');
-    setIsVerifyModalOpen(true);
-  };
-
-  const handleVerifyMembership = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeCondominiumId || !selectedMembership) return;
-    if (verifyReason.trim().length < 5) {
-      toast.error('O motivo da validação deve conter no mínimo 5 caracteres para fins de auditoria.');
+    if (!newName.trim() || !newUnit.trim()) {
+      toast.error('Informe ao menos o nome do morador e o número da unidade.');
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmittingCreate(true);
     try {
-      await api.post(
-        `/condominiums/${activeCondominiumId}/memberships/${selectedMembership.id}/verify`,
-        {
-          new_status: verifyStatus,
-          method: verifyMethod,
-          reason: verifyReason.trim(),
-        }
+      await api.post(`/condominiums/${activeCondominiumId}/registrations`, {
+        full_name: newName.trim(),
+        phone_e164: newPhone.replace(/\D/g, '') || null,
+        email: newEmail.trim().toLowerCase() || null,
+        block_tower: newTower.trim() || null,
+        unit_code: newUnit.trim(),
+        relationship: 'proprietario_residente',
+        notes: newNotes.trim() || null,
+      });
+      toast.success('Morador registrado com sucesso!');
+      setIsCreateOpen(false);
+      fetchResidents();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao registrar morador.');
+    } finally {
+      setIsSubmittingCreate(false);
+    }
+  };
+
+  const handleOpenEdit = (res: ResidentItem) => {
+    setEditingResident(res);
+    setEditName(res.full_name || '');
+    setEditPhone(res.phone_e164 || '');
+    setEditEmail(res.email || '');
+    setEditNotes(res.notes || '');
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeCondominiumId || !editingResident) return;
+
+    setIsSubmittingEdit(true);
+    try {
+      await api.patch(`/condominiums/${activeCondominiumId}/registrations/${editingResident.id}`, {
+        full_name: editName.trim(),
+        phone_e164: editPhone.replace(/\D/g, '') || null,
+        email: editEmail.trim().toLowerCase() || null,
+        notes: editNotes.trim() || null,
+      });
+      toast.success('Dados do morador atualizados com sucesso!');
+      setIsEditOpen(false);
+      fetchResidents();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar dados do morador.');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
+  const handleOpenDelete = (res: ResidentItem) => {
+    setDeletingResident(res);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteSubmit = async () => {
+    if (!activeCondominiumId || !deletingResident) return;
+    setIsSubmittingDelete(true);
+    try {
+      await api.delete(`/condominiums/${activeCondominiumId}/registrations/${deletingResident.id}`);
+      toast.success('Morador removido do cadastro com sucesso.');
+      setIsDeleteOpen(false);
+      fetchResidents();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao remover morador.');
+    } finally {
+      setIsSubmittingDelete(false);
+    }
+  };
+
+  const handleOpenSuggestions = async (res: ResidentItem) => {
+    setSelectedResidentForSugs(res);
+    setIsSuggestionsOpen(true);
+    setIsLoadingSugs(true);
+    try {
+      const response = await api.get<SuggestionItem[]>(
+        `/condominiums/${activeCondominiumId}/registrations/${res.id}/suggestions`
       );
-      toast.success(`Validação documental registrada com sucesso (CA-12, CA-15)!`);
-      setIsVerifyModalOpen(false);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao registrar validação de residência.');
+      setResidentSuggestions(response.data || []);
+    } catch {
+      setResidentSuggestions([]);
     } finally {
-      setIsSubmitting(false);
+      setIsLoadingSugs(false);
     }
   };
 
-  const handleOpenDeleteMembership = (m: any) => {
-    setSelectedMembership(m);
-    setIsDeleteMembershipOpen(true);
-  };
-
-  const handleDeleteMembership = async () => {
-    if (!activeCondominiumId || !selectedMembership) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.delete(`/condominiums/${activeCondominiumId}/memberships/${selectedMembership.id}`);
-      toast.success(`Vínculo de "${selectedMembership.resident_name}" revogado com sucesso.`);
-      setIsDeleteMembershipOpen(false);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao revogar vínculo do morador.');
-    } finally {
-      setIsSubmitting(false);
+  // Abre conversa no WhatsApp direto com o morador
+  const handleOpenWhatsApp = (resident: ResidentItem) => {
+    if (!resident.phone_e164) {
+      toast.error('Este morador não possui celular cadastrado.');
+      return;
     }
+    const cleanPhone = resident.phone_e164.replace(/\D/g, '');
+    const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const condoName = activeCondominium?.name || 'nosso condomínio';
+    const text = encodeURIComponent(
+      `Olá ${resident.full_name}, sou o síndico do ${condoName}. Estou entrando em contato sobre a sua participação na revisão dos documentos condominiais.`
+    );
+    window.open(`https://wa.me/${fullPhone}?text=${text}`, '_blank');
   };
 
-  const handleOpenPurge = (m: any) => {
-    setSelectedMembership(m);
-    setIsPurgeMembershipOpen(true);
-  };
-
-  const handlePurgeConfirm = async () => {
-    if (!activeCondominiumId || !selectedMembership) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.delete(`/condominiums/${activeCondominiumId}/memberships/${selectedMembership.id}?permanent=true`);
-      toast.success(`Vínculo de "${selectedMembership.resident_name}" excluído definitivamente no saneamento.`);
-      setIsPurgeMembershipOpen(false);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao excluir definitivamente o vínculo do morador.');
-    } finally {
-      setIsSubmitting(false);
+  // Exporta a lista de moradores para CSV formatado com BOM UTF-8 e ';'
+  const handleExportCSV = () => {
+    if (residents.length === 0) {
+      toast.error('Nenhum morador registrado para exportar.');
+      return;
     }
+
+    const headers = ['Nome Completo', 'Torre/Bloco', 'Unidade', 'WhatsApp/Telefone', 'E-mail', 'Sugestões Enviadas', 'Data Cadastro'];
+    const rows = residents.map((r) => [
+      `"${r.full_name.replace(/"/g, '""')}"`,
+      `"${(r.building_name || '').replace(/"/g, '""')}"`,
+      `"${r.unit_code}"`,
+      `"${r.phone_e164 || ''}"`,
+      `"${r.email || ''}"`,
+      r.suggestions_count || 0,
+      r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '',
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((row) => row.join(';'))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `moradores_${activeCondominium?.name || 'condominio'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Lista de moradores exportada com sucesso!');
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-12">
       <Breadcrumb
         items={[
-          { label: 'Estrutura & Moradores' },
-          { label: 'Moradores & Vínculos' },
+          { label: 'Painel', href: '/painel' },
+          { label: 'Cadastro de Moradores' },
         ]}
-        showHome
       />
 
+      {/* Header do Módulo */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Moradores & Vínculos</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-indigo-600" aria-hidden="true" />
+            <span>Moradores Participantes</span>
+          </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Gestão integrada de pré-cadastros, convites e validações auditadas de residência (CA-02, CA-12, CA-13, CA-14).
+            {activeCondominium?.name || 'Condomínio Selecionado'} — Cadastro unificado gerado automaticamente a cada sugestão enviada via link universal. Consulta exclusiva da gestão.
           </p>
         </div>
-        <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-1.5" aria-hidden="true" />
-          <span>Novo Pré-cadastro</span>
-        </Button>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <Download className="w-4 h-4 mr-1.5 text-slate-600" aria-hidden="true" />
+            <span>Exportar CSV</span>
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={handleOpenCreate}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+            <span>Novo Morador Manual</span>
+          </Button>
+        </div>
       </div>
 
-      {error && <Alert variant="error">{error}</Alert>}
+      {/* Destaque Informativo: Ciclo Ágil Zero-Atrito */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-sm border border-indigo-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 uppercase tracking-wider inline-block">
+            Cadastro Automático por Participação
+          </span>
+          <h2 className="text-sm sm:text-base font-bold text-white">
+            Sem Pré-Cadastros Burocráticos ou Múltiplos Registros
+          </h2>
+          <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+            Quando os moradores acessam o link público compartilhado para sugerir alterações nos documentos, o sistema consolida seus contatos automaticamente. Múltiplos acessos pelo mesmo morador não duplicam cadastros.
+          </p>
+        </div>
+        <div className="shrink-0 flex items-center gap-2">
+          <Badge className="bg-indigo-600/30 text-indigo-200 border-indigo-500/40 px-3 py-1 text-xs">
+            {totalMoradores} Morador{totalMoradores === 1 ? '' : 'es'} Único{totalMoradores === 1 ? '' : 's'}
+          </Badge>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="p-4 sm:p-6 pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Abas com contagem dinâmica */}
-            <Tabs
-              items={tabItems}
-              activeKey={activeTab}
-              onChange={(k) => setActiveTab(k as any)}
-              size="sm"
-            />
-
-            {/* Busca textual */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                className="w-full text-xs border border-slate-200 rounded-lg pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-brand-500"
-                placeholder="Buscar por nome, unidade, telefone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="animate-fade-in-up">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Moradores Registrados</p>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">{totalMoradores}</h3>
+              <p className="text-xs text-slate-500 mt-1">Participantes identificados</p>
             </div>
-          </div>
-        </CardHeader>
+            <div className="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700">
+              <Users className="w-5 h-5 text-current" aria-hidden="true" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="animate-fade-in-up">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Unidades com Participação</p>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">{unidadesUnicas}</h3>
+              <p className="text-xs text-slate-500 mt-1">Apartamentos representados</p>
+            </div>
+            <div className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800">
+              <Home className="w-5 h-5 text-current" aria-hidden="true" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="animate-fade-in-up">
+          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">Sugestões Coletadas</p>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">{totalSugestoes}</h3>
+              <p className="text-xs text-slate-500 mt-1">Propostas normativas enviadas</p>
+            </div>
+            <div className="p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700">
+              <MessageSquare className="w-5 h-5 text-current" aria-hidden="true" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {error && (
+        <Alert variant="error">
+          <span>{error}</span>
+        </Alert>
+      )}
+
+      {/* Barra de Filtro e Busca */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, unidade, torre ou telefone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        {search && (
+          <Button variant="ghost" size="sm" onClick={() => setSearch('')} className="text-xs text-slate-500">
+            Limpar Busca
+          </Button>
+        )}
+      </div>
+
+      {/* Tabela de Moradores */}
+      <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <TableSkeleton rows={5} />
-          ) : filtered.length === 0 ? (
             <div className="p-6">
+              <TableSkeleton rows={4} />
+            </div>
+          ) : filteredResidents.length === 0 ? (
+            <div className="py-12">
               <EmptyState
                 icon={Users}
-                title={
-                  search
-                    ? 'Nenhum resultado encontrado'
-                    : activeTab === 'pre_cadastros'
-                    ? 'Nenhum pré-cadastro pendente'
-                    : 'Nenhum morador cadastrado'
-                }
+                title={search ? 'Nenhum morador encontrado' : 'Nenhum morador cadastrado ainda'}
                 description={
                   search
-                    ? 'Nenhum morador ou pré-cadastro corresponde à sua busca.'
-                    : activeTab === 'pre_cadastros'
-                    ? 'Todos os moradores já foram convidados ou vinculados.'
-                    : 'Cadastre um novo morador manualmente ou importe uma planilha cadastral.'
+                    ? 'Tente ajustar os termos da sua busca.'
+                    : 'Assim que os moradores enviarem sugestões através do link da consulta pública, eles aparecerão aqui automaticamente.'
                 }
-                actionLabel={search ? undefined : 'Novo Pré-cadastro'}
-                onAction={search ? undefined : () => setIsCreateModalOpen(true)}
+                actionLabel={search ? 'Limpar filtro' : 'Cadastrar Manualmente'}
+                onAction={search ? () => setSearch('') : handleOpenCreate}
               />
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-3">Condômino / Morador</th>
-                    <th className="px-6 py-3">Unidade</th>
-                    <th className="px-6 py-3">Relação / Vínculo</th>
-                    <th className="px-6 py-3">Tipo de Registro</th>
-                    <th className="px-6 py-3">Verificação</th>
-                    <th className="px-6 py-3">Situação</th>
-                    <th className="px-6 py-3 text-right">Ações</th>
+              <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-600 font-semibold text-[11px] uppercase tracking-wider">
+                    <th className="py-3 px-4">Morador</th>
+                    <th className="py-3 px-4">Unidade / Torre</th>
+                    <th className="py-3 px-4">Contato (WhatsApp)</th>
+                    <th className="py-3 px-4 text-center">Sugestões</th>
+                    <th className="py-3 px-4">Última Atividade</th>
+                    <th className="py-3 px-4 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered.map((item) => {
-                    const isArchived =
-                      item.membershipStatus === 'ended' || item.membershipStatus === 'inactive';
-                    const isPreCadastro = item.itemType === 'registration';
-
-                    return (
-                      <tr
-                        key={`${item.itemType}-${item.id}`}
-                        className={`hover:bg-slate-50/50 transition-colors ${
-                          isArchived ? 'opacity-70 bg-slate-50/40' : ''
-                        }`}
-                      >
-                        {/* 1. Nome e Contato */}
-                        <td className="px-6 py-3.5">
-                          <span className="font-semibold text-slate-900 text-sm block">
-                            {item.name}
-                          </span>
-                          <div className="flex flex-wrap items-center gap-3 mt-0.5">
-                            {item.phone && (
-                              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-slate-400" />
-                                {item.phone}
-                              </span>
-                            )}
-                            {item.email && (
-                              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                                <Mail className="w-3 h-3 text-slate-400" />
-                                {item.email}
-                              </span>
-                            )}
+                  {filteredResidents.map((resident) => (
+                    <tr key={resident.id} className="hover:bg-slate-50/60 transition-colors">
+                      {/* Nome e Email */}
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-900">{resident.full_name}</div>
+                        {resident.email ? (
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                            <Mail className="w-3 h-3 text-slate-400" />
+                            <span>{resident.email}</span>
                           </div>
-                        </td>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 italic">E-mail não informado</div>
+                        )}
+                      </td>
 
-                        {/* 2. Unidade */}
-                        <td className="px-6 py-3.5">
-                          <span className="font-mono font-semibold text-slate-800 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 inline-block">
-                            {item.unitCode}
-                          </span>
-                        </td>
+                      {/* Unidade e Torre */}
+                      <td className="py-3 px-4">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-medium text-xs">
+                          <Home className="w-3 h-3 text-slate-500" />
+                          <span>Unidade {resident.unit_code}</span>
+                        </div>
+                        {resident.building_name && resident.building_name !== '—' && (
+                          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                            <Building2 className="w-3 h-3 text-slate-400" />
+                            <span>{resident.building_name}</span>
+                          </div>
+                        )}
+                      </td>
 
-                        {/* 3. Categoria / Relação */}
-                        <td className="px-6 py-3.5 text-slate-600 capitalize">
-                          {item.category.replace(/_/g, ' ')}
-                        </td>
+                      {/* WhatsApp / Celular */}
+                      <td className="py-3 px-4">
+                        {resident.phone_e164 ? (
+                          <button
+                            onClick={() => handleOpenWhatsApp(resident)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition font-medium text-xs group"
+                            title="Conversar com o morador no WhatsApp"
+                          >
+                            <Phone className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                            <span>{resident.phone_e164}</span>
+                            <ExternalLink className="w-3 h-3 text-emerald-500 opacity-60" />
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Sem telefone</span>
+                        )}
+                      </td>
 
-                        {/* 4. Tipo de Registro */}
-                        <td className="px-6 py-3.5">
-                          {isPreCadastro ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
-                              <Sparkles className="w-3 h-3 text-sky-500" />
-                              Pré-cadastro ({item.source === 'import' ? 'Planilha' : 'Manual'})
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                              <UserCheck className="w-3 h-3 text-emerald-600" />
-                              Conta com Vínculo
-                            </span>
-                          )}
-                        </td>
+                      {/* Total de Sugestões */}
+                      <td className="py-3 px-4 text-center">
+                        {resident.suggestions_count > 0 ? (
+                          <button
+                            onClick={() => handleOpenSuggestions(resident)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition text-xs font-semibold"
+                            title="Ver sugestões enviadas por este morador"
+                          >
+                            <MessageSquare className="w-3 h-3 text-indigo-600" />
+                            <span>{resident.suggestions_count} envio{resident.suggestions_count === 1 ? '' : 's'}</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">0 envios</span>
+                        )}
+                      </td>
 
-                        {/* 5. Status de Verificação */}
-                        <td className="px-6 py-3.5">
-                          {isPreCadastro ? (
-                            <Badge variant="warning">
-                              Aguardando Convite
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant={
-                                item.verificationStatus === 'validado'
-                                  ? 'success'
-                                  : item.verificationStatus === 'pendente'
-                                  ? 'warning'
-                                  : item.verificationStatus === 'em_analise'
-                                  ? 'default'
-                                  : 'danger'
-                              }
+                      {/* Última Atividade */}
+                      <td className="py-3 px-4 text-xs text-slate-500">
+                        {resident.last_suggestion_date ? (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>{new Date(resident.last_suggestion_date).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        ) : resident.created_at ? (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            <span>{new Date(resident.created_at).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+
+                      {/* Ações */}
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {resident.suggestions_count > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenSuggestions(resident)}
+                              className="h-8 px-2 text-indigo-700 hover:bg-indigo-50 text-xs"
+                              title="Ver sugestões enviadas"
                             >
-                              {item.verificationStatus === 'validado'
-                                ? 'Validado'
-                                : item.verificationStatus === 'em_analise'
-                                ? 'Em Análise'
-                                : item.verificationStatus === 'pendente'
-                                ? 'Pendente'
-                                : item.verificationStatus === 'recusado'
-                                ? 'Recusado'
-                                : 'Revogado'}
-                            </Badge>
+                              <FileText className="w-3.5 h-3.5 mr-1" />
+                              <span className="hidden sm:inline">Sugestões</span>
+                            </Button>
                           )}
-                        </td>
 
-                        {/* 6. Situação Geral */}
-                        <td className="px-6 py-3.5">
-                          {isArchived ? (
-                            <span className="inline-flex items-center text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                              Desativado
-                            </span>
-                          ) : isPreCadastro ? (
-                            <span className="inline-flex items-center text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                              Pré-cadastro
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                              Ativo
-                            </span>
-                          )}
-                        </td>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEdit(resident)}
+                            className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100"
+                            title="Editar dados do morador"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
 
-                        {/* 7. Ações */}
-                        <td className="px-6 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {isPreCadastro ? (
-                              <>
-                                {/* Editar Pré-cadastro */}
-                                <button
-                                  onClick={() => handleOpenEditReg(item.raw)}
-                                  className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Editar pré-cadastro"
-                                  aria-label="Editar pré-cadastro"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-
-                                {/* Excluir Pré-cadastro */}
-                                <button
-                                  onClick={() => handleOpenDeleteReg(item.raw)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Excluir pré-cadastro"
-                                  aria-label="Excluir pré-cadastro"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                {/* Validar Documentalmente Vínculo se pendente */}
-                                {item.verificationStatus !== 'validado' && (
-                                  <button
-                                    onClick={() => handleOpenVerifyModal(item.raw)}
-                                    className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-colors"
-                                    title="Validar residência documental (CA-12, CA-15)"
-                                    aria-label="Validar residência documental"
-                                  >
-                                    <ShieldCheck className="w-4 h-4" />
-                                  </button>
-                                )}
-
-                                {/* Editar Vínculo */}
-                                <button
-                                  onClick={() => handleOpenEditMembership(item.raw)}
-                                  className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Editar condômino"
-                                  aria-label="Editar condômino"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-
-                                {/* Arquivar / Reativar */}
-                                <button
-                                  onClick={() => handleToggleArchiveMembership(item.raw)}
-                                  className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title={isArchived ? 'Reativar condômino' : 'Arquivar/Desativar condômino'}
-                                  aria-label={isArchived ? 'Reativar condômino' : 'Arquivar/Desativar condômino'}
-                                >
-                                  {isArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
-                                </button>
-
-                                {/* Revogar / Saneamento Definitivo */}
-                                {isArchived ? (
-                                  <button
-                                    onClick={() => handleOpenPurge(item.raw)}
-                                    className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
-                                    title="Saneamento / Excluir Definitivamente"
-                                    aria-label="Saneamento / Excluir Definitivamente"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleOpenDeleteMembership(item.raw)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                    title="Revogar / Encerrar vínculo"
-                                    aria-label="Revogar / Encerrar vínculo"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDelete(resident)}
+                            className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                            title="Excluir morador"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -769,520 +588,290 @@ export const ResidentsPage: React.FC = () => {
       </Card>
 
       {/* ======================================================== */}
-      {/* MODAL 1: Novo Pré-cadastro Manual (CA-02)               */}
+      {/* 1. MODAL: NOVO MORADOR MANUAL                            */}
       {/* ======================================================== */}
       <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Novo Pré-cadastro de Morador"
-        description="Registra os dados cadastrais da unidade sem emitir credenciais automáticas (CA-02)."
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Novo Cadastro de Morador"
       >
-        <form onSubmit={handleCreatePreRegistration} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Unidade Autônoma *
-            </label>
-            <select
-              required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={newUnitId}
-              onChange={(e) => setNewUnitId(e.target.value)}
-            >
-              <option value="">Selecione a unidade...</option>
-              {units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  Unidade {u.code || u.unit_number} {u.block ? `(${u.block})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Cadastre manualmente um morador caso queira adiantar contatos antes do envio pelo link público universal.
+          </p>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Nome Completo do Morador *
-            </label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Nome Completo *</label>
             <input
               type="text"
               required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="Ex: Mariana Oliveira"
-              value={newFullName}
-              onChange={(e) => setNewFullName(e.target.value)}
+              placeholder="Ex: Fabiano Silva"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Telefone (com DDD)
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">WhatsApp / Celular</label>
               <input
                 type="text"
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="(11) 98888-7777"
+                placeholder="(27) 93500-9626"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                E-mail
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail (opcional)</label>
               <input
                 type="email"
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="morador@exemplo.com"
+                placeholder="morador@email.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Torre / Bloco</label>
+              <input
+                type="text"
+                placeholder="Ex: Torre VILLE"
+                value={newTower}
+                onChange={(e) => setNewTower(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Unidade / Apto *</label>
+              <input
+                type="text"
+                required
+                placeholder="Ex: 1004"
+                value={newUnit}
+                onChange={(e) => setNewUnit(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Relação com a Unidade *
-            </label>
-            <select
-              required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={newRelationship}
-              onChange={(e) => setNewRelationship(e.target.value)}
-            >
-              <option value="proprietario_residente">Proprietário Residente</option>
-              <option value="proprietario_nao_residente">Proprietário Não Residente</option>
-              <option value="inquilino">Inquilino / Locatário</option>
-              <option value="dependente">Dependente Familiar</option>
-              <option value="procurador">Procurador / Representante</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Observações Internas (Opcional)
-            </label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Observações Internas</label>
             <textarea
               rows={2}
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="Anotações para a administração do condomínio..."
+              placeholder="Notas de consulta do síndico..."
               value={newNotes}
               onChange={(e) => setNewNotes(e.target.value)}
+              className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <span>
-              <strong>Garantia de Não-Emissão Automática:</strong> O pré-cadastro não gera login nem convida o
-              morador imediatamente. O convite é emitido em etapa separada pelo assistente de convites.
-            </span>
-          </div>
-
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Salvando...' : 'Salvar Pré-cadastro'}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmittingCreate}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingCreate ? 'Salvando...' : 'Salvar Cadastro'}
             </Button>
           </div>
         </form>
       </Modal>
 
       {/* ======================================================== */}
-      {/* MODAL 2: Editar Pré-cadastro                             */}
+      {/* 2. MODAL: EDITAR MORADOR                                 */}
       {/* ======================================================== */}
       <Modal
-        isOpen={isEditRegOpen}
-        onClose={() => setIsEditRegOpen(false)}
-        title="Editar Pré-cadastro de Morador"
-        description="Atualize as informações cadastrais antes da emissão de convite."
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        title="Editar Dados do Morador"
       >
-        <form onSubmit={handleUpdatePreRegistration} className="space-y-4">
+        <form onSubmit={handleEditSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Unidade Autônoma *
-            </label>
-            <select
-              required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={editRegUnitId}
-              onChange={(e) => setEditRegUnitId(e.target.value)}
-            >
-              <option value="">Selecione a unidade...</option>
-              {units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  Unidade {u.code || u.unit_number} {u.block ? `(${u.block})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Nome do Morador *
-            </label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Nome Completo</label>
             <input
               type="text"
               required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={editRegFullName}
-              onChange={(e) => setEditRegFullName(e.target.value)}
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Telefone
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">WhatsApp / Celular</label>
               <input
                 type="text"
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="(11) 98888-7777"
-                value={editRegPhone}
-                onChange={(e) => setEditRegPhone(e.target.value)}
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                E-mail
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail</label>
               <input
                 type="email"
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="morador@exemplo.com"
-                value={editRegEmail}
-                onChange={(e) => setEditRegEmail(e.target.value)}
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Relação com a Unidade *
-            </label>
-            <select
-              required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={editRegRelationship}
-              onChange={(e) => setEditRegRelationship(e.target.value)}
-            >
-              <option value="proprietario_residente">Proprietário Residente</option>
-              <option value="proprietario_nao_residente">Proprietário Não Residente</option>
-              <option value="inquilino">Inquilino / Locatário</option>
-              <option value="dependente">Dependente Familiar</option>
-              <option value="procurador">Procurador / Representante</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Observações Internas
-            </label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Observações do Síndico</label>
             <textarea
               rows={2}
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={editRegNotes}
-              onChange={(e) => setEditRegNotes(e.target.value)}
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsEditRegOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsEditOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmittingEdit}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isSubmittingEdit ? 'Atualizando...' : 'Salvar Alterações'}
             </Button>
           </div>
         </form>
       </Modal>
 
       {/* ======================================================== */}
-      {/* MODAL 3: Excluir Pré-cadastro                            */}
+      {/* 3. MODAL: EXCLUIR MORADOR                                */}
       {/* ======================================================== */}
       <Modal
-        isOpen={isDeleteRegOpen}
-        onClose={() => setIsDeleteRegOpen(false)}
-        title="Excluir Pré-cadastro de Morador"
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        title="Confirmar Exclusão de Morador"
       >
         <div className="space-y-4">
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div className="text-xs text-rose-900">
-              <p className="font-semibold text-rose-950">Confirmar exclusão de pré-cadastro:</p>
-              <p className="mt-1">
-                Deseja remover o pré-cadastro de <strong>"{selectedReg?.full_name}"</strong> da unidade{' '}
-                <strong>"{selectedReg?.unit_code || unitsMap.get(selectedReg?.unit_id)?.code || '—'}"</strong>?
-              </p>
-              <p className="mt-1 text-slate-600">
-                Esta ação remove o registro prévio não convidado da base cadastral.
-              </p>
+          <p className="text-xs sm:text-sm text-slate-600">
+            Tem certeza que deseja remover o cadastro de <strong>{deletingResident?.full_name}</strong> (Unidade {deletingResident?.unit_code})?
+          </p>
+          <Alert variant="warning">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="text-xs text-amber-800">
+                Esta ação remove o contato do cadastro administrativo. As sugestões previamente registradas serão preservadas para histórico.
+              </span>
             </div>
-          </div>
+          </Alert>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsDeleteRegOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsDeleteOpen(false)}>
               Cancelar
             </Button>
             <Button
-              variant="destructive"
-              disabled={isSubmitting}
-              onClick={handleDeletePreRegistration}
+              type="button"
+              size="sm"
+              disabled={isSubmittingDelete}
+              onClick={handleDeleteSubmit}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              {isSubmitting ? 'Excluindo...' : 'Excluir Pré-cadastro'}
+              {isSubmittingDelete ? 'Excluindo...' : 'Sim, Excluir Morador'}
             </Button>
           </div>
         </div>
       </Modal>
 
       {/* ======================================================== */}
-      {/* MODAL 4: Editar Vínculo com Conta                        */}
+      {/* 4. MODAL: VER SUGESTÕES DO MORADOR                       */}
       {/* ======================================================== */}
       <Modal
-        isOpen={isEditMembershipOpen}
-        onClose={() => setIsEditMembershipOpen(false)}
-        title="Editar Dados do Condômino"
-        description="Atualize as informações cadastrais e relação de vínculo do morador com a unidade."
+        isOpen={isSuggestionsOpen}
+        onClose={() => setIsSuggestionsOpen(false)}
+        title={`Sugestões de ${selectedResidentForSugs?.full_name || 'Morador'}`}
       >
-        <form onSubmit={handleUpdateMembership} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Nome do Morador *
-            </label>
-            <input
-              type="text"
-              required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={editMemName}
-              onChange={(e) => setEditMemName(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Telefone
-              </label>
-              <input
-                type="text"
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="(11) 98888-7777"
-                value={editMemPhone}
-                onChange={(e) => setEditMemPhone(e.target.value)}
-              />
+              <span className="text-slate-500">Unidade: </span>
+              <strong className="text-slate-900">{selectedResidentForSugs?.unit_code}</strong>
+              {selectedResidentForSugs?.building_name && selectedResidentForSugs.building_name !== '—' && (
+                <span className="text-slate-500"> ({selectedResidentForSugs.building_name})</span>
+              )}
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Situação do Vínculo
-              </label>
-              <select
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                value={editMemStatus}
-                onChange={(e) => setEditMemStatus(e.target.value)}
+            {selectedResidentForSugs?.phone_e164 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selectedResidentForSugs && handleOpenWhatsApp(selectedResidentForSugs)}
+                className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 h-7 text-xs"
               >
-                <option value="active">Ativo</option>
-                <option value="ended">Encerrado / Desativado</option>
-                <option value="inactive">Inativo</option>
-              </select>
+                <Phone className="w-3 h-3 mr-1" />
+                <span>WhatsApp</span>
+              </Button>
+            )}
+          </div>
+
+          {isLoadingSugs ? (
+            <div className="py-8 text-center text-xs text-slate-500">Carregando sugestões enviadas...</div>
+          ) : residentSuggestions.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-500">Nenhuma sugestão encontrada para este morador.</div>
+          ) : (
+            <div className="space-y-3">
+              {residentSuggestions.map((sug) => (
+                <div key={sug.id} className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-xs space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                      {sug.protocol}
+                    </span>
+                    <Badge
+                      className={
+                        sug.action_type === 'alterar'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : sug.action_type === 'remover'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }
+                    >
+                      {sug.action_type.toUpperCase()}
+                    </Badge>
+                  </div>
+
+                  <div className="text-xs font-semibold text-slate-900">
+                    Dispositivo: {sug.target_reference}
+                  </div>
+
+                  <div className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 whitespace-pre-wrap leading-relaxed">
+                    {sug.suggestion_text}
+                  </div>
+
+                  {sug.justification && (
+                    <div className="text-[11px] text-slate-500 italic">
+                      <strong>Motivação:</strong> {sug.justification}
+                    </div>
+                  )}
+
+                  <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-100">
+                    <span>Enviado em {new Date(sug.created_at).toLocaleString('pt-BR')}</span>
+                    <span className="capitalize font-medium text-slate-600">Status: {sug.status}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Relação / Categoria de Vínculo *
-            </label>
-            <select
-              required
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              value={editMemCategory}
-              onChange={(e) => setEditMemCategory(e.target.value)}
-            >
-              <option value="proprietario_residente">Proprietário Residente</option>
-              <option value="proprietario_nao_residente">Proprietário Não Residente</option>
-              <option value="inquilino">Inquilino / Locatário</option>
-              <option value="dependente">Dependente Familiar</option>
-              <option value="procurador">Procurador / Representante</option>
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsEditMembershipOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* ======================================================== */}
-      {/* MODAL 5: Validação Documental de Residência (CA-12, CA-15)*/}
-      {/* ======================================================== */}
-      <Modal
-        isOpen={isVerifyModalOpen}
-        onClose={() => setIsVerifyModalOpen(false)}
-        title="Validar Residência e Titularidade"
-        description="Registro auditado de conferência de vínculo conforme diretrizes CA-12 e CA-15."
-      >
-        <form onSubmit={handleVerifyMembership} className="space-y-4">
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
-            <p>
-              Condômino: <strong>{selectedMembership?.resident_name}</strong>
-            </p>
-            <p className="mt-0.5">
-              Unidade:{' '}
-              <strong>
-                {selectedMembership?.unit_code ||
-                  unitsMap.get(selectedMembership?.unit_id)?.code ||
-                  '—'}
-              </strong>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Novo Status de Verificação *
-              </label>
-              <select
-                required
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                value={verifyStatus}
-                onChange={(e) => setVerifyStatus(e.target.value)}
-              >
-                <option value="validado">Validado (Confirmado)</option>
-                <option value="em_analise">Em Análise</option>
-                <option value="recusado">Recusado</option>
-                <option value="revogado">Revogado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Método de Conferência *
-              </label>
-              <select
-                required
-                className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-                value={verifyMethod}
-                onChange={(e) => setVerifyMethod(e.target.value)}
-              >
-                <option value="documento">Documento Comprobatório</option>
-                <option value="declaracao_sindico">Declaração do Síndico</option>
-                <option value="presencial">Conferência Presencial</option>
-                <option value="cadastro_legado">Cadastro Legado da Administração</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Motivo / Justificativa Auditada *
-            </label>
-            <textarea
-              required
-              rows={3}
-              minLength={5}
-              className="w-full text-sm border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="Ex: Escritura apresentada na administração e conferida com certidão de ônus."
-              value={verifyReason}
-              onChange={(e) => setVerifyReason(e.target.value)}
-            />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Mínimo de 5 caracteres. Registrado de forma imutável na trilha de auditoria.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsVerifyModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Registrando...' : 'Confirmar Validação'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* ======================================================== */}
-      {/* MODAL 6: Revogar Vínculo do Morador                      */}
-      {/* ======================================================== */}
-      <Modal
-        isOpen={isDeleteMembershipOpen}
-        onClose={() => setIsDeleteMembershipOpen(false)}
-        title="Revogar Vínculo do Morador"
-      >
-        <div className="space-y-4">
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div className="text-xs text-rose-900">
-              <p className="font-semibold text-rose-950">Atenção ao revogar este vínculo:</p>
-              <p className="mt-1">
-                Você está prestes a revogar o vínculo de <strong>{selectedMembership?.resident_name}</strong> com a
-                unidade{' '}
-                <strong>
-                  {selectedMembership?.unit_code ||
-                    unitsMap.get(selectedMembership?.unit_id)?.code ||
-                    '—'}
-                </strong>.
-              </p>
-              <p className="mt-1 text-slate-600">
-                O histórico auditado será preservado (CA-12, CA-15), mas o morador perderá os acessos vinculados a esta unidade.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsDeleteMembershipOpen(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={isSubmitting}
-              onClick={handleDeleteMembership}
-            >
-              {isSubmitting ? 'Revogando...' : 'Confirmar Revogação'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ======================================================== */}
-      {/* MODAL 7: Saneamento Definitivo de Vínculo                */}
-      {/* ======================================================== */}
-      <Modal
-        isOpen={isPurgeMembershipOpen}
-        onClose={() => setIsPurgeMembershipOpen(false)}
-        title="Saneamento Definitivo de Vínculo"
-      >
-        <div className="space-y-4">
-          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3 text-rose-900 text-xs">
-            <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
-            <div>
-              <p className="font-bold uppercase tracking-wider text-rose-700">Ação Irreversível de Saneamento</p>
-              <p className="mt-1 leading-relaxed">
-                O vínculo de <strong>"{selectedMembership?.resident_name}"</strong> com a unidade{' '}
-                <strong>
-                  "{selectedMembership?.unit_code ||
-                    unitsMap.get(selectedMembership?.unit_id)?.code ||
-                    '—'}"
-                </strong>{' '}
-                já está inativo/revogado e será <strong>removido definitivamente</strong> da base de dados.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsPurgeMembershipOpen(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={isSubmitting}
-              onClick={handlePurgeConfirm}
-            >
-              {isSubmitting ? 'Expurgando...' : 'Excluir Definitivamente'}
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsSuggestionsOpen(false)}>
+              Fechar
             </Button>
           </div>
         </div>

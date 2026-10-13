@@ -11,11 +11,14 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from django.conf import settings
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, models
 
 from infrastructure.models import (
     Condominium,
     Account,
+    Building,
+    Unit,
+    ResidentRegistration,
     PublicConsultation,
     ConsultationSuggestion,
 )
@@ -116,8 +119,9 @@ class SimplifiedConsultationService:
         justification: Optional[str] = None,
     ) -> ConsultationSuggestion:
         """
-        Submissão zero-atrito da sugestão do morador via token público.
-        Gera protocolo automático e registra os dados de contato.
+        Submissão zero-atrito da sugestão do morador via token público universal.
+        Gera protocolo único, organiza o cadastro do morador e impede múltiplos cadastros
+        para a mesma pessoa e unidade a cada acesso.
         """
         consultation = PublicConsultation.objects.select_related('condominium').get(public_token=token)
 
@@ -130,27 +134,124 @@ class SimplifiedConsultationService:
         if normalized_action not in valid_actions:
             raise ValueError(f"Tipo de ação inválido: {action_type}. Deve ser uma de: alterar, remover, incluir.")
 
-        # Gera protocolo único
-        protocol = cls.generate_protocol()
-        while ConsultationSuggestion.objects.filter(protocol=protocol).exists():
-            protocol = cls.generate_protocol()
+        with transaction.atomic():
+            # 1. Normalização de dados
+            clean_name = resident_name.strip()
+            clean_phone = "".join(filter(str.isdigit, resident_phone))
+            clean_email = resident_email.strip().lower() if resident_email else None
+            clean_unit = unit_code.strip()
+            clean_tower = block_tower.strip() if block_tower else None
 
-        suggestion = ConsultationSuggestion.objects.create(
-            condominium=consultation.condominium,
-            consultation=consultation,
-            protocol=protocol,
-            resident_name=resident_name.strip(),
-            resident_phone=resident_phone.strip(),
-            resident_email=resident_email.strip() if resident_email else None,
-            block_tower=block_tower.strip() if block_tower else None,
-            unit_code=unit_code.strip(),
-            target_reference=target_reference.strip(),
-            action_type=normalized_action,
-            suggestion_text=suggestion_text.strip(),
-            justification=justification.strip() if justification else None,
-            status='recebida',
-        )
-        return suggestion
+            # 2. Localiza ou cria a estrutura predial (Building e Unit)
+            building = None
+            if clean_tower:
+                building = Building.objects.filter(
+                    condominium=consultation.condominium,
+                    status='active'
+                ).filter(
+                    models.Q(code__iexact=clean_tower) | models.Q(name__iexact=clean_tower)
+                ).first()
+                if not building:
+                    building = Building.objects.create(
+                        id=uuid.uuid4(),
+                        condominium=consultation.condominium,
+                        code=clean_tower[:50].upper(),
+                        name=clean_tower[:255],
+                        status='active'
+                    )
+
+            unit = Unit.objects.filter(
+                condominium=consultation.condominium,
+                status='active',
+                code__iexact=clean_unit
+            ).first()
+
+            if not unit:
+                unit = Unit.objects.create(
+                    id=uuid.uuid4(),
+                    condominium=consultation.condominium,
+                    building=building,
+                    code=clean_unit[:50],
+                    status='active'
+                )
+            elif building and not unit.building_id:
+                unit.building = building
+                unit.save(update_fields=['building'])
+
+            # 3. Deduplicação inteligente do Morador no Condomínio
+            # Evita duplicar cadastros para a mesma pessoa/unidade em acessos subsequentes
+            existing_reg = None
+            reg_candidates = ResidentRegistration.objects.filter(
+                condominium=consultation.condominium,
+                unit=unit
+            )
+            for r in reg_candidates:
+                r_phone = "".join(filter(str.isdigit, r.phone_e164 or ""))
+                r_email = (r.email or "").strip().lower()
+                if (clean_phone and r_phone == clean_phone) or (clean_email and r_email == clean_email):
+                    existing_reg = r
+                    break
+                if r.full_name.strip().lower() == clean_name.lower():
+                    existing_reg = r
+                    break
+
+            if not existing_reg and clean_phone:
+                # Busca pelo telefone no condomínio caso a unidade tenha sido digitada ligeiramente diferente
+                existing_reg = ResidentRegistration.objects.filter(
+                    condominium=consultation.condominium,
+                    phone_e164__icontains=clean_phone[-9:] if len(clean_phone) >= 9 else clean_phone
+                ).first()
+
+            if existing_reg:
+                # Reutiliza o cadastro existente! Atualiza campos de contato se o novo for mais completo
+                changed = False
+                if clean_email and not existing_reg.email:
+                    existing_reg.email = clean_email
+                    changed = True
+                if clean_phone and (not existing_reg.phone_e164 or len(existing_reg.phone_e164) < len(clean_phone)):
+                    existing_reg.phone_e164 = clean_phone
+                    changed = True
+                if clean_name and len(clean_name) > len(existing_reg.full_name):
+                    existing_reg.full_name = clean_name
+                    changed = True
+                if changed:
+                    existing_reg.save()
+            else:
+                # Criação única do registro de morador a partir da sugestão
+                ResidentRegistration.objects.create(
+                    id=uuid.uuid4(),
+                    condominium=consultation.condominium,
+                    unit=unit,
+                    full_name=clean_name,
+                    phone_e164=clean_phone,
+                    email=clean_email,
+                    relationship='proprietario_residente',
+                    source='auto_cadastro',
+                    status='ativado',
+                    notes=f"Cadastrado automaticamente via participação na consulta '{consultation.title}'"
+                )
+
+            # 4. Gera protocolo único e grava a sugestão
+            protocol = cls.generate_protocol()
+            while ConsultationSuggestion.objects.filter(protocol=protocol).exists():
+                protocol = cls.generate_protocol()
+
+            suggestion = ConsultationSuggestion.objects.create(
+                condominium=consultation.condominium,
+                consultation=consultation,
+                protocol=protocol,
+                resident_name=clean_name,
+                resident_phone=clean_phone if clean_phone else resident_phone.strip(),
+                resident_email=clean_email,
+                block_tower=clean_tower,
+                unit_code=clean_unit,
+                target_reference=target_reference.strip(),
+                action_type=normalized_action,
+                suggestion_text=suggestion_text.strip(),
+                justification=justification.strip() if justification else None,
+                status='recebida',
+            )
+            return suggestion
 
     @staticmethod
     def list_suggestions(
