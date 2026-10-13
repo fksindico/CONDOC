@@ -60,11 +60,17 @@ export const DashboardPage: React.FC = () => {
             {activeCondominium?.name || 'Condomínio Selecionado'} — Governança documental e participação consultiva.
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Link to="/painel/projetos">
-            <Button size="sm">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Link to="/painel/consultas">
+            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <FileText className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              <span>Ver Minutas</span>
+              <span>Consultas em PDF</span>
+            </Button>
+          </Link>
+          <Link to="/painel/projetos">
+            <Button variant="outline" size="sm">
+              <FolderGit2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              <span>Minutas</span>
             </Button>
           </Link>
           <Link to="/painel/exportacoes">
@@ -74,6 +80,27 @@ export const DashboardPage: React.FC = () => {
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Destaque: Fluxo Simplificado de Revisão Participativa em PDF */}
+      <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 rounded-2xl p-5 text-white shadow-sm border border-indigo-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 uppercase tracking-wider inline-block">
+            Novo Fluxo Ágil
+          </span>
+          <h2 className="text-base sm:text-lg font-bold text-white">
+            Consultas Públicas em PDF & Coleta Direta de Sugestões
+          </h2>
+          <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+            Faça upload do Regimento ou Convenção em PDF e gere um link compartilhado para WhatsApp. Os moradores participam com visualização lado a lado e você exporta o relatório consolidado para Excel/CSV sem fricção de cadastros.
+          </p>
+        </div>
+        <Link to="/painel/consultas" className="shrink-0">
+          <button className="px-4 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-semibold text-xs rounded-xl shadow-xs transition flex items-center gap-2">
+            <span>Acessar Consultas</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </Link>
       </div>
 
       {/* Grid de Métricas Principais (UI-05: sem PII ou contatos expostos) */}
@@ -105,6 +132,16 @@ export const DashboardPage: React.FC = () => {
             <CardDescription>Atalhos rápidos para fluxos de trabalho normativos e prediais.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
+            <Link
+              to="/painel/consultas"
+              className="flex items-center justify-between p-3 rounded-lg border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/60 transition-colors text-xs sm:text-sm group"
+            >
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-4 h-4 text-indigo-700" aria-hidden="true" />
+                <span className="font-semibold text-indigo-950">Consultas em PDF (Links Compartilháveis)</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+            </Link>
             <Link
               to="/painel/projetos"
               className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100 transition-colors text-xs sm:text-sm group"

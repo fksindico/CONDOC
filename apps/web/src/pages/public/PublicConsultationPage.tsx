@@ -68,6 +68,19 @@ export const PublicConsultationPage: React.FC = () => {
   const [mySuggestions, setMySuggestions] = useState<ConsultationSuggestionItem[]>([]);
   const [copiedProtocol, setCopiedProtocol] = useState(false);
 
+  const handlePhoneChange = (val: string) => {
+    const raw = val.replace(/\D/g, '').slice(0, 11);
+    if (raw.length <= 2) {
+      setResidentPhone(raw);
+    } else if (raw.length <= 6) {
+      setResidentPhone(`(${raw.slice(0, 2)}) ${raw.slice(2)}`);
+    } else if (raw.length <= 10) {
+      setResidentPhone(`(${raw.slice(0, 2)}) ${raw.slice(2, 6)}-${raw.slice(6)}`);
+    } else {
+      setResidentPhone(`(${raw.slice(0, 2)}) ${raw.slice(2, 7)}-${raw.slice(7)}`);
+    }
+  };
+
   // Carrega dados salvos do morador do localStorage
   useEffect(() => {
     try {
@@ -351,16 +364,46 @@ export const PublicConsultationPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 w-full bg-slate-200 relative">
-            <iframe
-              src={`${consultation.pdf_download_url}#toolbar=1&navpanes=0`}
-              className="w-full h-full min-h-[500px] border-none"
-              title="Visualizador do Documento PDF"
-            />
+          {/* Alerta Amigável para Mobile */}
+          <div className="md:hidden px-3.5 py-2.5 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between text-xs text-indigo-950">
+            <span className="text-[11px] text-slate-600">Leitura móvel do documento:</span>
+            <a
+              href={consultation.pdf_download_url}
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold underline text-indigo-700 flex items-center gap-1 text-xs"
+            >
+              Abrir PDF Completo <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
 
-          <div className="p-2.5 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
-            Dica: No celular ou tablet, caso prefira, clique em <strong>"Tela Cheia"</strong> para zoom touch.
+          <div className="flex-1 w-full bg-slate-200 relative min-h-[450px]">
+            <object
+              data={`${consultation.pdf_download_url}#toolbar=1&navpanes=0`}
+              type="application/pdf"
+              className="w-full h-full min-h-[450px] border-none"
+            >
+              <iframe
+                src={`${consultation.pdf_download_url}#toolbar=1&navpanes=0`}
+                className="w-full h-full min-h-[450px] border-none"
+                title="Visualizador do Documento PDF"
+              />
+            </object>
+          </div>
+
+          {/* Rodapé Mobile com Botão de Ação Direta para o Formulário */}
+          <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 md:hidden">
+            <span className="text-xs text-slate-500">Leu o trecho?</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('form')}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition"
+            >
+              <Edit3 className="w-4 h-4" /> Escrever Minha Sugestão
+            </button>
+          </div>
+          <div className="hidden md:block p-2.5 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
+            Dica: Navegue pelo documento ao lado para conferir a numeração dos artigos e parágrafos antes de enviar sua sugestão.
           </div>
         </section>
 
@@ -449,7 +492,19 @@ export const PublicConsultationPage: React.FC = () => {
             </div>
           ) : (
             /* Card do Formulário de Sugestão */
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+            <>
+              <div className="md:hidden flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-200/60 shadow-xs mb-1 text-xs">
+                <span className="text-slate-600 font-medium">Dúvida no artigo?</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('document')}
+                  className="font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-indigo-100 transition"
+                >
+                  <FileText className="w-3.5 h-3.5" /> Consultar PDF
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
               <div className="mb-4">
                 <div className="flex items-center gap-2 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">
                   <Sparkles className="w-4 h-4" /> Participação de Moradores
@@ -504,7 +559,7 @@ export const PublicConsultationPage: React.FC = () => {
                             type="tel"
                             required
                             value={residentPhone}
-                            onChange={(e) => setResidentPhone(e.target.value)}
+                            onChange={(e) => handlePhoneChange(e.target.value)}
                             placeholder="(11) 99999-9999"
                             className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           />
@@ -685,6 +740,7 @@ export const PublicConsultationPage: React.FC = () => {
                 </form>
               )}
             </div>
+            </>
           )}
 
           {/* Histórico Resumido no Desktop */}
