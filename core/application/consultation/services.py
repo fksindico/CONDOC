@@ -31,11 +31,24 @@ class SimplifiedConsultationService:
         return secrets.token_urlsafe(16).replace('-', '').replace('_', '')[:20]
 
     @staticmethod
-    def generate_protocol() -> str:
-        """Gera protocolo amigável e legível para o morador, ex: SUG-2026-8491."""
-        year = timezone.now().year
-        rand = secrets.randbelow(9000) + 1000
-        return f"SUG-{year}-{rand}"
+    def generate_protocol(block_tower: Optional[str] = None, unit_code: Optional[str] = None) -> str:
+        """
+        Gera protocolo com formato Torre-Apartamento-##### para facilitar a identificação.
+        Ex: Torre B-604-84912 ou 604-84912 caso não haja torre informada.
+        """
+        rand_5 = secrets.randbelow(90000) + 10000  # 5 dígitos (10000 a 99999)
+        clean_tower = block_tower.strip() if block_tower else ""
+        clean_unit = unit_code.strip() if unit_code else ""
+
+        if clean_tower and clean_unit:
+            return f"{clean_tower}-{clean_unit}-{rand_5}"
+        elif clean_unit:
+            return f"{clean_unit}-{rand_5}"
+        elif clean_tower:
+            return f"{clean_tower}-{rand_5}"
+        else:
+            year = timezone.now().year
+            return f"SUG-{year}-{rand_5}"
 
     @classmethod
     def create_consultation(
@@ -235,9 +248,9 @@ class SimplifiedConsultationService:
                 )
 
             # 4. Gera protocolo único e grava a sugestão
-            protocol = cls.generate_protocol()
+            protocol = cls.generate_protocol(clean_tower, clean_unit)
             while ConsultationSuggestion.objects.filter(protocol=protocol).exists():
-                protocol = cls.generate_protocol()
+                protocol = cls.generate_protocol(clean_tower, clean_unit)
 
             suggestion = ConsultationSuggestion.objects.create(
                 condominium=consultation.condominium,

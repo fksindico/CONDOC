@@ -58,6 +58,38 @@ def http_post_multipart(url, fields, files):
     with urllib.request.urlopen(req, timeout=10) as resp:
         return resp.status, resp.read(), resp.headers
 
+def make_valid_pdf_bytes(title: str, lines: list) -> bytes:
+    stream_content = 'BT\n/F1 16 Tf\n50 780 Td\n(' + title + ') Tj\n/F1 11 Tf\n0 -30 Td\n'
+    for line in lines:
+        safe_line = line.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+        stream_content += f'({safe_line}) Tj\n0 -18 Td\n'
+    stream_content += 'ET'
+    stream_bytes = stream_content.encode('latin1')
+    
+    objects = [
+        b'1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+        b'2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+        b'3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n',
+        b'4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n',
+        b'5 0 obj\n<< /Length ' + str(len(stream_bytes)).encode('ascii') + b' >>\nstream\n' + stream_bytes + b'\nendstream\nendobj\n'
+    ]
+    
+    header = b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n'
+    body = b''
+    offsets = [0]
+    curr_offset = len(header)
+    for obj in objects:
+        offsets.append(curr_offset)
+        body += obj
+        curr_offset += len(obj)
+        
+    xref = f'xref\n0 {len(objects) + 1}\n0000000000 65535 f \n'.encode('ascii')
+    for off in offsets[1:]:
+        xref += f'{off:010d} 00000 n \n'.encode('ascii')
+        
+    trailer = f'trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{curr_offset}\n%%EOF\n'.encode('ascii')
+    return header + body + xref + trailer
+
 def run_test():
     print(f"=== TESTE LIVE E2E: CONSULTAS SIMPLIFICADAS EM PDF ({BASE_URL}) ===")
 
@@ -76,8 +108,18 @@ def run_test():
     print(f"[OK] Condomínio ativo: {condo['name']} ({condo_id})")
 
     # 3. Cria consulta pública em PDF
-    print("\n--- 1. Criando Consulta de Regimento com Upload de PDF ---")
-    mock_pdf_bytes = b"%PDF-1.4 Mock Regimento Interno - Live Deploy Test on LXC 1"
+    print("\n--- 1. Criando Consulta de Regimento com Upload de PDF Válido ---")
+    mock_pdf_bytes = make_valid_pdf_bytes(
+        "REGIMENTO INTERNO DO CONDOMINIO",
+        [
+            "CAPITULO I - DAS DISPOSICOES GERAIS",
+            "Art. 1. O presente Regimento disciplina a convivencia dos moradores.",
+            "Art. 2. E dever de todos os condominos zelar pelo sossego e higiene.",
+            "Art. 3. O horario de silencio vigora das 22h00 as 08h00 diariamente.",
+            "Art. 4. A utilizacao das areas comuns e restrita aos moradores e convidados.",
+            "Art. 5. O descumprimento destas normas sujeita o infrator as penalidades previstas."
+        ]
+    )
     fields = {
         'title': 'Revisão Participativa do Regimento 2026',
         'document_type': 'regimento',
@@ -133,7 +175,8 @@ def run_test():
     protocol = sug_data['protocol']
     print(f"[OK] Sugestão registrada com sucesso!")
     print(f"[OK] Número de Protocolo gerado: {protocol}")
-    assert protocol.startswith('SUG-')
+    assert protocol.startswith('Torre B-604-')
+    assert len(protocol.split('-')[-1]) == 5
 
     # 7. Consulta de histórico pelo morador via protocolo unívoco (Blindagem Anti-IDOR)
     print("\n--- 5. Consulta de Histórico pelo Morador (Segurança Anti-IDOR) ---")

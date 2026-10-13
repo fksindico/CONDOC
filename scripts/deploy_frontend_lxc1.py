@@ -71,13 +71,6 @@ def main():
     print("Configurando /etc/caddy/Caddyfile...")
     caddy_content = """# Configuração Caddy para CONDOC — LXC 1
 :80 {
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options SAMEORIGIN
-        Referrer-Policy strict-origin-when-cross-origin
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-    }
-
     # API Backend Core Django
     handle /api/* {
         reverse_proxy 127.0.0.1:8000 {
@@ -94,6 +87,12 @@ def main():
 
     # Frontend SPA React
     handle {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            Referrer-Policy strict-origin-when-cross-origin
+            Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        }
         root * /opt/condc/frontend
         try_files {path} /index.html
         file_server

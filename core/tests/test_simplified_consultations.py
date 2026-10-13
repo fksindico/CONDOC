@@ -81,7 +81,8 @@ class TestSimplifiedConsultationService:
         )
 
         assert suggestion.id is not None
-        assert suggestion.protocol.startswith("SUG-")
+        assert suggestion.protocol.startswith("Torre A-402-")
+        assert len(suggestion.protocol.split("-")[-1]) == 5
         assert suggestion.action_type == "alterar"
         assert suggestion.unit_code == "402"
         assert suggestion.status == "recebida"
@@ -227,7 +228,8 @@ class TestSimplifiedConsultationApi:
         assert response.status_code == 201
         data = response.json()
         assert "protocol" in data
-        assert data["protocol"].startswith("SUG-")
+        assert data["protocol"].startswith("Torre Sul-801-")
+        assert len(data["protocol"].split("-")[-1]) == 5
         assert data["resident_name"] == "Roberto Firmino"
         assert data["unit_code"] == "801"
         assert data["action_type"] == "incluir"

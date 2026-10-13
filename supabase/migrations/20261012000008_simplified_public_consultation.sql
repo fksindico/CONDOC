@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS app.consultation_suggestions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     condominium_id UUID NOT NULL REFERENCES app.condominiums(id) ON DELETE CASCADE,
     consultation_id UUID NOT NULL REFERENCES app.public_consultations(id) ON DELETE CASCADE,
-    protocol VARCHAR(30) NOT NULL UNIQUE,
+    protocol VARCHAR(100) NOT NULL UNIQUE,
     resident_name VARCHAR(255) NOT NULL,
     resident_phone VARCHAR(50) NOT NULL,
     resident_email VARCHAR(255),

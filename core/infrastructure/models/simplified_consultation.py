@@ -38,7 +38,7 @@ class ConsultationSuggestion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     condominium = models.ForeignKey(Condominium, on_delete=models.CASCADE, db_column='condominium_id')
     consultation = models.ForeignKey(PublicConsultation, on_delete=models.CASCADE, db_column='consultation_id')
-    protocol = models.CharField(max_length=30, unique=True)
+    protocol = models.CharField(max_length=100, unique=True)
     resident_name = models.CharField(max_length=255)
     resident_phone = models.CharField(max_length=50)
     resident_email = models.CharField(max_length=255, null=True, blank=True)

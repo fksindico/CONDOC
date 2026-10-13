@@ -23,6 +23,7 @@ import {
   Columns,
   Maximize2,
   Minimize2,
+  ExternalLink,
 } from 'lucide-react';
 import {
   consultationService,
@@ -361,47 +362,60 @@ export const PublicConsultationPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Controles Desktop de Alternância de Visualização */}
-          <div className="hidden md:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setDesktopView('split')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                desktopView === 'split'
-                  ? 'bg-white text-indigo-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Exibir documento e formulário lado a lado"
+          {/* Ações do Cabeçalho: Baixar Documento + Alternância de Visualização */}
+          <div className="flex items-center gap-2">
+            <a
+              href={consultation.pdf_download_url}
+              download={consultation.pdf_original_name}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl shadow-xs transition"
+              title="Baixar documento oficial em PDF"
             >
-              <Columns className="w-3.5 h-3.5" />
-              <span>Dividido</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setDesktopView('pdf_only')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                desktopView === 'pdf_only'
-                  ? 'bg-white text-indigo-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Expandir documento em tela cheia"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Foco no Documento</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setDesktopView('form_only')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                desktopView === 'form_only'
-                  ? 'bg-white text-indigo-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Focar no formulário de sugestão"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Foco na Sugestão</span>
-            </button>
+              <Download className="w-3.5 h-3.5" />
+              <span>Baixar PDF</span>
+            </a>
+
+            {/* Controles Desktop de Alternância de Visualização */}
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setDesktopView('split')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                  desktopView === 'split'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Exibir documento e formulário lado a lado"
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>Dividido</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDesktopView('pdf_only')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                  desktopView === 'pdf_only'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Expandir documento em tela cheia"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Foco no Documento</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDesktopView('form_only')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                  desktopView === 'form_only'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Focar no formulário de sugestão"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Foco na Sugestão</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -462,20 +476,39 @@ export const PublicConsultationPage: React.FC = () => {
           }`}
         >
           {/* Cabeçalho do Leitor de PDF */}
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2 truncate">
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 truncate min-w-0">
               <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
-              <span className="text-xs font-bold text-slate-800 truncate">
+              <span className="text-xs font-bold text-slate-800 truncate" title={consultation.pdf_original_name}>
                 {consultation.pdf_original_name}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={consultation.pdf_download_url}
+                download={consultation.pdf_original_name}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition"
+                title="Baixar documento original em PDF"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Baixar Documento</span>
+              </a>
+              <a
+                href={consultation.pdf_download_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg transition"
+                title="Abrir PDF em nova aba externa do navegador"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Nova Aba</span>
+              </a>
               {desktopView === 'split' && (
                 <button
                   type="button"
                   onClick={() => setDesktopView('pdf_only')}
-                  className="hidden md:inline-flex items-center gap-1 text-xs text-slate-600 hover:text-indigo-600 font-medium transition"
-                  title="Ampliar visualização"
+                  className="hidden md:inline-flex items-center gap-1 text-xs text-slate-600 hover:text-indigo-600 font-medium transition ml-1"
+                  title="Ampliar documento para tela cheia"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
                   <span>Expandir</span>
@@ -485,23 +518,56 @@ export const PublicConsultationPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDesktopView('split')}
-                  className="hidden md:inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-bold transition"
+                  className="hidden md:inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-bold transition ml-1"
                   title="Voltar para visualização lado a lado"
                 >
                   <Minimize2 className="w-3.5 h-3.5" />
-                  <span>Dividir com Formulário</span>
+                  <span>Dividir</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Iframe que renderiza o PDF internamente sem sair da página */}
+          {/* Visualizador de PDF com fallback para navegadores sem suporte a PDF embutido */}
           <div className="flex-1 w-full bg-slate-100 relative min-h-[480px] md:min-h-[600px] flex flex-col">
-            <iframe
-              src={`${consultation.pdf_download_url}#view=FitH&toolbar=1`}
+            <object
+              data={`${consultation.pdf_download_url}#toolbar=1&navpanes=0&view=FitH`}
+              type="application/pdf"
               className="w-full flex-1 min-h-[480px] md:min-h-[calc(100vh-210px)] border-0"
-              title={`Visualização de ${consultation.pdf_original_name}`}
-            />
+            >
+              <iframe
+                src={`${consultation.pdf_download_url}#toolbar=1&navpanes=0&view=FitH`}
+                className="w-full flex-1 min-h-[480px] md:min-h-[calc(100vh-210px)] border-0"
+                title={`Visualização de ${consultation.pdf_original_name}`}
+              >
+                <div className="p-8 text-center bg-white rounded-xl border border-slate-200 m-6 shadow-xs">
+                  <FileText className="w-12 h-12 text-indigo-600 mx-auto mb-3" />
+                  <h3 className="text-base font-bold text-slate-900 mb-1">
+                    Visualização do Documento
+                  </h3>
+                  <p className="text-xs text-slate-600 mb-4 max-w-sm mx-auto">
+                    Caso o seu navegador não exiba o leitor de PDF diretamente na página, utilize as opções abaixo:
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <a
+                      href={consultation.pdf_download_url}
+                      download={consultation.pdf_original_name}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                    >
+                      <Download className="w-4 h-4" /> Baixar Documento (PDF)
+                    </a>
+                    <a
+                      href={consultation.pdf_download_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition"
+                    >
+                      <ExternalLink className="w-4 h-4" /> Abrir em Nova Aba
+                    </a>
+                  </div>
+                </div>
+              </iframe>
+            </object>
           </div>
 
           {/* Rodapé Mobile: Botão em destaque para ir ao formulário */}
