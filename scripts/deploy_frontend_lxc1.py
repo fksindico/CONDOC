@@ -73,7 +73,7 @@ def main():
 :80 {
     header {
         X-Content-Type-Options nosniff
-        X-Frame-Options DENY
+        X-Frame-Options SAMEORIGIN
         Referrer-Policy strict-origin-when-cross-origin
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
     }

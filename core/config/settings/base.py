@@ -15,7 +15,13 @@ load_dotenv(ROOT_DIR / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-dev-key-condc-2026-replace-in-prod")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1")
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,condoc.fk.adm.br").split(",")
+allowed_hosts_env = os.getenv("DJANGO_ALLOWED_HOSTS") or os.getenv("ALLOWED_HOSTS")
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "192.168.10.200", "condoc.fk.adm.br"]
+if DEBUG and "*" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("*")
 
 # Reconhecimento de cabeçalho HTTPS vindo do Proxy Reverso (NPM / Caddy / Cloudflare)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -98,6 +104,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Django REST Framework

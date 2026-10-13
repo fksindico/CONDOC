@@ -54,6 +54,7 @@ export const AdminLayout: React.FC = () => {
       title: 'Visão Geral',
       items: [
         { label: 'Dashboard', path: '/painel', icon: BarChart3 },
+        { label: 'Consultas em PDF', path: '/painel/consultas', icon: FileText },
       ],
     },
     {

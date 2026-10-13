@@ -1,13 +1,16 @@
 import type { ApiError } from '@condc/api-contracts';
 
-let currentTenantId: string | null = localStorage.getItem('condc_active_tenant_id');
+let currentTenantId: string | null =
+  typeof localStorage !== 'undefined' ? localStorage.getItem('condc_active_tenant_id') : null;
 
 export function setApiTenantId(tenantId: string | null): void {
   currentTenantId = tenantId;
-  if (tenantId) {
-    localStorage.setItem('condc_active_tenant_id', tenantId);
-  } else {
-    localStorage.removeItem('condc_active_tenant_id');
+  if (typeof localStorage !== 'undefined') {
+    if (tenantId) {
+      localStorage.setItem('condc_active_tenant_id', tenantId);
+    } else {
+      localStorage.removeItem('condc_active_tenant_id');
+    }
   }
 }
 

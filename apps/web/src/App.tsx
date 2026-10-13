@@ -46,16 +46,22 @@ import { AccessStatusPage } from '@/pages/portal/AccessStatusPage';
 // Modo de Apresentação em Assembleia (Leitura)
 import { AssemblyPresentationPage } from '@/pages/assembly/AssemblyPresentationPage';
 
+// Consultas Públicas Simplificadas (PDF & Sugestões Ágeis)
+import { PublicConsultationPage } from '@/pages/public/PublicConsultationPage';
+import { SimplifiedConsultationsPage } from '@/pages/admin/SimplifiedConsultationsPage';
+
 export const App: React.FC = () => {
   return (
     <Routes>
       {/* Rotas Públicas de Acesso */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/acesso/convite" element={<InvitationRedeemPage />} />
+      <Route path="/participar/:token" element={<PublicConsultationPage />} />
 
       {/* Painel Administrativo da Gestão / Síndico (S01 a S21) */}
       <Route path="/painel" element={<AdminLayout />}>
         <Route index element={<DashboardPage />} />
+        <Route path="consultas" element={<SimplifiedConsultationsPage />} />
         <Route path="condominios" element={<CondominiumsPage />} />
         <Route path="unidades" element={<UnitsPage />} />
         <Route path="moradores" element={<ResidentsPage />} />

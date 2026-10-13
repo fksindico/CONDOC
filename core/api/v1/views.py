@@ -10,8 +10,9 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.renderers import BaseRenderer, JSONRenderer
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, Http404
 from django.utils import timezone
+from django.conf import settings
 import os
 import uuid
 
@@ -51,6 +52,8 @@ from infrastructure.models import (
     SuggestionIncorporation,
     ConsultationSnapshot,
     ExportArtifact,
+    PublicConsultation,
+    ConsultationSuggestion,
 )
 from application.identity.services import (
     CondominiumService,
@@ -89,6 +92,7 @@ from application.agreements.services import (
     IncorporationService,
 )
 from application.preservation.services import PreservationService
+from application.consultation.services import SimplifiedConsultationService
 from domain.identity.exceptions import (
     DuplicateBuildingError,
     DuplicateUnitError,
@@ -199,6 +203,11 @@ from .serializers import (
     ExportArtifactSerializer,
     ManifestVerificationSerializer,
     IdentityAccessEventSerializer,
+    PublicConsultationDetailSerializer,
+    PublicSuggestionSubmitSerializer,
+    PublicConsultationSuggestionConfirmationSerializer,
+    AdminConsultationListCreateSerializer,
+    AdminConsultationSuggestionListSerializer,
 )
 
 # ============================================================================
@@ -2535,6 +2544,254 @@ class AuditLogsListView(APIView):
         events = IdentityAuditService.list_access_events(condominium_id=condominium_id)
         serializer = IdentityAccessEventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ============================================================================
+# CONSULTAS PÚBLICAS SIMPLIFICADAS (PDF & Sugestões Ágeis)
+# ============================================================================
+
+class PublicConsultationDetailView(APIView):
+    """
+    Retorna os detalhes públicos da consulta para o morador via token de acesso compartilhado.
+    Zero necessidade de login.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        try:
+            consultation = SimplifiedConsultationService.get_consultation_by_token(token)
+            serializer = PublicConsultationDetailSerializer(consultation, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta pública não encontrada ou link inválido."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class PublicConsultationPdfView(APIView):
+    """
+    Entrega o arquivo PDF da consulta diretamente para o visualizador (iframe) do morador.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        try:
+            consultation = SimplifiedConsultationService.get_consultation_by_token(token)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
+        full_path = os.path.join(media_root, consultation.pdf_file_path)
+
+        if not os.path.exists(full_path):
+            return Response({"error": "Arquivo PDF não encontrado no servidor."}, status=status.HTTP_404_NOT_FOUND)
+
+        response = FileResponse(open(full_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{consultation.pdf_original_name}"'
+        return response
+
+
+class PublicSuggestionSubmitView(APIView):
+    """
+    Submissão ágil de sugestão de alteração/remoção/inclusão pelo morador via token público.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, token):
+        serializer = PublicSuggestionSubmitSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            suggestion = SimplifiedConsultationService.submit_suggestion(
+                token=token,
+                **serializer.validated_data
+            )
+            response_serializer = PublicConsultationSuggestionConfirmationSerializer(suggestion)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta pública não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": f"Erro interno ao registrar sugestão: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PublicMySuggestionsListView(APIView):
+    """
+    Permite ao morador consultar na sessão atual as sugestões por ele enviadas
+    filtrando por telefone, unidade ou protocolo para manter privacidade.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        try:
+            consultation = SimplifiedConsultationService.get_consultation_by_token(token)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta pública não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        phone = request.query_params.get('phone')
+        unit = request.query_params.get('unit')
+        protocol = request.query_params.get('protocol')
+
+        if not any([phone, unit, protocol]):
+            return Response([], status=status.HTTP_200_OK)
+
+        qs = ConsultationSuggestion.objects.filter(consultation=consultation)
+        if protocol:
+            qs = qs.filter(protocol__iexact=protocol.strip())
+        elif phone and unit:
+            qs = qs.filter(resident_phone=phone.strip(), unit_code__iexact=unit.strip())
+        elif phone:
+            qs = qs.filter(resident_phone=phone.strip())
+        elif unit:
+            qs = qs.filter(unit_code__iexact=unit.strip())
+
+        serializer = PublicConsultationSuggestionConfirmationSerializer(qs.order_by('-created_at'), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminConsultationListCreateView(APIView):
+    """
+    Listagem e criação de consultas públicas simplificadas no painel do síndico.
+    Suporta upload de PDF multipart/form-data.
+    """
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request, condominium_id):
+        consultations = PublicConsultation.objects.filter(condominium_id=condominium_id).order_by('-created_at')
+        items = []
+        for c in consultations:
+            data = AdminConsultationListCreateSerializer(c).data
+            data['suggestions_count'] = ConsultationSuggestion.objects.filter(consultation_id=c.id).count()
+            items.append(data)
+        return Response(items, status=status.HTTP_200_OK)
+
+    def post(self, request, condominium_id):
+        actor_id, role = _resolve_actor_and_role(request, condominium_id)
+        title = request.data.get('title')
+        document_type = request.data.get('document_type', 'regimento')
+        description = request.data.get('description', '')
+        deadline = request.data.get('deadline')
+        pdf_file = request.FILES.get('pdf_file')
+
+        if not title or not str(title).strip():
+            return Response({"error": "Título da consulta é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not pdf_file:
+            return Response({"error": "Arquivo PDF do documento é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            consultation = SimplifiedConsultationService.create_consultation(
+                condominium_id=condominium_id,
+                title=str(title),
+                document_type=str(document_type),
+                pdf_file=pdf_file,
+                description=str(description) if description else None,
+                created_by_id=actor_id,
+                deadline=deadline,
+            )
+            data = AdminConsultationListCreateSerializer(consultation).data
+            data['suggestions_count'] = 0
+            return Response(data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": f"Erro ao criar consulta: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminConsultationDetailUpdateDeleteView(APIView):
+    """
+    Consulta, alteração de status e exclusão de consulta pelo síndico.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, consultation_id):
+        try:
+            consultation = PublicConsultation.objects.get(id=consultation_id, condominium_id=condominium_id)
+            data = AdminConsultationListCreateSerializer(consultation).data
+            data['suggestions_count'] = ConsultationSuggestion.objects.filter(consultation_id=consultation.id).count()
+            return Response(data, status=status.HTTP_200_OK)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, condominium_id, consultation_id):
+        try:
+            consultation = PublicConsultation.objects.get(id=consultation_id, condominium_id=condominium_id)
+            if 'status' in request.data:
+                new_status = request.data['status']
+                if new_status in ('aberta', 'pausada', 'encerrada'):
+                    consultation.status = new_status
+            if 'title' in request.data:
+                consultation.title = request.data['title'].strip()
+            if 'description' in request.data:
+                consultation.description = request.data['description']
+            if 'deadline' in request.data:
+                consultation.deadline = request.data['deadline']
+            consultation.save()
+            data = AdminConsultationListCreateSerializer(consultation).data
+            data['suggestions_count'] = ConsultationSuggestion.objects.filter(consultation_id=consultation.id).count()
+            return Response(data, status=status.HTTP_200_OK)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, condominium_id, consultation_id):
+        try:
+            consultation = PublicConsultation.objects.get(id=consultation_id, condominium_id=condominium_id)
+            media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
+            full_path = os.path.join(media_root, consultation.pdf_file_path)
+            if os.path.exists(full_path):
+                try:
+                    os.remove(full_path)
+                except Exception:
+                    pass
+            consultation.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AdminConsultationSuggestionsListView(APIView):
+    """
+    Listagem filtrável das sugestões recebidas para acompanhamento pelo síndico.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, consultation_id):
+        action_type = request.query_params.get('action_type')
+        unit_code = request.query_params.get('unit_code')
+        block_tower = request.query_params.get('block_tower')
+        search_text = request.query_params.get('search')
+
+        suggestions = SimplifiedConsultationService.list_suggestions(
+            condominium_id=condominium_id,
+            consultation_id=consultation_id,
+            action_type=action_type,
+            unit_code=unit_code,
+            block_tower=block_tower,
+            search_text=search_text,
+        )
+        serializer = AdminConsultationSuggestionListSerializer(suggestions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminConsultationExportView(APIView):
+    """
+    Exporta todas as sugestões em CSV para abertura perfeita no Microsoft Excel/Sheets.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, condominium_id, consultation_id):
+        try:
+            csv_content = SimplifiedConsultationService.export_suggestions_csv(
+                condominium_id=condominium_id,
+                consultation_id=consultation_id,
+            )
+            response = HttpResponse(csv_content, content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="sugestoes_consulta_{consultation_id}.csv"'
+            return response
+        except PublicConsultation.DoesNotExist:
+            return Response({"error": "Consulta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Erro na exportação: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 

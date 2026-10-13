@@ -580,6 +580,42 @@ CREATE TABLE IF NOT EXISTS app.export_artifacts (
     generated_by_id TEXT REFERENCES accounts(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS app.public_consultations (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    document_type TEXT NOT NULL DEFAULT 'regimento',
+    description TEXT,
+    pdf_file_path TEXT NOT NULL,
+    pdf_original_name TEXT NOT NULL,
+    pdf_size_bytes INTEGER NOT NULL DEFAULT 0,
+    public_token TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'aberta',
+    deadline TIMESTAMP,
+    created_by_id TEXT REFERENCES accounts(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app.consultation_suggestions (
+    id TEXT PRIMARY KEY,
+    condominium_id TEXT NOT NULL REFERENCES condominiums(id) ON DELETE CASCADE,
+    consultation_id TEXT NOT NULL REFERENCES public_consultations(id) ON DELETE CASCADE,
+    protocol TEXT NOT NULL UNIQUE,
+    resident_name TEXT NOT NULL,
+    resident_phone TEXT NOT NULL,
+    resident_email TEXT,
+    block_tower TEXT,
+    unit_code TEXT NOT NULL,
+    target_reference TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    suggestion_text TEXT NOT NULL,
+    justification TEXT,
+    status TEXT NOT NULL DEFAULT 'recebida',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 @pytest.fixture(autouse=True)

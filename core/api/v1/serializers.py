@@ -41,6 +41,8 @@ from infrastructure.models import (
     SuggestionIncorporation,
     ConsultationSnapshot,
     ExportArtifact,
+    PublicConsultation,
+    ConsultationSuggestion,
 )
 
 # ============================================================================
@@ -558,6 +560,87 @@ class IdentityAccessEventSerializer(serializers.ModelSerializer):
             'target_type', 'target_id', 'purpose', 'created_at'
         ]
         read_only_fields = fields
+
+
+# ============================================================================
+# CONSULTAS PÚBLICAS SIMPLIFICADAS (PDF & Sugestões Ágeis)
+# ============================================================================
+
+class PublicConsultationDetailSerializer(serializers.ModelSerializer):
+    condominium_name = serializers.CharField(source='condominium.name', read_only=True)
+    pdf_download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PublicConsultation
+        fields = [
+            'id', 'title', 'document_type', 'description',
+            'pdf_original_name', 'pdf_size_bytes', 'public_token',
+            'status', 'deadline', 'condominium_name', 'pdf_download_url',
+            'created_at',
+        ]
+        read_only_fields = fields
+
+    def get_pdf_download_url(self, obj):
+        request = self.context.get('request')
+        relative = f"/api/v1/public/consultations/{obj.public_token}/pdf"
+        if request:
+            return request.build_absolute_uri(relative)
+        return relative
+
+
+class PublicSuggestionSubmitSerializer(serializers.Serializer):
+    resident_name = serializers.CharField(max_length=255, required=True)
+    resident_phone = serializers.CharField(max_length=50, required=True)
+    resident_email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
+    block_tower = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+    unit_code = serializers.CharField(max_length=50, required=True)
+    target_reference = serializers.CharField(max_length=255, required=True)
+    action_type = serializers.ChoiceField(choices=['alterar', 'remover', 'incluir'], required=True)
+    suggestion_text = serializers.CharField(required=True)
+    justification = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class PublicConsultationSuggestionConfirmationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsultationSuggestion
+        fields = [
+            'id', 'protocol', 'resident_name', 'unit_code', 'block_tower',
+            'target_reference', 'action_type', 'suggestion_text', 'justification',
+            'status', 'created_at'
+        ]
+        read_only_fields = fields
+
+
+class AdminConsultationListCreateSerializer(serializers.ModelSerializer):
+    pdf_file = serializers.FileField(write_only=True, required=False)
+    suggestions_count = serializers.IntegerField(read_only=True, required=False)
+
+    class Meta:
+        model = PublicConsultation
+        fields = [
+            'id', 'condominium_id', 'title', 'document_type', 'description',
+            'pdf_original_name', 'pdf_size_bytes', 'public_token',
+            'status', 'deadline', 'pdf_file', 'suggestions_count',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'condominium_id', 'pdf_original_name', 'pdf_size_bytes',
+            'public_token', 'created_at', 'updated_at'
+        ]
+
+
+class AdminConsultationSuggestionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsultationSuggestion
+        fields = [
+            'id', 'condominium_id', 'consultation_id', 'protocol',
+            'resident_name', 'resident_phone', 'resident_email',
+            'block_tower', 'unit_code', 'target_reference',
+            'action_type', 'suggestion_text', 'justification',
+            'status', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'protocol', 'created_at', 'updated_at']
+
 
 
 

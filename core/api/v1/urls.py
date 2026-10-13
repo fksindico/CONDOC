@@ -82,6 +82,15 @@ from .views import (
     ExportArtifactDetailView,
     ManifestVerifyView,
     AuditLogsListView,
+    # Consultas Simplificadas
+    PublicConsultationDetailView,
+    PublicConsultationPdfView,
+    PublicSuggestionSubmitView,
+    PublicMySuggestionsListView,
+    AdminConsultationListCreateView,
+    AdminConsultationDetailUpdateDeleteView,
+    AdminConsultationSuggestionsListView,
+    AdminConsultationExportView,
 )
 
 urlpatterns = [
@@ -205,4 +214,20 @@ urlpatterns = [
     path('condominiums/<uuid:condominium_id>/documents/<uuid:document_id>/assembly-reading', DocumentAssemblyReadingView.as_view(), name='api_v1_document_assembly_reading'),
     path('condominiums/<uuid:condominium_id>/artifacts/<uuid:artifact_id>', ExportArtifactDetailView.as_view(), name='api_v1_artifact_detail'),
     path('condominiums/<uuid:condominium_id>/artifacts/<uuid:artifact_id>/verify', ManifestVerifyView.as_view(), name='api_v1_artifact_verify'),
+
+    # =========================================================================
+    # CONSULTAS PÚBLICAS SIMPLIFICADAS (PDF & Sugestões Ágeis)
+    # =========================================================================
+    # Endpoints Públicos (Acesso via token seguro, zero login)
+    path('public/consultations/<str:token>', PublicConsultationDetailView.as_view(), name='api_v1_public_consultation_detail'),
+    path('public/consultations/<str:token>/pdf', PublicConsultationPdfView.as_view(), name='api_v1_public_consultation_pdf'),
+    path('public/consultations/<str:token>/suggestions', PublicSuggestionSubmitView.as_view(), name='api_v1_public_suggestion_submit'),
+    path('public/consultations/<str:token>/my-suggestions', PublicMySuggestionsListView.as_view(), name='api_v1_public_my_suggestions'),
+
+    # Endpoints Administrativos (Painel do Síndico)
+    path('condominiums/<uuid:condominium_id>/consultations', AdminConsultationListCreateView.as_view(), name='api_v1_admin_consultations'),
+    path('condominiums/<uuid:condominium_id>/consultations/<uuid:consultation_id>', AdminConsultationDetailUpdateDeleteView.as_view(), name='api_v1_admin_consultation_detail'),
+    path('condominiums/<uuid:condominium_id>/consultations/<uuid:consultation_id>/suggestions', AdminConsultationSuggestionsListView.as_view(), name='api_v1_admin_consultation_suggestions'),
+    path('condominiums/<uuid:condominium_id>/consultations/<uuid:consultation_id>/export', AdminConsultationExportView.as_view(), name='api_v1_admin_consultation_export'),
 ]
+

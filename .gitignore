@@ -43,3 +43,8 @@ build/
 
 # Test artifacts
 test_screenshots/
+
+# Uploads & Media
+media/
+core/media/
+
