@@ -635,6 +635,80 @@ class TestSimplifiedConsultationApi:
         assert export_event.actor_account_id == self.sindico.id
         assert "Exportação de planilha CSV" in export_event.purpose
 
+    def test_custom_token_creation_and_case_insensitive_lookup(self):
+        """
+        Garante criação de consulta com token customizado curto e busca case-insensitive.
+        """
+        from io import BytesIO
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        fake_pdf = SimpleUploadedFile("custom.pdf", b"%PDF-1.4 custom", content_type="application/pdf")
+        consultation = SimplifiedConsultationService.create_consultation(
+            condominium_id=self.condo.id,
+            title="Consulta com Token Curto",
+            document_type="regimento",
+            pdf_file=fake_pdf,
+            custom_token="REG2026",
+            created_by_id=self.sindico.id,
+        )
+        assert consultation.public_token == "REG2026"
+
+        # 1. Busca pelo token original
+        resp1 = self.client.get("/api/v1/public/consultations/REG2026")
+        assert resp1.status_code == 200
+        assert resp1.json()["id"] == str(consultation.id)
+
+        # 2. Busca pelo token minúsculo (case-insensitive)
+        resp2 = self.client.get("/api/v1/public/consultations/reg2026")
+        assert resp2.status_code == 200
+        assert resp2.json()["id"] == str(consultation.id)
+
+    def test_sindico_can_update_consultation_token(self):
+        """
+        Garante que o síndico possa atualizar/personalizar o token da campanha via PATCH.
+        """
+        url = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}"
+        patch_resp = self.client.patch(url, {"public_token": "FLORES26"}, content_type="application/json")
+        assert patch_resp.status_code == 200
+        assert patch_resp.json()["public_token"] == "FLORES26"
+
+        # Acesso pelo novo token minúsculo
+        public_resp = self.client.get("/api/v1/public/consultations/flores26")
+        assert public_resp.status_code == 200
+        assert public_resp.json()["id"] == str(self.consultation.id)
+
+    def test_reject_invalid_or_duplicate_custom_token(self):
+        """
+        Rejeita tokens com caracteres inválidos ou duplicados.
+        """
+        url = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}"
+        # Caracteres inválidos (espaço)
+        resp_invalid = self.client.patch(url, {"public_token": "TOKEN INVALIDO"}, content_type="application/json")
+        assert resp_invalid.status_code == 400
+        assert "alfanuméricos" in resp_invalid.json()["error"]
+
+        # Token muito curto (< 3 chars)
+        resp_short = self.client.patch(url, {"public_token": "AB"}, content_type="application/json")
+        assert resp_short.status_code == 400
+
+        # Cria uma segunda consulta
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        fake_pdf = SimpleUploadedFile("other.pdf", b"%PDF-1.4 other", content_type="application/pdf")
+        other = SimplifiedConsultationService.create_consultation(
+            condominium_id=self.condo.id,
+            title="Outra Consulta",
+            document_type="convencao",
+            pdf_file=fake_pdf,
+            custom_token="CAMPANHA2026",
+            created_by_id=self.sindico.id,
+        )
+
+        # Tenta mudar a primeira consulta para o mesmo token da segunda (case-insensitive)
+        resp_duplicate = self.client.patch(url, {"public_token": "campanha2026"}, content_type="application/json")
+        assert resp_duplicate.status_code == 400
+        assert "já está em uso" in resp_duplicate.json()["error"]
+
+
 
 
 

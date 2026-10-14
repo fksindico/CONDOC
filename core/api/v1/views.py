@@ -18,6 +18,7 @@ from django.conf import settings
 from django.db import models
 import os
 import uuid
+import re
 
 from infrastructure.models import (
     Condominium,
@@ -2874,6 +2875,7 @@ class AdminConsultationListCreateView(APIView):
         document_type = request.data.get('document_type', 'regimento')
         description = request.data.get('description', '')
         deadline = request.data.get('deadline')
+        custom_token = request.data.get('public_token') or request.data.get('custom_token')
         pdf_file = request.FILES.get('pdf_file')
 
         if not title or not str(title).strip():
@@ -2891,10 +2893,13 @@ class AdminConsultationListCreateView(APIView):
                 description=str(description) if description else None,
                 created_by_id=actor_id,
                 deadline=deadline,
+                custom_token=str(custom_token).strip() if custom_token else None,
             )
             data = AdminConsultationListCreateSerializer(consultation).data
             data['suggestions_count'] = 0
             return Response(data, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": f"Erro ao criar consulta: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2929,6 +2934,18 @@ class AdminConsultationDetailUpdateDeleteView(APIView):
                 consultation.deadline = request.data['deadline']
             if 'thank_you_message' in request.data:
                 consultation.thank_you_message = request.data['thank_you_message']
+            if 'public_token' in request.data:
+                new_token = str(request.data['public_token']).strip()
+                if not re.match(r'^[a-zA-Z0-9_-]{3,50}$', new_token):
+                    return Response({
+                        "error": "O código de acesso deve conter entre 3 e 50 caracteres alfanuméricos (letras, números, hífens ou sublinhados)."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                if PublicConsultation.objects.filter(public_token__iexact=new_token).exclude(id=consultation.id).exists():
+                    return Response({
+                        "error": f"O código de acesso '{new_token}' já está em uso por outra consulta. Por favor, escolha outro código."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                consultation.public_token = new_token
+
             consultation.save()
             data = AdminConsultationListCreateSerializer(consultation).data
             data['suggestions_count'] = ConsultationSuggestion.objects.filter(consultation_id=consultation.id).count()

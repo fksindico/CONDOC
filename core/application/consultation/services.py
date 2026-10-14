@@ -7,6 +7,7 @@ import uuid
 import secrets
 import csv
 import io
+import re
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from django.conf import settings
@@ -60,17 +61,25 @@ class SimplifiedConsultationService:
         description: Optional[str] = None,
         created_by_id: Optional[uuid.UUID] = None,
         deadline: Optional[datetime] = None,
+        custom_token: Optional[str] = None,
     ) -> PublicConsultation:
         """
         Cria uma nova consulta de documento com upload físico do PDF
-        e token público de compartilhamento.
+        e token público de compartilhamento (curto e personalizável).
         """
         condo = Condominium.objects.get(id=condominium_id)
-        token = cls.generate_token()
 
-        # Garante unicidade do token
-        while PublicConsultation.objects.filter(public_token=token).exists():
+        if custom_token and str(custom_token).strip():
+            clean_custom = str(custom_token).strip()
+            if not re.match(r'^[a-zA-Z0-9_-]{3,50}$', clean_custom):
+                raise ValueError("O código de acesso deve conter entre 3 e 50 caracteres alfanuméricos (letras, números, hífens ou sublinhados).")
+            if PublicConsultation.objects.filter(public_token__iexact=clean_custom).exists():
+                raise ValueError(f"O código de acesso '{clean_custom}' já está em uso por outra consulta. Por favor, escolha outro código.")
+            token = clean_custom
+        else:
             token = cls.generate_token()
+            while PublicConsultation.objects.filter(public_token__iexact=token).exists():
+                token = cls.generate_token()
 
         # Diretório de armazenamento de mídia
         media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
@@ -114,8 +123,9 @@ class SimplifiedConsultationService:
 
     @staticmethod
     def get_consultation_by_token(token: str) -> PublicConsultation:
-        """Busca consulta ativa ou existente pelo token público."""
-        return PublicConsultation.objects.select_related('condominium').get(public_token=token)
+        """Busca consulta ativa ou existente pelo token público (case-insensitive)."""
+        clean_token = token.strip() if token else ""
+        return PublicConsultation.objects.select_related('condominium').get(public_token__iexact=clean_token)
 
     @classmethod
     def submit_suggestion(
@@ -136,7 +146,7 @@ class SimplifiedConsultationService:
         Gera protocolo único, organiza o cadastro do morador e impede múltiplos cadastros
         para a mesma pessoa e unidade a cada acesso.
         """
-        consultation = PublicConsultation.objects.select_related('condominium').get(public_token=token)
+        consultation = cls.get_consultation_by_token(token)
 
         if consultation.status != 'aberta':
             raise ValueError(f"Esta consulta está com status '{consultation.status}' e não aceita novos envios.")

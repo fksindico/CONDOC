@@ -22,6 +22,8 @@ import {
   Layers,
   ChevronRight,
   Eye,
+  Edit3,
+  KeyRound,
 } from 'lucide-react';
 import {
   consultationService,
@@ -51,9 +53,16 @@ export const SimplifiedConsultationsPage: React.FC = () => {
   const [newDescription, setNewDescription] = useState('');
   const [newThankYouMessage, setNewThankYouMessage] = useState('');
   const [newDeadline, setNewDeadline] = useState('');
+  const [newCustomToken, setNewCustomToken] = useState('');
   const [newPdfFile, setNewPdfFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Edição de Token da Consulta Selecionada
+  const [isEditingToken, setIsEditingToken] = useState(false);
+  const [tokenEditValue, setTokenEditValue] = useState('');
+  const [tokenEditError, setTokenEditError] = useState<string | null>(null);
+  const [savingToken, setSavingToken] = useState(false);
 
   // Notificação de Cópia
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
@@ -140,6 +149,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
     if (newDescription.trim()) formData.append('description', newDescription.trim());
     if (newThankYouMessage.trim()) formData.append('thank_you_message', newThankYouMessage.trim());
     if (newDeadline) formData.append('deadline', newDeadline);
+    if (newCustomToken.trim()) formData.append('public_token', newCustomToken.trim().toUpperCase());
     formData.append('pdf_file', newPdfFile);
 
     try {
@@ -149,6 +159,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
       setNewDescription('');
       setNewThankYouMessage('');
       setNewDeadline('');
+      setNewCustomToken('');
       setNewPdfFile(null);
       loadConsultations();
       setSelectedConsultation(created);
@@ -156,6 +167,44 @@ export const SimplifiedConsultationsPage: React.FC = () => {
       setCreateError(err.message || 'Erro ao criar consulta.');
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Personalização do Código de Acesso da Consulta
+  const handleStartEditToken = () => {
+    if (selectedConsultation) {
+      setTokenEditValue(selectedConsultation.public_token);
+      setTokenEditError(null);
+      setIsEditingToken(true);
+    }
+  };
+
+  const handleSaveToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!condoId || !selectedConsultation) return;
+    const cleanToken = tokenEditValue.trim().toUpperCase();
+    if (!cleanToken) {
+      setTokenEditError('O código de acesso não pode ser vazio.');
+      return;
+    }
+    if (!/^[A-Z0-9_-]{3,50}$/.test(cleanToken)) {
+      setTokenEditError('O código deve conter entre 3 e 50 caracteres (apenas letras, números, hífen ou sublinhado).');
+      return;
+    }
+
+    setSavingToken(true);
+    setTokenEditError(null);
+    try {
+      const updated = await consultationService.updateAdminConsultation(condoId, selectedConsultation.id, {
+        public_token: cleanToken,
+      });
+      setSelectedConsultation(updated);
+      setIsEditingToken(false);
+      loadConsultations();
+    } catch (err: any) {
+      setTokenEditError(err.message || 'Erro ao atualizar código de acesso. Verifique se o código já não está em uso.');
+    } finally {
+      setSavingToken(false);
     }
   };
 
@@ -313,7 +362,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               {/* Barra de Ações & Link Compartilhável */}
               <div className="p-5 bg-gradient-to-r from-slate-50 to-indigo-50/30 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-lg font-bold text-slate-900">{selectedConsultation.title}</h2>
                     <select
@@ -337,6 +386,58 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                       ? new Date(selectedConsultation.deadline).toLocaleDateString('pt-BR')
                       : 'Indeterminado'}
                   </p>
+
+                  {/* Código de Acesso Personalizável pelo Síndico */}
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <span className="text-xs font-medium text-slate-600">Código de Acesso:</span>
+                    {isEditingToken ? (
+                      <form onSubmit={handleSaveToken} className="inline-flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={tokenEditValue}
+                          onChange={(e) => setTokenEditValue(e.target.value.toUpperCase())}
+                          placeholder="Ex: REG2026"
+                          autoFocus
+                          className="px-2 py-1 text-xs font-mono font-bold bg-white border border-indigo-500 rounded-md uppercase focus:ring-1 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="submit"
+                          disabled={savingToken}
+                          className="px-2.5 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition cursor-pointer"
+                        >
+                          {savingToken ? 'Salvando...' : 'Salvar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsEditingToken(false);
+                            setTokenEditError(null);
+                          }}
+                          className="px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      </form>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-900 font-mono font-bold text-xs border border-indigo-200">
+                          {selectedConsultation.public_token}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleStartEditToken}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-0.5 rounded hover:bg-indigo-50 transition cursor-pointer flex items-center gap-1"
+                          title="Personalizar código curto de acesso da campanha"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Personalizar</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {tokenEditError && (
+                    <p className="text-xs text-rose-600 font-medium">{tokenEditError}</p>
+                  )}
                 </div>
 
                 {/* Bloco de Compartilhamento Direto */}
@@ -647,6 +748,22 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
                   Este PDF ficará visível lado a lado para os moradores no formulário de sugestão.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Código de Acesso Personalizado (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={newCustomToken}
+                  onChange={(e) => setNewCustomToken(e.target.value.toUpperCase())}
+                  placeholder="Ex: REG2026 (se vazio, será gerado automaticamente)"
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-hidden uppercase"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Defina um código curto e amigável para os moradores digitarem na página inicial (ex: REG2026, FLORES26).
                 </p>
               </div>
 
