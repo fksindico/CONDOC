@@ -205,6 +205,55 @@ export const PublicConsultationPage: React.FC = () => {
     }
   }, [token]);
 
+  // Auto-Save Contínuo de Rascunho (Resiliência contra Queda de Conexão ou Recarregamento)
+  const DRAFT_KEY = token ? `condoc_draft_${token}` : '';
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+  useEffect(() => {
+    if (!DRAFT_KEY) return;
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_KEY);
+      if (savedDraft) {
+        const d = JSON.parse(savedDraft);
+        if (d.targetReference) setTargetReference(d.targetReference);
+        if (d.actionType) setActionType(d.actionType);
+        if (d.suggestionText) setSuggestionText(d.suggestionText);
+        if (d.justification) setJustification(d.justification);
+        if (d.suggestionText || d.targetReference) {
+          setHasRestoredDraft(true);
+        }
+      }
+    } catch {}
+  }, [DRAFT_KEY]);
+
+  useEffect(() => {
+    if (!DRAFT_KEY || lastSubmission) return;
+    const timeout = setTimeout(() => {
+      try {
+        if (targetReference || suggestionText || justification) {
+          localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({
+              targetReference,
+              actionType,
+              suggestionText,
+              justification,
+            })
+          );
+        }
+      } catch {}
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [DRAFT_KEY, targetReference, actionType, suggestionText, justification, lastSubmission]);
+
+  const clearDraft = () => {
+    if (DRAFT_KEY) localStorage.removeItem(DRAFT_KEY);
+    setTargetReference('');
+    setSuggestionText('');
+    setJustification('');
+    setHasRestoredDraft(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -274,6 +323,12 @@ export const PublicConsultationPage: React.FC = () => {
       setTargetReference('');
       setSuggestionText('');
       setJustification('');
+      // Limpa o rascunho temporário pois já foi consolidado com sucesso
+      if (DRAFT_KEY) {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+      setHasRestoredDraft(false);
+
       // Atualiza histórico localmente e persiste no localStorage deste dispositivo
       setMySuggestions((prev) => {
         const next = [result, ...prev.filter((s) => s.id !== result.id)];
@@ -564,48 +619,128 @@ export const PublicConsultationPage: React.FC = () => {
               : 'w-full lg:w-[460px] xl:w-[500px] shrink-0'
           }`}
         >
-          {/* Card de Notificação de Sucesso com Protocolo */}
-          {lastSubmission && (
-            <div className="bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-5 shadow-sm text-slate-800 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="font-bold text-base text-emerald-900">Sugestão Registrada com Sucesso!</h3>
-                  <p className="text-xs text-emerald-700 mt-1">
-                    Sua contribuição foi salva e já está disponível para o síndico e comissão no relatório de revisão.
+          {/* 1. TELA DEDICADA DE CONFIRMAÇÃO & AGRADECIMENTO PERSONALIZADO */}
+          {lastSubmission ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-lg space-y-6 animate-in fade-in zoom-in-95 duration-200">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Sugestão Registrada com Sucesso!</h3>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+                  Sua contribuição foi salva com segurança e já se encontra disponível para análise no painel da gestão.
+                </p>
+              </div>
+
+              {/* Protocolo em Destaque */}
+              <div className="bg-slate-950 text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-center sm:text-left">
+                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block mb-0.5">
+                    Comprovante de Protocolo
+                  </span>
+                  <span className="text-lg sm:text-xl font-mono font-extrabold text-emerald-400 tracking-tight">
+                    {lastSubmission.protocol}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyProtocol}
+                  className="w-full sm:w-auto px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border border-slate-700"
+                >
+                  {copiedProtocol ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-300" />}
+                  <span>{copiedProtocol ? 'Copiado!' : 'Copiar Protocolo'}</span>
+                </button>
+              </div>
+
+              {/* Resumo da Sugestão Registrada */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-700">Artigo / Dispositivo:</span>
+                  <span className="font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                    {lastSubmission.target_reference}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-700">Tipo de Ação:</span>
+                  <span className="font-semibold uppercase text-slate-700 bg-slate-200 px-2 py-0.5 rounded-md">
+                    {lastSubmission.action_type}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="font-bold text-slate-700 block mb-1">Redação Proposta:</span>
+                  <p className="text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200 italic leading-relaxed">
+                    "{lastSubmission.suggestion_text}"
                   </p>
-
-                  <div className="mt-3.5 bg-white rounded-xl p-3 border border-emerald-200 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        Número de Protocolo
-                      </span>
-                      <span className="text-sm font-mono font-bold text-slate-900">{lastSubmission.protocol}</span>
-                    </div>
-                    <button
-                      onClick={copyProtocol}
-                      className="px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 rounded-lg flex items-center gap-1 transition"
-                    >
-                      {copiedProtocol ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copiedProtocol ? 'Copiado!' : 'Copiar'}
-                    </button>
+                </div>
+                {lastSubmission.justification && (
+                  <div className="pt-1">
+                    <span className="font-bold text-slate-700 block mb-1">Justificativa:</span>
+                    <p className="text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200 italic leading-relaxed">
+                      "{lastSubmission.justification}"
+                    </p>
                   </div>
-
-                  <div className="mt-4 flex items-center justify-between pt-2 border-t border-emerald-200/60">
-                    <button
-                      onClick={() => setLastSubmission(null)}
-                      className="text-xs font-semibold text-emerald-800 hover:text-emerald-900 flex items-center gap-1"
-                    >
-                      <PlusCircle className="w-4 h-4" /> Enviar outra sugestão agora
-                    </button>
-                  </div>
+                )}
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-slate-500 text-[11px]">
+                  <span>Unidade: <strong>{lastSubmission.unit_code}</strong> {lastSubmission.block_tower ? `(${lastSubmission.block_tower})` : ''}</span>
+                  <span>{lastSubmission.resident_name}</span>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Abas Mobile para Histórico de Envios */}
-          {activeTab === 'history' ? (
+              {/* Mensagem de Agradecimento Personalizada do Síndico */}
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50/60 rounded-2xl p-4 sm:p-5 border border-indigo-100 shadow-2xs space-y-2">
+                <div className="flex items-center gap-2 text-indigo-900 font-bold text-xs uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  <span>Mensagem da Administração</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-serif italic">
+                  "{lastSubmission.thank_you_message || consultation?.thank_you_message || (consultation as any)?.default_thank_you_message || 'Agradecemos imensamente sua contribuição! A participação dos moradores é fundamental para construirmos regras que reflitam a harmonia e o respeito mútuo em nosso condomínio.'}"
+                </p>
+              </div>
+
+              {/* Botão em Destaque: Enviar Nova Sugestão */}
+              <div className="pt-2 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLastSubmission(null);
+                    setTargetReference('');
+                    setSuggestionText('');
+                    setJustification('');
+                  }}
+                  className="w-full py-3.5 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Adicionar Outra Sugestão</span>
+                </button>
+                <p className="text-[11px] text-slate-400 text-center">
+                  Seus dados cadastrais (nome, e-mail e unidade) permanecem salvos para você sugerir sobre outro artigo com agilidade.
+                </p>
+              </div>
+
+              {/* Histórico das sugestões enviadas nesta sessão */}
+              {mySuggestions.length > 1 && (
+                <div className="pt-4 border-t border-slate-200 space-y-2.5">
+                  <span className="text-xs font-bold text-slate-700 block">
+                    Suas contribuições nesta sessão ({mySuggestions.length} enviadas):
+                  </span>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {mySuggestions.map((s) => (
+                      <div key={s.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                        <div>
+                          <span className="font-mono font-bold text-indigo-700 block text-[11px]">{s.protocol}</span>
+                          <span className="text-slate-700 font-medium text-[11px]">{s.target_reference}</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                          Recebida ✓
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'history' ? (
+            /* Abas Mobile para Histórico de Envios */
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -666,6 +801,23 @@ export const PublicConsultationPage: React.FC = () => {
                     Preenchimento simples e direto. Suas sugestões serão analisadas pelo síndico para a versão final.
                   </p>
                 </div>
+
+                {/* Banner de Rascunho Recuperado Automaticamente */}
+                {hasRestoredDraft && (
+                  <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-900 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Rascunho recuperado da sua última edição.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearDraft}
+                      className="text-[11px] text-indigo-700 hover:text-indigo-900 font-bold underline cursor-pointer"
+                    >
+                      Descartar
+                    </button>
+                  </div>
+                )}
 
                 {isClosed ? (
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">

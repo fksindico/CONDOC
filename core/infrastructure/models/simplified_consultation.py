@@ -20,6 +20,7 @@ class PublicConsultation(models.Model):
     public_token = models.CharField(max_length=64, unique=True)
     status = models.CharField(max_length=50, default='aberta')  # 'aberta', 'pausada', 'encerrada'
     deadline = models.DateTimeField(null=True, blank=True)
+    thank_you_message = models.TextField(null=True, blank=True)
     created_by = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, db_column='created_by_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -48,6 +49,9 @@ class ConsultationSuggestion(models.Model):
     action_type = models.CharField(max_length=20)  # 'alterar', 'remover', 'incluir'
     suggestion_text = models.TextField()
     justification = models.TextField(null=True, blank=True)
+    has_divergence = models.BooleanField(default=False)
+    divergence_details = models.TextField(null=True, blank=True)
+    registered_email = models.CharField(max_length=255, null=True, blank=True)
     status = models.CharField(max_length=50, default='recebida')  # 'recebida', 'em_analise', 'destaque', 'arquivada'
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

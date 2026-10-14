@@ -56,6 +56,8 @@ class CondominiumSerializer(serializers.ModelSerializer):
             'id', 'name', 'cnpj', 'status', 'timezone',
             'address_street', 'address_number', 'address_complement',
             'address_neighborhood', 'address_city', 'address_state', 'address_zip_code',
+            'landing_title', 'landing_subtitle', 'landing_description',
+            'landing_contact_email', 'landing_contact_phone', 'default_thank_you_message',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -568,6 +570,7 @@ class IdentityAccessEventSerializer(serializers.ModelSerializer):
 
 class PublicConsultationDetailSerializer(serializers.ModelSerializer):
     condominium_name = serializers.CharField(source='condominium.name', read_only=True)
+    default_thank_you_message = serializers.CharField(source='condominium.default_thank_you_message', read_only=True)
     pdf_download_url = serializers.SerializerMethodField()
     structure = serializers.SerializerMethodField()
 
@@ -576,7 +579,8 @@ class PublicConsultationDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'document_type', 'description',
             'pdf_original_name', 'pdf_size_bytes', 'public_token',
-            'status', 'deadline', 'condominium_name', 'pdf_download_url',
+            'status', 'deadline', 'thank_you_message', 'default_thank_you_message',
+            'condominium_name', 'pdf_download_url',
             'structure', 'created_at',
         ]
         read_only_fields = fields
@@ -649,14 +653,24 @@ class PublicSuggestionSubmitSerializer(serializers.Serializer):
 
 
 class PublicConsultationSuggestionConfirmationSerializer(serializers.ModelSerializer):
+    thank_you_message = serializers.SerializerMethodField()
+
     class Meta:
         model = ConsultationSuggestion
         fields = [
             'id', 'protocol', 'resident_name', 'unit_code', 'block_tower',
             'target_reference', 'action_type', 'suggestion_text', 'justification',
+            'has_divergence', 'thank_you_message',
             'status', 'created_at'
         ]
         read_only_fields = fields
+
+    def get_thank_you_message(self, obj):
+        if obj.consultation and obj.consultation.thank_you_message:
+            return obj.consultation.thank_you_message
+        if obj.condominium and obj.condominium.default_thank_you_message:
+            return obj.condominium.default_thank_you_message
+        return "Agradecemos imensamente sua contribuição! A participação dos moradores é fundamental para construirmos regras que reflitam a harmonia e o respeito mútuo em nosso condomínio."
 
 
 class AdminConsultationListCreateSerializer(serializers.ModelSerializer):
@@ -668,7 +682,7 @@ class AdminConsultationListCreateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'condominium_id', 'title', 'document_type', 'description',
             'pdf_original_name', 'pdf_size_bytes', 'public_token',
-            'status', 'deadline', 'pdf_file', 'suggestions_count',
+            'status', 'deadline', 'thank_you_message', 'pdf_file', 'suggestions_count',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
@@ -685,9 +699,41 @@ class AdminConsultationSuggestionListSerializer(serializers.ModelSerializer):
             'resident_name', 'resident_phone', 'resident_email',
             'block_tower', 'unit_code', 'target_reference',
             'action_type', 'suggestion_text', 'justification',
+            'has_divergence', 'divergence_details', 'registered_email',
             'status', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'protocol', 'created_at', 'updated_at']
+
+
+class PublicLandingInfoSerializer(serializers.ModelSerializer):
+    open_consultations = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Condominium
+        fields = [
+            'id', 'name', 'landing_title', 'landing_subtitle',
+            'landing_description', 'landing_contact_email', 'landing_contact_phone',
+            'default_thank_you_message', 'open_consultations'
+        ]
+        read_only_fields = fields
+
+    def get_open_consultations(self, obj):
+        consultations = PublicConsultation.objects.filter(
+            condominium=obj,
+            status='aberta'
+        ).order_by('-created_at')
+        return [
+            {
+                'id': str(c.id),
+                'title': c.title,
+                'document_type': c.document_type,
+                'description': c.description,
+                'public_token': c.public_token,
+                'pdf_original_name': c.pdf_original_name,
+                'deadline': c.deadline.isoformat() if c.deadline else None,
+            }
+            for c in consultations
+        ]
 
 
 

@@ -194,34 +194,59 @@ class SimplifiedConsultationService:
                 unit.building = building
                 unit.save(update_fields=['building'])
 
-            # 3. Deduplicação inteligente do Morador no Condomínio
-            # Evita duplicar cadastros para a mesma pessoa/unidade em acessos subsequentes
-            existing_reg = None
+            # 3. Deduplicação inteligente e detecção de Divergência Cadastral
+            # Previne falsidade/usurpação cadastral de terceiros sem bloquear o envio
+            has_divergence = False
+            divergence_details = None
+            registered_email = None
+
             reg_candidates = ResidentRegistration.objects.filter(
                 condominium=consultation.condominium,
                 unit=unit
             )
-            for r in reg_candidates:
-                r_phone = "".join(filter(str.isdigit, r.phone_e164 or ""))
-                r_email = (r.email or "").strip().lower()
-                if (clean_phone and r_phone == clean_phone) or (clean_email and r_email == clean_email):
-                    existing_reg = r
-                    break
-                if r.full_name.strip().lower() == clean_name.lower():
-                    existing_reg = r
-                    break
 
-            if not existing_reg and clean_phone:
-                # Busca pelo telefone no condomínio caso a unidade tenha sido digitada ligeiramente diferente
-                existing_reg = ResidentRegistration.objects.filter(
-                    condominium=consultation.condominium,
-                    phone_e164__icontains=clean_phone[-9:] if len(clean_phone) >= 9 else clean_phone
-                ).first()
+            # Extrai e-mails já registrados legitimamente para esta unidade
+            unit_emails = [
+                (r.email or "").strip().lower()
+                for r in reg_candidates
+                if (r.email or "").strip()
+            ]
+
+            existing_reg = None
+            if unit_emails:
+                if clean_email in unit_emails:
+                    # E-mail coincide com o titular ou familiar já cadastrado na unidade!
+                    has_divergence = False
+                    registered_email = clean_email
+                    existing_reg = next(
+                        (r for r in reg_candidates if (r.email or "").strip().lower() == clean_email),
+                        None
+                    )
+                else:
+                    # DIVERGÊNCIA DETECTADA: O e-mail informado difere do cadastrado na unidade!
+                    has_divergence = True
+                    registered_email = unit_emails[0]
+                    divergence_details = (
+                        f"E-mail informado '{clean_email}' diverge do e-mail oficial cadastrado "
+                        f"na unidade {clean_unit} ('{registered_email}')."
+                    )
+                    # SEGURANÇA: Não associamos nem alteramos o cadastro do titular legítimo
+                    existing_reg = None
+            else:
+                # Unidade ainda não possui e-mails pré-cadastrados (ou sem cadastro)
+                for r in reg_candidates:
+                    r_phone = "".join(filter(str.isdigit, r.phone_e164 or ""))
+                    if clean_phone and r_phone == clean_phone:
+                        existing_reg = r
+                        break
+                    if r.full_name.strip().lower() == clean_name.lower():
+                        existing_reg = r
+                        break
 
             if existing_reg:
-                # Reutiliza o cadastro existente! Atualiza campos de contato se o novo for mais completo
+                # Atualiza contatos apenas se NÃO houver divergência
                 changed = False
-                if clean_email and existing_reg.email != clean_email:
+                if not has_divergence and clean_email and (not existing_reg.email or existing_reg.email != clean_email):
                     existing_reg.email = clean_email
                     changed = True
                 if clean_phone and (not existing_reg.phone_e164 or len(existing_reg.phone_e164) < len(clean_phone)):
@@ -232,8 +257,8 @@ class SimplifiedConsultationService:
                     changed = True
                 if changed:
                     existing_reg.save()
-            else:
-                # Criação única do registro de morador a partir da sugestão
+            elif not reg_candidates.exists() and not has_divergence:
+                # Criação inicial do registro do primeiro morador da unidade
                 ResidentRegistration.objects.create(
                     id=uuid.uuid4(),
                     condominium=consultation.condominium,
@@ -265,6 +290,9 @@ class SimplifiedConsultationService:
                 action_type=normalized_action,
                 suggestion_text=suggestion_text.strip(),
                 justification=justification.strip() if justification else None,
+                has_divergence=has_divergence,
+                divergence_details=divergence_details,
+                registered_email=registered_email,
                 status='recebida',
             )
             return suggestion
@@ -277,6 +305,7 @@ class SimplifiedConsultationService:
         unit_code: Optional[str] = None,
         block_tower: Optional[str] = None,
         search_text: Optional[str] = None,
+        has_divergence: Optional[bool] = None,
     ):
         """Lista sugestões com suporte a filtros dinâmicos."""
         qs = ConsultationSuggestion.objects.filter(condominium_id=condominium_id)
@@ -288,6 +317,8 @@ class SimplifiedConsultationService:
             qs = qs.filter(unit_code__icontains=unit_code.strip())
         if block_tower:
             qs = qs.filter(block_tower__icontains=block_tower.strip())
+        if has_divergence is not None:
+            qs = qs.filter(has_divergence=has_divergence)
         if search_text:
             s = search_text.strip()
             from django.db.models import Q
@@ -326,7 +357,9 @@ class SimplifiedConsultationService:
             'Data e Hora',
             'Morador / Condômino',
             'Telefone (WhatsApp)',
-            'E-mail',
+            'E-mail Informado',
+            'Divergência Cadastral',
+            'E-mail Titular Cadastrado',
             'Bloco / Torre',
             'Unidade',
             'Artigo / Dispositivo',
@@ -349,6 +382,8 @@ class SimplifiedConsultationService:
                 s.resident_name,
                 s.resident_phone,
                 s.resident_email or '—',
+                'SIM (DIVERGENTE)' if s.has_divergence else 'Não',
+                s.registered_email or '—',
                 s.block_tower or '—',
                 s.unit_code,
                 s.target_reference,

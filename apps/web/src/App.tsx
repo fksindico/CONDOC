@@ -49,10 +49,15 @@ import { AssemblyPresentationPage } from '@/pages/assembly/AssemblyPresentationP
 // Consultas Públicas Simplificadas (PDF & Sugestões Ágeis)
 import { PublicConsultationPage } from '@/pages/public/PublicConsultationPage';
 import { SimplifiedConsultationsPage } from '@/pages/admin/SimplifiedConsultationsPage';
+import { LandingPage } from '@/pages/public/LandingPage';
+import { LandingConfigPage } from '@/pages/admin/LandingConfigPage';
 
 export const App: React.FC = () => {
   return (
     <Routes>
+      {/* Rota Raiz: Landing Page Institucional Pública */}
+      <Route path="/" element={<LandingPage />} />
+
       {/* Rotas Públicas de Acesso */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/acesso/convite" element={<InvitationRedeemPage />} />
@@ -62,6 +67,7 @@ export const App: React.FC = () => {
       <Route path="/painel" element={<AdminLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="consultas" element={<SimplifiedConsultationsPage />} />
+        <Route path="apresentacao" element={<LandingConfigPage />} />
         <Route path="condominios" element={<CondominiumsPage />} />
         <Route path="unidades" element={<UnitsPage />} />
         <Route path="moradores" element={<ResidentsPage />} />
@@ -101,9 +107,8 @@ export const App: React.FC = () => {
         <Route index element={<AssemblyPresentationPage />} />
       </Route>
 
-      {/* Rota Raiz Padrão */}
-      <Route path="/" element={<Navigate to="/portal" replace />} />
-      <Route path="*" element={<Navigate to="/portal" replace />} />
+      {/* Fallback para páginas não encontradas */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

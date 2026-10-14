@@ -211,6 +211,7 @@ from .serializers import (
     PublicConsultationSuggestionConfirmationSerializer,
     AdminConsultationListCreateSerializer,
     AdminConsultationSuggestionListSerializer,
+    PublicLandingInfoSerializer,
 )
 
 # ============================================================================
@@ -2926,6 +2927,8 @@ class AdminConsultationDetailUpdateDeleteView(APIView):
                 consultation.description = request.data['description']
             if 'deadline' in request.data:
                 consultation.deadline = request.data['deadline']
+            if 'thank_you_message' in request.data:
+                consultation.thank_you_message = request.data['thank_you_message']
             consultation.save()
             data = AdminConsultationListCreateSerializer(consultation).data
             data['suggestions_count'] = ConsultationSuggestion.objects.filter(consultation_id=consultation.id).count()
@@ -2952,6 +2955,7 @@ class AdminConsultationDetailUpdateDeleteView(APIView):
 class AdminConsultationSuggestionsListView(APIView):
     """
     Listagem filtrável das sugestões recebidas para acompanhamento pelo síndico.
+    Permite filtrar por ação, unidade, torre, texto de busca e divergência cadastral.
     """
     permission_classes = [AllowAny]
 
@@ -2960,6 +2964,14 @@ class AdminConsultationSuggestionsListView(APIView):
         unit_code = request.query_params.get('unit_code')
         block_tower = request.query_params.get('block_tower')
         search_text = request.query_params.get('search')
+        has_divergence_param = request.query_params.get('has_divergence')
+
+        has_divergence = None
+        if has_divergence_param is not None and has_divergence_param != '':
+            if has_divergence_param.lower() in ('true', '1', 'sim'):
+                has_divergence = True
+            elif has_divergence_param.lower() in ('false', '0', 'nao', 'não'):
+                has_divergence = False
 
         suggestions = SimplifiedConsultationService.list_suggestions(
             condominium_id=condominium_id,
@@ -2968,8 +2980,47 @@ class AdminConsultationSuggestionsListView(APIView):
             unit_code=unit_code,
             block_tower=block_tower,
             search_text=search_text,
+            has_divergence=has_divergence,
         )
         serializer = AdminConsultationSuggestionListSerializer(suggestions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PublicLandingInfoView(APIView):
+    """
+    Retorna as informações públicas institucionais da Landing Page e as consultas ativas.
+    Zero autenticação necessária.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        condo_id = request.query_params.get('condominium_id')
+        condo = None
+        if condo_id:
+            try:
+                condo = Condominium.objects.get(id=condo_id, status='active')
+            except (Condominium.DoesNotExist, ValueError):
+                pass
+
+        if not condo:
+            # Seleciona o condomínio ativo prioritário cadastrado no sistema
+            condo = Condominium.objects.filter(status='active').order_by('name').first()
+            if not condo:
+                condo = Condominium.objects.order_by('name').first()
+
+        if not condo:
+            return Response({
+                "name": "CONDOC",
+                "landing_title": "Plataforma de Governança e Revisão Normativa",
+                "landing_subtitle": "Transparência, participação cidadã e legalidade",
+                "landing_description": "Participe da revisão e atualização das normas do condomínio.",
+                "landing_contact_email": None,
+                "landing_contact_phone": None,
+                "default_thank_you_message": None,
+                "open_consultations": []
+            }, status=status.HTTP_200_OK)
+
+        serializer = PublicLandingInfoSerializer(condo)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

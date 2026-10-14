@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS app.condominiums (
     address_city TEXT,
     address_state TEXT,
     address_zip_code TEXT,
+    landing_title TEXT,
+    landing_subtitle TEXT,
+    landing_description TEXT,
+    landing_contact_email TEXT,
+    landing_contact_phone TEXT,
+    default_thank_you_message TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -593,6 +599,7 @@ CREATE TABLE IF NOT EXISTS app.public_consultations (
     public_token TEXT NOT NULL UNIQUE,
     status TEXT NOT NULL DEFAULT 'aberta',
     deadline TIMESTAMP,
+    thank_you_message TEXT,
     created_by_id TEXT REFERENCES accounts(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -612,6 +619,9 @@ CREATE TABLE IF NOT EXISTS app.consultation_suggestions (
     action_type TEXT NOT NULL,
     suggestion_text TEXT NOT NULL,
     justification TEXT,
+    has_divergence INTEGER NOT NULL DEFAULT 0,
+    divergence_details TEXT,
+    registered_email TEXT,
     status TEXT NOT NULL DEFAULT 'recebida',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

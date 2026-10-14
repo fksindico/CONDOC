@@ -28,6 +28,8 @@ export interface PublicConsultation {
   public_token: string;
   status: 'aberta' | 'pausada' | 'encerrada';
   deadline?: string;
+  thank_you_message?: string;
+  default_thank_you_message?: string;
   condominium_name: string;
   pdf_download_url: string;
   structure?: PublicStructure;
@@ -37,6 +39,7 @@ export interface PublicConsultation {
 export interface AdminConsultation extends PublicConsultation {
   condominium_id: string;
   suggestions_count: number;
+  thank_you_message?: string;
   updated_at: string;
 }
 
@@ -66,13 +69,43 @@ export interface ConsultationSuggestionItem {
   action_type: 'alterar' | 'remover' | 'incluir';
   suggestion_text: string;
   justification?: string;
+  has_divergence?: boolean;
+  divergence_details?: string;
+  registered_email?: string;
+  thank_you_message?: string;
   status: string;
   created_at: string;
   updated_at?: string;
 }
 
+export interface PublicLandingInfo {
+  id: string;
+  name: string;
+  landing_title?: string | null;
+  landing_subtitle?: string | null;
+  landing_description?: string | null;
+  landing_contact_email?: string | null;
+  landing_contact_phone?: string | null;
+  default_thank_you_message?: string | null;
+  open_consultations: {
+    id: string;
+    title: string;
+    document_type: 'regimento' | 'convencao';
+    description?: string | null;
+    public_token: string;
+    pdf_original_name: string;
+    deadline?: string | null;
+  }[];
+}
+
 export const consultationService = {
-  // Endpoints Públicos (Morador via Token)
+  // Endpoints Públicos (Morador via Token e Landing Page)
+  async getPublicLandingInfo(condoId?: string): Promise<PublicLandingInfo> {
+    const url = condoId ? `/public/landing-info?condominium_id=${condoId}` : '/public/landing-info';
+    const res = await api.get<PublicLandingInfo>(url);
+    return res.data;
+  },
+
   async getPublicConsultation(token: string): Promise<PublicConsultation> {
     const res = await api.get<PublicConsultation>(`/public/consultations/${token}`);
     return res.data;
@@ -116,13 +149,14 @@ export const consultationService = {
   async getAdminSuggestions(
     condoId: string,
     consultationId: string,
-    filters?: { action_type?: string; unit_code?: string; block_tower?: string; search?: string }
+    filters?: { action_type?: string; unit_code?: string; block_tower?: string; search?: string; has_divergence?: boolean }
   ): Promise<ConsultationSuggestionItem[]> {
     const query = new URLSearchParams();
     if (filters?.action_type && filters.action_type !== 'todos') query.append('action_type', filters.action_type);
     if (filters?.unit_code) query.append('unit_code', filters.unit_code);
     if (filters?.block_tower) query.append('block_tower', filters.block_tower);
     if (filters?.search) query.append('search', filters.search);
+    if (filters?.has_divergence !== undefined) query.append('has_divergence', String(filters.has_divergence));
 
     const res = await api.get<ConsultationSuggestionItem[]>(
       `/condominiums/${condoId}/consultations/${consultationId}/suggestions?${query.toString()}`

@@ -18,6 +18,12 @@ class Condominium(models.Model):
     address_city = models.CharField(max_length=100, null=True, blank=True)
     address_state = models.CharField(max_length=2, null=True, blank=True)
     address_zip_code = models.CharField(max_length=10, null=True, blank=True)
+    landing_title = models.CharField(max_length=255, null=True, blank=True)
+    landing_subtitle = models.CharField(max_length=255, null=True, blank=True)
+    landing_description = models.TextField(null=True, blank=True)
+    landing_contact_email = models.CharField(max_length=255, null=True, blank=True)
+    landing_contact_phone = models.CharField(max_length=50, null=True, blank=True)
+    default_thank_you_message = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

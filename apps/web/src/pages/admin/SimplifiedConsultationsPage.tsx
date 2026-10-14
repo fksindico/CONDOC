@@ -42,12 +42,14 @@ export const SimplifiedConsultationsPage: React.FC = () => {
   const [actionFilter, setActionFilter] = useState('todos');
   const [searchText, setSearchText] = useState('');
   const [unitFilter, setUnitFilter] = useState('');
+  const [divergenceFilter, setDivergenceFilter] = useState<'todos' | 'divergentes' | 'sem_divergencia'>('todos');
 
   // Modal de Criação
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDocType, setNewDocType] = useState<'regimento' | 'convencao'>('regimento');
   const [newDescription, setNewDescription] = useState('');
+  const [newThankYouMessage, setNewThankYouMessage] = useState('');
   const [newDeadline, setNewDeadline] = useState('');
   const [newPdfFile, setNewPdfFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
@@ -89,11 +91,16 @@ export const SimplifiedConsultationsPage: React.FC = () => {
   const loadSuggestions = () => {
     if (!condoId || !selectedConsultation) return;
     setLoadingSuggestions(true);
+
+    const hasDivergenceParam =
+      divergenceFilter === 'divergentes' ? true : divergenceFilter === 'sem_divergencia' ? false : undefined;
+
     consultationService
       .getAdminSuggestions(condoId, selectedConsultation.id, {
         action_type: actionFilter,
         search: searchText,
         unit_code: unitFilter,
+        has_divergence: hasDivergenceParam,
       })
       .then((data) => {
         setSuggestions(data);
@@ -108,7 +115,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
 
   useEffect(() => {
     loadSuggestions();
-  }, [condoId, selectedConsultation, actionFilter, searchText, unitFilter]);
+  }, [condoId, selectedConsultation, actionFilter, searchText, unitFilter, divergenceFilter]);
 
   // Criação de Nova Consulta
   const handleCreateConsultation = async (e: React.FormEvent) => {
@@ -131,6 +138,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
     formData.append('title', newTitle.trim());
     formData.append('document_type', newDocType);
     if (newDescription.trim()) formData.append('description', newDescription.trim());
+    if (newThankYouMessage.trim()) formData.append('thank_you_message', newThankYouMessage.trim());
     if (newDeadline) formData.append('deadline', newDeadline);
     formData.append('pdf_file', newPdfFile);
 
@@ -139,6 +147,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
       setIsModalOpen(false);
       setNewTitle('');
       setNewDescription('');
+      setNewThankYouMessage('');
       setNewDeadline('');
       setNewPdfFile(null);
       loadConsultations();
@@ -397,6 +406,17 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                     <option value="incluir">➕ Incluir Nova Regra</option>
                   </select>
 
+                  {/* Filtro por Divergência Cadastral */}
+                  <select
+                    value={divergenceFilter}
+                    onChange={(e) => setDivergenceFilter(e.target.value as any)}
+                    className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 focus:outline-hidden"
+                  >
+                    <option value="todos">Todos os Registros</option>
+                    <option value="divergentes">⚠️ Apenas com Divergência Cadastral</option>
+                    <option value="sem_divergencia">✓ Sem Divergência</option>
+                  </select>
+
                   {/* Filtro por Unidade */}
                   <input
                     type="text"
@@ -460,7 +480,7 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                         const waClean = sug.resident_phone.replace(/\D/g, '');
 
                         return (
-                          <tr key={sug.id} className="hover:bg-slate-50/80 transition">
+                          <tr key={sug.id} className={`hover:bg-slate-50/80 transition ${sug.has_divergence ? 'bg-amber-50/30' : ''}`}>
                             <td className="py-3 px-4 font-mono font-bold text-indigo-700 whitespace-nowrap">
                               {sug.protocol}
                             </td>
@@ -478,7 +498,23 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                                 </a>
                               </div>
                               {sug.resident_email && (
-                                <div className="text-[11px] text-slate-400">{sug.resident_email}</div>
+                                <div className="text-[11px] text-slate-500">{sug.resident_email}</div>
+                              )}
+                              {sug.has_divergence && (
+                                <div className="mt-1.5 space-y-1">
+                                  <div
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-bold"
+                                    title={sug.divergence_details || 'E-mail informado diverge do titular cadastrado'}
+                                  >
+                                    <AlertCircle className="w-3 h-3 text-amber-700 shrink-0" />
+                                    <span>⚠️ Divergência Cadastral</span>
+                                  </div>
+                                  {sug.registered_email && (
+                                    <div className="text-[10px] text-amber-800 bg-amber-50 rounded px-1.5 py-0.5 border border-amber-200">
+                                      Titular: <strong>{sug.registered_email}</strong>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </td>
                             <td className="py-3 px-4 whitespace-nowrap">
@@ -605,12 +641,28 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                   Descrição ou Orientações aos Moradores
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="Ex: Caros moradores, enviem sugestões sobre áreas comuns e regras de convivência até o dia 30..."
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Mensagem de Agradecimento Pós-Envio (Opcional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={newThankYouMessage}
+                  onChange={(e) => setNewThankYouMessage(e.target.value)}
+                  placeholder="Ex: Agradecemos imensamente sua contribuição nesta minuta! Ela será revisada pelo síndico e comissão."
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Se não informada, será utilizada a mensagem padrão institucional do condomínio.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">

@@ -25,10 +25,11 @@ import {
   X,
   Home,
   Eye,
+  Sparkles,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
-  const { user, logout, isSindico, activeRole, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isSindico, activeRole, setActiveRole, isAuthenticated, isLoading } = useAuth();
   const { condominiums, activeCondominium, selectCondominium } = useTenant();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -68,6 +69,7 @@ export const AdminLayout: React.FC = () => {
     {
       title: 'Administração',
       items: [
+        { label: 'Apresentação & Mensagens', path: '/painel/apresentacao', icon: Sparkles },
         { label: 'Equipe & Permissões', path: '/painel/equipe', icon: ShieldCheck },
         { label: 'Trilha de Auditoria', path: '/painel/auditoria', icon: History },
       ],
@@ -168,16 +170,28 @@ export const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
-        {/* Acesso ao Portal do Morador */}
-        <div className="p-3 border-t border-slate-800">
-          <Link
-            to="/portal"
-            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors shadow-2xs"
-            title="Visualizar a experiência do morador"
+        {/* Alternador de Visão para o Síndico (Modo Simulação) */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/40">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <Eye className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Alternar Modo de Visão</span>
+          </label>
+          <select
+            value={activeRole}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === 'morador') {
+                window.location.href = '/portal';
+              } else {
+                setActiveRole(val);
+              }
+            }}
+            className="w-full text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-indigo-400 outline-none"
           >
-            <Home className="w-4 h-4 text-brand-400" aria-hidden="true" />
-            <span>Ver Portal do Morador</span>
-          </Link>
+            <option value="sindico">👑 Visão Síndico (Acesso Geral)</option>
+            <option value="conselho">🛡️ Visão Conselho / Comissão</option>
+            <option value="morador">🏠 Ver como Morador (/portal)</option>
+          </select>
         </div>
 
         {/* Perfil & Logout */}
@@ -187,12 +201,12 @@ export const AdminLayout: React.FC = () => {
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
                 className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border ${
-                  isSindico
+                  activeRole === 'sindico'
                     ? 'bg-amber-950/80 text-amber-300 border-amber-700/80 font-bold'
-                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                    : 'bg-indigo-950/80 text-indigo-300 border-indigo-700/80 font-bold'
                 }`}
               >
-                {isSindico ? 'Síndico Ativo' : activeRole}
+                {activeRole === 'sindico' ? 'Síndico Ativo' : `Simulando: ${activeRole}`}
               </span>
             </div>
           </div>
@@ -209,6 +223,24 @@ export const AdminLayout: React.FC = () => {
 
       {/* Conteúdo Principal */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Banner de Simulação da Visão do Conselho / Comissão */}
+        {activeRole === 'conselho' && (
+          <div className="bg-amber-500/15 border-b border-amber-300 text-amber-900 px-4 py-2.5 text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>
+                <strong>Modo Simulação Ativo:</strong> Você está navegando com a visão do <strong>Conselho Fiscal / Comissão</strong>. Dados pessoais de contato estão anonimizados e ações de publicação restritas ao síndico ativo.
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveRole('sindico')}
+              className="ml-3 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
+            >
+              Voltar para Síndico
+            </button>
+          </div>
+        )}
+
         {/* Topbar Mobile */}
         <header className="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
           <button

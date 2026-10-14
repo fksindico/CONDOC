@@ -94,6 +94,7 @@ from .views import (
     AdminConsultationSuggestionsListView,
     AdminConsultationExportView,
     CondominiumDashboardMetricsView,
+    PublicLandingInfoView,
 )
 
 urlpatterns = [
@@ -225,6 +226,7 @@ urlpatterns = [
     # CONSULTAS PÚBLICAS SIMPLIFICADAS (PDF & Sugestões Ágeis)
     # =========================================================================
     # Endpoints Públicos (Acesso via token seguro, zero login)
+    path('public/landing-info', PublicLandingInfoView.as_view(), name='api_v1_public_landing_info'),
     path('public/consultations/<str:token>', PublicConsultationDetailView.as_view(), name='api_v1_public_consultation_detail'),
     path('public/consultations/<str:token>/pdf', PublicConsultationPdfView.as_view(), name='api_v1_public_consultation_pdf'),
     path('public/consultations/<str:token>/suggestions', PublicSuggestionSubmitView.as_view(), name='api_v1_public_suggestion_submit'),

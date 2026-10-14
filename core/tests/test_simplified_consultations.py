@@ -307,8 +307,8 @@ class TestSimplifiedConsultationApi:
         # Continua sendo exatamente 1 cadastro!
         assert ResidentRegistration.objects.filter(condominium=self.condo).count() == 1
 
-        # 3. Terceiro envio pelo mesmo morador atualizando e-mail
-        SimplifiedConsultationService.submit_suggestion(
+        # 3. Terceiro envio com e-mail divergente
+        sug3 = SimplifiedConsultationService.submit_suggestion(
             token=self.consultation.public_token,
             resident_name="Carlos Eduardo Silva",
             resident_phone="11988887777",
@@ -320,10 +320,15 @@ class TestSimplifiedConsultationApi:
             suggestion_text="Terceira sugestão incluindo novo parágrafo",
         )
 
-        # Continua sendo exatamente 1 cadastro, mas agora com o e-mail atualizado!
+        # Continua sendo exatamente 1 cadastro de morador, preservando o e-mail do titular legítimo
         regs_after = ResidentRegistration.objects.filter(condominium=self.condo)
         assert regs_after.count() == 1
-        assert regs_after.first().email == "carlos.silva.novo@teste.com"
+        assert regs_after.first().email == "carlos.eduardo@teste.com"
+
+        # A sugestão foi aceita, mas sinalizada com divergência cadastral para o síndico!
+        assert sug3.has_divergence is True
+        assert sug3.registered_email == "carlos.eduardo@teste.com"
+        assert "carlos.silva.novo@teste.com" in sug3.divergence_details
 
         # Sugestões totais enviadas: 3
         assert ConsultationSuggestion.objects.filter(condominium=self.condo).count() == 3
@@ -442,5 +447,67 @@ class TestSimplifiedConsultationApi:
         response = self.client.post(url, data=payload, content_type="application/json")
         assert response.status_code == 400
         assert "resident_email" in response.json()
+
+    def test_public_landing_info_endpoint(self):
+        """Valida que o endpoint público da Landing Page retorna as consultas abertas e dados institucionais."""
+        self.condo.landing_title = "Residencial Jardins de Versalhes"
+        self.condo.landing_subtitle = "Governança Participativa 2026"
+        self.condo.landing_description = "Sejam bem-vindos ao portal de revisão de regras."
+        self.condo.save()
+
+        url = "/api/v1/public/landing-info"
+        response = self.client.get(url)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Edifício Solar das Palmeiras"
+        assert data["landing_title"] == "Residencial Jardins de Versalhes"
+        assert len(data["open_consultations"]) >= 1
+        assert data["open_consultations"][0]["public_token"] == self.consultation.public_token
+
+    def test_submission_returns_thank_you_message_and_divergence(self):
+        """Valida que o retorno da submissão traz a mensagem de agradecimento e status de divergência."""
+        # Configura mensagem customizada na consulta
+        self.consultation.thank_you_message = "Mensagem personalizada: Muito obrigado por sua ajuda!"
+        self.consultation.save()
+
+        # Pré-cadastra morador com e-mail original
+        from infrastructure.models import Unit, ResidentRegistration
+        unit = Unit.objects.create(condominium=self.condo, code="302A")
+        ResidentRegistration.objects.create(
+            condominium=self.condo,
+            unit=unit,
+            full_name="Maria Oliveira",
+            phone_e164="11955554444",
+            email="maria.titular@teste.com",
+            relationship="proprietario_residente",
+        )
+
+        # Envio com e-mail DIVERGENTE
+        url = f"/api/v1/public/consultations/{self.consultation.public_token}/suggestions"
+        payload = {
+            "resident_name": "Maria Oliveira",
+            "resident_phone": "(11) 95555-4444",
+            "resident_email": "outro.email@teste.com",
+            "unit_code": "302A",
+            "target_reference": "Artigo 15",
+            "action_type": "alterar",
+            "suggestion_text": "Proposta de mudança com e-mail alternativo",
+        }
+        response = self.client.post(url, data=payload, content_type="application/json")
+        assert response.status_code == 201
+        data = response.json()
+        assert data["has_divergence"] is True
+        assert data["thank_you_message"] == "Mensagem personalizada: Muito obrigado por sua ajuda!"
+
+        # Verifica filtro no painel do síndico
+        admin_url = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}/suggestions?has_divergence=true"
+        admin_resp = self.client.get(admin_url)
+        assert admin_resp.status_code == 200
+        sug_list = admin_resp.json()
+        assert len(sug_list) >= 1
+        assert sug_list[0]["has_divergence"] is True
+        assert sug_list[0]["registered_email"] == "maria.titular@teste.com"
+        assert sug_list[0]["resident_email"] == "outro.email@teste.com"
+
 
 
