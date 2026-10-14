@@ -582,11 +582,8 @@ class PublicConsultationDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_pdf_download_url(self, obj):
-        request = self.context.get('request')
-        relative = f"/api/v1/public/consultations/{obj.public_token}/pdf"
-        if request:
-            return request.build_absolute_uri(relative)
-        return relative
+        # Retorna caminho relativo /api/... para prevenir Mixed Content em proxies HTTPS (Cloudflare/Caddy)
+        return f"/api/v1/public/consultations/{obj.public_token}/pdf"
 
     def get_structure(self, obj):
         from infrastructure.models import Building, Unit

@@ -75,20 +75,36 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         setLoading(true);
         setError(null);
         setLoadingProgress(5);
-        setLoadingStatus('Baixando documento...');
+        // 1. Normaliza URL para evitar Mixed Content (HTTP em HTTPS) e resolver rota
+        let targetUrl = pdfUrl;
+        if (typeof window !== 'undefined') {
+          if (window.location.protocol === 'https:' && targetUrl.startsWith('http:')) {
+            targetUrl = targetUrl.replace(/^http:/, 'https:');
+          }
+          try {
+            const parsed = new URL(targetUrl, window.location.origin);
+            if (parsed.host === window.location.host) {
+              targetUrl = parsed.pathname + parsed.search;
+            }
+          } catch {}
+        }
+
+        // 2. Faz o download direto dos bytes via Fetch API (evita bloqueios de Worker e Mixed Content)
+        const resp = await fetch(targetUrl);
+        if (!resp.ok) {
+          throw new Error(`Falha ao obter PDF do servidor (HTTP ${resp.status} ${resp.statusText})`);
+        }
+        const arrayBuffer = await resp.arrayBuffer();
+        if (isCancelled) return;
+
+        setLoadingProgress(35);
+        setLoadingStatus('Decodificando estrutura do PDF...');
+
+        const uint8Array = new Uint8Array(arrayBuffer);
 
         const loadingTask = pdfjsLib.getDocument({
-          url: pdfUrl,
-          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + pdfjsLib.version + '/cmaps/',
-          cMapPacked: true,
+          data: uint8Array,
         });
-
-        loadingTask.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
-          if (total > 0) {
-            const percent = Math.min(40, Math.round((loaded / total) * 40));
-            setLoadingProgress(percent);
-          }
-        };
 
         const pdfDoc = await loadingTask.promise;
         if (isCancelled) return;
