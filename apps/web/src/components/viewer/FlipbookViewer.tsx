@@ -75,8 +75,10 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const bookMountRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageFlipInstance = useRef<PageFlip | null>(null);
   const currentPageRef = useRef(1);
+  const isManualNavRef = useRef(false);
 
   // Sincroniza referência de página atual para evitar recriação desnecessária de efeitos
   useEffect(() => {
@@ -465,6 +467,40 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [totalPages, effectiveMode]);
 
+  // Monitoramento de Scroll Spy no Modo Rolagem Contínua
+  const handleScrollModeScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || isManualNavRef.current || pagesData.length === 0) return;
+
+    const scrollTop = container.scrollTop;
+    const focusY = scrollTop + container.clientHeight * 0.25;
+
+    let detectedPage = 1;
+    for (let i = 0; i < pagesData.length; i++) {
+      const page = pagesData[i];
+      const el = document.getElementById(`scroll-page-${page.pageNumber}`);
+      if (el) {
+        const top = el.offsetTop - container.offsetTop;
+        const bottom = top + el.offsetHeight;
+        if (top <= focusY && bottom > focusY) {
+          detectedPage = page.pageNumber;
+          break;
+        } else if (top > focusY) {
+          detectedPage = Math.max(1, page.pageNumber - 1);
+          break;
+        } else {
+          detectedPage = page.pageNumber;
+        }
+      }
+    }
+
+    if (detectedPage !== currentPageRef.current) {
+      currentPageRef.current = detectedPage;
+      setCurrentPage(detectedPage);
+      setInputPage(String(detectedPage));
+    }
+  }, [pagesData]);
+
   // Navegação
   const handlePrevPage = () => {
     if (effectiveMode !== 'scroll' && pageFlipInstance.current) {
@@ -488,13 +524,24 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     if (p < 1 || p > totalPages) return;
     setCurrentPage(p);
     setInputPage(String(p));
+    currentPageRef.current = p;
 
     if (effectiveMode !== 'scroll' && pageFlipInstance.current) {
       pageFlipInstance.current.turnToPage(p - 1);
-    } else {
+    } else if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
       const el = document.getElementById(`scroll-page-${p}`);
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        isManualNavRef.current = true;
+        // Rola estritamente o container interno para o topo da folha selecionada sem rolar a janela externa
+        const targetScrollTop = el.offsetTop - container.offsetTop - 16;
+        container.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior: 'smooth',
+        });
+        setTimeout(() => {
+          isManualNavRef.current = false;
+        }, 550);
       }
     }
   };
@@ -857,32 +904,63 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             </div>
           )}
 
-          {/* MODO 3: ROLAGEM VERTICAL CONTÍNUA */}
+          {/* MODO 3: ROLAGEM VERTICAL CONTÍNUA COM NAVEGAÇÃO SUAVE E ISOLAMENTO DE SCROLL */}
           {!loading && !error && effectiveMode === 'scroll' && (
-            <div
-              className="w-full h-full overflow-y-auto px-2 py-6 flex flex-col items-center gap-6"
-              style={{
-                transform: zoomLevel !== 100 ? `scale(${zoomLevel / 100})` : 'none',
-                transformOrigin: 'top center',
-              }}
-            >
-              {pagesData.map((page) => (
-                <div
-                  key={page.pageNumber}
-                  id={`scroll-page-${page.pageNumber}`}
-                  className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-3xl w-full border border-slate-800 flex flex-col"
-                >
-                  <div className="bg-slate-100 px-3 py-1.5 text-[11px] font-mono text-slate-500 border-b border-slate-200 flex items-center justify-between">
-                    <span className="font-bold text-slate-700">Página {page.pageNumber}</span>
-                    <span className="text-[10px] text-slate-400 uppercase">Minuta Oficial</span>
+            <div className="w-full h-full relative select-none flex items-center justify-center">
+              {/* Botão Flutuante de Rolar para Página Anterior (<) */}
+              <button
+                type="button"
+                onClick={handlePrevPage}
+                disabled={currentPage <= 1}
+                className="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
+                title="Página anterior (←)"
+              >
+                <ChevronLeft className="w-6 h-6 -ml-0.5" />
+              </button>
+
+              {/* Container de Rolagem Estritamente Isolado - NUNCA rola o window externo */}
+              <div
+                ref={scrollContainerRef}
+                onScroll={handleScrollModeScroll}
+                className="w-full h-full overflow-y-auto px-2 sm:px-6 py-6 flex flex-col items-center gap-8 overscroll-contain scroll-smooth custom-scrollbar"
+                style={{
+                  transform: zoomLevel !== 100 ? `scale(${zoomLevel / 100})` : 'none',
+                  transformOrigin: 'top center',
+                }}
+              >
+                {pagesData.map((page) => (
+                  <div
+                    key={page.pageNumber}
+                    id={`scroll-page-${page.pageNumber}`}
+                    className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-3xl w-full border border-slate-800/80 flex flex-col shrink-0 transition-shadow hover:shadow-indigo-950/40"
+                  >
+                    <div className="bg-slate-100/95 px-3.5 py-2 text-[11px] font-mono text-slate-500 border-b border-slate-200 flex items-center justify-between">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                        Página {page.pageNumber} de {totalPages}
+                      </span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Minuta Oficial</span>
+                    </div>
+                    <img
+                      src={page.imageUrl}
+                      alt={`Página ${page.pageNumber}`}
+                      className="w-full h-auto object-contain select-text block"
+                      loading={page.pageNumber <= 3 ? 'eager' : 'lazy'}
+                    />
                   </div>
-                  <img
-                    src={page.imageUrl}
-                    alt={`Página ${page.pageNumber}`}
-                    className="w-full h-auto object-contain select-text"
-                  />
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* Botão Flutuante de Rolar para Próxima Página (>) */}
+              <button
+                type="button"
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages}
+                className="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
+                title="Próxima página (→)"
+              >
+                <ChevronRight className="w-6 h-6 -mr-0.5" />
+              </button>
             </div>
           )}
         </main>

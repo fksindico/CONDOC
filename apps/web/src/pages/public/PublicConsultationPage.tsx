@@ -334,9 +334,9 @@ export const PublicConsultationPage: React.FC = () => {
   const isClosed = consultation.status !== 'aberta';
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen lg:h-screen bg-slate-100 flex flex-col font-sans lg:overflow-hidden">
       {/* Barra de Cabeçalho Superior */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
@@ -375,8 +375,8 @@ export const PublicConsultationPage: React.FC = () => {
               <span>Baixar PDF</span>
             </a>
 
-            {/* Controles Desktop de Alternância de Visualização */}
-            <div className="hidden md:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {/* Controles Desktop de Alternância de Visualização (Desktop & Tablet Paisagem >= 1024px) */}
+            <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => setDesktopView('split')}
@@ -420,8 +420,8 @@ export const PublicConsultationPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Alternador de Abas Mobile */}
-        <div className="flex border-t border-slate-200 md:hidden bg-slate-50">
+        {/* Alternador de Abas Mobile & Tablet Retrato (< 1024px) */}
+        <div className="flex border-t border-slate-200 lg:hidden bg-slate-50">
           <button
             onClick={() => setActiveTab('document')}
             className={`flex-1 py-3 text-xs font-medium flex items-center justify-center gap-1.5 border-b-2 transition ${
@@ -461,23 +461,23 @@ export const PublicConsultationPage: React.FC = () => {
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col md:flex-row gap-5">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 flex flex-col lg:flex-row gap-5 lg:h-[calc(100vh-68px)] lg:overflow-hidden min-h-0">
         {/* Painel Esquerdo: Visualizador de PDF Embutido na Própria Página */}
         <section
-          className={`flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all ${
-            // Controle Mobile
-            activeTab === 'document' ? 'flex' : 'hidden md:flex'
+          className={`flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all lg:h-full min-h-0 ${
+            // Controle Mobile / Tablet Retrato
+            activeTab === 'document' ? 'flex flex-1 min-h-[calc(100vh-140px)]' : 'hidden lg:flex'
           } ${
-            // Controle Desktop
+            // Controle Desktop / Tablet Paisagem
             desktopView === 'form_only'
-              ? 'md:hidden'
+              ? 'lg:hidden'
               : desktopView === 'pdf_only'
-              ? 'flex-1 min-h-[calc(100vh-140px)]'
-              : 'flex-1 min-h-[550px] md:min-h-[calc(100vh-140px)]'
+              ? 'flex-1'
+              : 'flex-1 min-w-0'
           }`}
         >
           {/* Barra de Controle de Visualização no Topo (Desktop) */}
-          <div className="px-4 py-2 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between text-xs">
+          <div className="px-4 py-2 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between text-xs shrink-0">
             <div className="flex items-center gap-2 truncate">
               <span className="font-bold text-slate-700 truncate">📖 Leitor Interativo do Documento</span>
             </div>
@@ -486,7 +486,7 @@ export const PublicConsultationPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDesktopView('pdf_only')}
-                  className="hidden md:inline-flex items-center gap-1 text-xs text-slate-600 hover:text-indigo-600 font-medium transition"
+                  className="hidden lg:inline-flex items-center gap-1 text-xs text-slate-600 hover:text-indigo-600 font-medium transition"
                   title="Ampliar documento para tela cheia (ocultar formulário)"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
@@ -497,7 +497,7 @@ export const PublicConsultationPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDesktopView('split')}
-                  className="hidden md:inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-bold transition"
+                  className="hidden lg:inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-bold transition"
                   title="Voltar para visualização dividida com formulário"
                 >
                   <Minimize2 className="w-3.5 h-3.5" />
@@ -508,7 +508,7 @@ export const PublicConsultationPage: React.FC = () => {
           </div>
 
           {/* Visualizador Flipbook Interativo 3D (100% OSS MIT) */}
-          <div className="flex-1 w-full relative min-h-[500px] md:min-h-[calc(100vh-210px)] flex flex-col">
+          <div className="flex-1 w-full relative h-full flex flex-col min-h-0 overflow-hidden">
             <FlipbookViewer
               pdfUrl={consultation.pdf_download_url}
               documentTitle={consultation.pdf_original_name}
@@ -520,12 +520,12 @@ export const PublicConsultationPage: React.FC = () => {
                 link.click();
                 document.body.removeChild(link);
               }}
-              className="flex-1 rounded-none border-0"
+              className="flex-1 rounded-none border-0 h-full"
             />
           </div>
 
           {/* Rodapé Mobile: Botão em destaque para ir ao formulário */}
-          <div className="p-3 bg-indigo-50/70 border-t border-indigo-100 flex items-center justify-between gap-2 md:hidden">
+          <div className="p-3 bg-indigo-50/70 border-t border-indigo-100 flex items-center justify-between gap-2 lg:hidden shrink-0">
             <span className="text-xs text-indigo-900 font-medium">Leu o trecho que quer alterar?</span>
             <button
               type="button"
@@ -537,7 +537,7 @@ export const PublicConsultationPage: React.FC = () => {
           </div>
 
           {/* Rodapé Desktop Discreto com Opção de Download Secundária */}
-          <div className="hidden md:flex px-4 py-2 bg-slate-50 border-t border-slate-200 items-center justify-between text-xs text-slate-500">
+          <div className="hidden lg:flex px-4 py-2 bg-slate-50 border-t border-slate-200 items-center justify-between text-xs text-slate-500 shrink-0">
             <span>Dica: Consulte os artigos ao lado antes de registrar sua sugestão.</span>
             <a
               href={consultation.pdf_download_url}
@@ -550,18 +550,18 @@ export const PublicConsultationPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Painel Direito: Formulário de Sugestões Zero-Atrito */}
+        {/* Painel Direito: Formulário de Sugestões Zero-Atrito com Scroll Isolado */}
         <section
-          className={`flex-col gap-4 transition-all ${
-            // Controle Mobile
-            activeTab === 'form' || activeTab === 'history' ? 'flex w-full' : 'hidden md:flex'
+          className={`flex-col gap-4 transition-all lg:h-full lg:overflow-y-auto overscroll-contain pr-1 custom-scrollbar min-h-0 ${
+            // Controle Mobile / Tablet Retrato
+            activeTab === 'form' || activeTab === 'history' ? 'flex w-full' : 'hidden lg:flex'
           } ${
-            // Controle Desktop
+            // Controle Desktop / Tablet Paisagem
             desktopView === 'pdf_only'
-              ? 'md:hidden'
+              ? 'lg:hidden'
               : desktopView === 'form_only'
               ? 'w-full max-w-3xl mx-auto'
-              : 'w-full md:w-[480px] lg:w-[520px] shrink-0'
+              : 'w-full lg:w-[460px] xl:w-[500px] shrink-0'
           }`}
         >
           {/* Card de Notificação de Sucesso com Protocolo */}
