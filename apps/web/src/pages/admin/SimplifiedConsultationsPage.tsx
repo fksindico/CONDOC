@@ -477,7 +477,8 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                             ? 'bg-rose-50 text-rose-700 border-rose-200'
                             : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
-                        const waClean = sug.resident_phone.replace(/\D/g, '');
+                        const isMasked = (sug as any).is_masked || sug.resident_phone.includes('*');
+                        const waClean = !isMasked ? sug.resident_phone.replace(/\D/g, '') : '';
 
                         return (
                           <tr key={sug.id} className={`hover:bg-slate-50/80 transition ${sug.has_divergence ? 'bg-amber-50/30' : ''}`}>
@@ -485,20 +486,33 @@ export const SimplifiedConsultationsPage: React.FC = () => {
                               {sug.protocol}
                             </td>
                             <td className="py-3 px-4">
-                              <div className="font-semibold text-slate-900">{sug.resident_name}</div>
+                              <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                                <span>{sug.resident_name}</span>
+                                {isMasked && (
+                                  <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[9px] font-medium border border-slate-200" title="Dados pessoais protegidos por privacidade (LGPD)">
+                                    Confidencial
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <a
-                                  href={`https://wa.me/55${waClean}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-[11px] text-emerald-600 hover:underline flex items-center gap-0.5"
-                                  title="Conversar no WhatsApp"
-                                >
-                                  <MessageCircle className="w-3 h-3" /> {sug.resident_phone}
-                                </a>
+                                {!isMasked && waClean ? (
+                                  <a
+                                    href={`https://wa.me/55${waClean}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[11px] text-emerald-600 hover:underline flex items-center gap-0.5"
+                                    title="Conversar no WhatsApp"
+                                  >
+                                    <MessageCircle className="w-3 h-3" /> {sug.resident_phone}
+                                  </a>
+                                ) : (
+                                  <span className="text-[11px] text-slate-500 font-mono flex items-center gap-0.5">
+                                    <MessageCircle className="w-3 h-3 text-slate-400" /> {sug.resident_phone}
+                                  </span>
+                                )}
                               </div>
                               {sug.resident_email && (
-                                <div className="text-[11px] text-slate-500">{sug.resident_email}</div>
+                                <div className="text-[11px] text-slate-500 font-mono">{sug.resident_email}</div>
                               )}
                               {sug.has_divergence && (
                                 <div className="mt-1.5 space-y-1">

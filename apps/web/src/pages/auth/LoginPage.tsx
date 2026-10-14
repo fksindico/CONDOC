@@ -28,7 +28,7 @@ export const LoginPage: React.FC = () => {
       }
       const isManager = account.roles?.some((r) => ['sindico', 'admin', 'comissao', 'juridico'].includes(r.toLowerCase()));
       const from = (location.state as any)?.from?.pathname;
-      const target = from || (isManager ? '/painel' : '/portal');
+      const target = from || '/painel';
       navigate(target, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Falha ao autenticar.');
@@ -56,18 +56,18 @@ export const LoginPage: React.FC = () => {
       badgeColor: 'bg-amber-900/60 text-amber-300 border-amber-700',
     },
     {
-      name: 'Mariana Oliveira',
-      role: 'Moradora (Apto 101)',
-      email: 'mariana.oliveira@exemplo.com',
-      desc: 'Portal do morador, envio de sugestões privadas e concordâncias',
-      icon: User,
-      badgeColor: 'bg-emerald-900/60 text-emerald-300 border-emerald-700',
+      name: 'Gestão Administrativa',
+      role: 'Administrador',
+      email: 'admin@parquedasflores.com',
+      desc: 'Configuração estrutural, importação predial, parâmetros e auditoria',
+      icon: ShieldCheck,
+      badgeColor: 'bg-indigo-900/60 text-indigo-300 border-indigo-700',
     },
     {
-      name: 'Roberto Santos',
-      role: 'Proprietário (B201)',
-      email: 'roberto.santos@exemplo.com',
-      desc: 'Morador com múltiplas unidades e consulta ativa',
+      name: 'Conselho Consultivo',
+      role: 'Conselho Fiscal',
+      email: 'conselho@parquedasflores.com',
+      desc: 'Acompanhamento colegiado do processo normativo e leitura prévia',
       icon: UserCheck,
       badgeColor: 'bg-blue-900/60 text-blue-300 border-blue-700',
     },
@@ -175,12 +175,12 @@ export const LoginPage: React.FC = () => {
         </Card>
 
         <p className="text-center text-xs text-slate-500">
-          Deseja ir diretamente para o portal sem login?{' '}
+          É condômino ou morador?{' '}
           <button
-            onClick={() => navigate('/portal')}
+            onClick={() => navigate('/')}
             className="text-brand-400 hover:underline font-medium cursor-pointer"
           >
-            Acessar como Morador Visitante
+            Acesse as Consultas Públicas na Página Inicial
           </button>
         </p>
       </div>

@@ -332,11 +332,23 @@ class SimplifiedConsultationService:
         return qs.order_by('-created_at')
 
     @classmethod
-    def export_suggestions_csv(cls, condominium_id: uuid.UUID, consultation_id: uuid.UUID) -> str:
+    def export_suggestions_csv(
+        cls,
+        condominium_id: uuid.UUID,
+        consultation_id: uuid.UUID,
+        is_sindico: bool = True,
+    ) -> str:
         """
         Exporta todas as sugestões em formato CSV formatado com BOM UTF-8
         para abertura perfeita no Microsoft Excel e Google Sheets.
+        LGPD / CA-33: Se is_sindico=False, dados de contato são mascarados/anonimizados.
         """
+        from domain.identity.invariants import (
+            mask_personal_name,
+            mask_phone_number,
+            mask_email_address,
+        )
+
         consultation = PublicConsultation.objects.select_related('condominium').get(
             id=consultation_id,
             condominium_id=condominium_id
@@ -376,14 +388,25 @@ class SimplifiedConsultationService:
         }
 
         for s in suggestions:
+            if is_sindico:
+                name_val = s.resident_name
+                phone_val = s.resident_phone
+                email_val = s.resident_email or '—'
+                reg_email_val = s.registered_email or '—'
+            else:
+                name_val = mask_personal_name(s.resident_name)
+                phone_val = mask_phone_number(s.resident_phone)
+                email_val = mask_email_address(s.resident_email) if s.resident_email else '—'
+                reg_email_val = '[CONFIDENCIAL]' if s.registered_email else '—'
+
             writer.writerow([
                 s.protocol,
                 s.created_at.strftime('%d/%m/%Y %H:%M'),
-                s.resident_name,
-                s.resident_phone,
-                s.resident_email or '—',
+                name_val,
+                phone_val,
+                email_val,
                 'SIM (DIVERGENTE)' if s.has_divergence else 'Não',
-                s.registered_email or '—',
+                reg_email_val,
                 s.block_tower or '—',
                 s.unit_code,
                 s.target_reference,
@@ -394,3 +417,4 @@ class SimplifiedConsultationService:
             ])
 
         return output.getvalue()
+

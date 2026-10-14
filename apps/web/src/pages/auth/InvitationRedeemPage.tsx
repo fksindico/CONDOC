@@ -68,7 +68,7 @@ export const InvitationRedeemPage: React.FC = () => {
       });
       setSuccess(true);
       setTimeout(() => {
-        navigate('/portal/situacao');
+        navigate('/');
       }, 1500);
     } catch (err: any) {
       setError(err.message || 'Erro ao resgatar convite.');

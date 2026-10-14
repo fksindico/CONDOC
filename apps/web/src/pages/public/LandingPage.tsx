@@ -60,13 +60,13 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <Link
-              to="/portal"
+            <a
+              href="#consultas"
               className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-slate-800/80 transition-all flex items-center gap-1.5"
             >
-              <Home className="w-4 h-4 text-slate-400" />
-              <span>Portal do Morador</span>
-            </Link>
+              <BookOpen className="w-4 h-4 text-indigo-400" />
+              <span>Consultas Abertas</span>
+            </a>
 
             <Link
               to="/login"

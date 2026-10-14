@@ -175,6 +175,18 @@ class TestSimplifiedConsultationApi:
             name="Edifício Solar das Palmeiras",
             cnpj="98.765.432/0001-10",
         )
+        self.sindico = Account.objects.create(
+            email="sindico.solar@teste.com",
+            full_name="Síndico Solar",
+            auth_user_id=uuid.uuid4(),
+        )
+        from infrastructure.models import RoleAssignment
+        RoleAssignment.objects.create(
+            condominium=self.condo,
+            account=self.sindico,
+            role="sindico",
+            status="active"
+        )
         self.pdf_file = SimpleUploadedFile(
             "Regimento_Solar.pdf",
             b"%PDF-1.4 Test PDF content",
@@ -186,6 +198,7 @@ class TestSimplifiedConsultationApi:
             document_type="regimento",
             pdf_file=self.pdf_file,
             description="Descrição da consulta pública",
+            created_by_id=self.sindico.id,
         )
 
     def test_public_get_consultation_by_token(self):
@@ -508,6 +521,120 @@ class TestSimplifiedConsultationApi:
         assert sug_list[0]["has_divergence"] is True
         assert sug_list[0]["registered_email"] == "maria.titular@teste.com"
         assert sug_list[0]["resident_email"] == "outro.email@teste.com"
+
+    def test_lgpd_masking_for_non_sindico_roles(self):
+        """
+        LGPD / CA-33: Membros de comissões, conselhos ou usuários comuns NÃO devem ver
+        dados de contato reais dos moradores em sugestões. Os dados devem vir mascarados.
+        """
+        from infrastructure.models import IdentityAccessEvent
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Fernando de Albuquerque",
+            resident_phone="(11) 98765-4321",
+            resident_email="fernando.albuquerque@teste.com",
+            unit_code="401",
+            target_reference="Artigo 5º",
+            action_type="alterar",
+            suggestion_text="Modificar regras sobre animais de estimação.",
+        )
+
+        # 1. Acesso com papel 'comissao'
+        url_comissao = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}/suggestions?role=comissao"
+        resp_comissao = self.client.get(url_comissao)
+        assert resp_comissao.status_code == 200
+        data_comissao = resp_comissao.json()
+        target_sug = next(s for s in data_comissao if s["unit_code"] == "401")
+
+        assert target_sug["is_masked"] is True
+        # Nome mascarado
+        assert target_sug["resident_name"] != "Fernando de Albuquerque"
+        assert "F*******" in target_sug["resident_name"]
+        # Telefone mascarado
+        assert target_sug["resident_phone"] != "(11) 98765-4321"
+        assert "****" in target_sug["resident_phone"]
+        # E-mail mascarado
+        assert target_sug["resident_email"] != "fernando.albuquerque@teste.com"
+        assert "f***e@t***.com" in target_sug["resident_email"]
+        # Dispositivo e texto da sugestão permanecem visíveis para análise técnica
+        assert target_sug["target_reference"] == "Artigo 5º"
+        assert target_sug["suggestion_text"] == "Modificar regras sobre animais de estimação."
+
+        # 2. Acesso com papel 'conselho'
+        url_conselho = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}/suggestions?role=conselho"
+        resp_conselho = self.client.get(url_conselho)
+        assert resp_conselho.status_code == 200
+        target_conselho = next(s for s in resp_conselho.json() if s["unit_code"] == "401")
+        assert target_conselho["is_masked"] is True
+
+        # 3. Exportação de CSV por papel 'comissao'
+        export_comissao = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}/export?role=comissao"
+        resp_csv = self.client.get(export_comissao)
+        assert resp_csv.status_code == 200
+        csv_text = resp_csv.content.decode("utf-8")
+        assert "anonimizado" in resp_csv["Content-Disposition"]
+        assert "Fernando de Albuquerque" not in csv_text
+        assert "F******* d* A**********" in csv_text
+        assert "fernando.albuquerque@teste.com" not in csv_text
+
+    def test_lgpd_sindico_access_unmasked_and_generates_audit_event(self):
+        """
+        LGPD / CA-33: Apenas o Síndico ativo visualiza dados de contato em aberto,
+        e cada consulta ou exportação gera evento imutável em IdentityAccessEvent.
+        """
+        from infrastructure.models import IdentityAccessEvent
+        initial_events_count = IdentityAccessEvent.objects.count()
+
+        SimplifiedConsultationService.submit_suggestion(
+            token=self.consultation.public_token,
+            resident_name="Gabriel Medina",
+            resident_phone="(11) 91234-5678",
+            resident_email="gabriel.medina@teste.com",
+            unit_code="702",
+            target_reference="Artigo 12",
+            action_type="incluir",
+            suggestion_text="Instalação de pranchário na garagem.",
+        )
+
+        # 1. Síndico lista sugestões
+        url_sindico = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}/suggestions?role=sindico"
+        resp_sindico = self.client.get(url_sindico)
+        assert resp_sindico.status_code == 200
+        target = next(s for s in resp_sindico.json() if s["unit_code"] == "702")
+
+        assert target["is_masked"] is False
+        assert target["resident_name"] == "Gabriel Medina"
+        assert target["resident_phone"] == "11912345678"
+        assert target["resident_email"] == "gabriel.medina@teste.com"
+
+        # Garante que gerou evento de auditoria imutável
+        view_event = IdentityAccessEvent.objects.filter(
+            condominium=self.condo,
+            target_type="consultation_suggestions_view",
+            target_id=self.consultation.id
+        ).order_by("-created_at").first()
+        assert view_event is not None
+        assert view_event.actor_account_id == self.sindico.id
+        assert "Consulta administrativa aos dados de contato" in view_event.purpose
+
+        # 2. Síndico exporta CSV
+        export_sindico = f"/api/v1/condominiums/{self.condo.id}/consultations/{self.consultation.id}/export?role=sindico"
+        resp_export = self.client.get(export_sindico)
+        assert resp_export.status_code == 200
+        csv_text = resp_export.content.decode("utf-8")
+        assert "Gabriel Medina" in csv_text
+        assert "gabriel.medina@teste.com" in csv_text
+
+        # Garante evento de auditoria para exportação
+        export_event = IdentityAccessEvent.objects.filter(
+            condominium=self.condo,
+            target_type="consultation_suggestions_export",
+            target_id=self.consultation.id
+        ).order_by("-created_at").first()
+        assert export_event is not None
+        assert export_event.actor_account_id == self.sindico.id
+        assert "Exportação de planilha CSV" in export_event.purpose
+
 
 
 

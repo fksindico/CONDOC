@@ -38,6 +38,13 @@ def main():
     GRANT USAGE ON SCHEMA app TO test_app_user;
     GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA app TO test_app_user;
 
+    -- 0. Insere condomínios temporários para garantir integridade referencial
+    INSERT INTO app.condominiums (id, name, cnpj)
+    VALUES 
+        ('a0000000-0000-0000-0000-000000000001', 'Parque das Flores (RLS Test)', '11.111.111/0001-11'),
+        ('a0000000-0000-0000-0000-000000000002', 'Edifício Horizon (RLS Test)', '22.222.222/0001-22')
+    ON CONFLICT (id) DO NOTHING;
+
     -- 1. Cria consultas vinculadas aos condomínios existentes:
     -- c1 = a0000000-0000-0000-0000-000000000001 (Parque das Flores)
     -- c2 = a0000000-0000-0000-0000-000000000002 (Edifício Horizon)

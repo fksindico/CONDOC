@@ -82,3 +82,52 @@ def assert_unique_unit_code(is_duplicate: bool, code: str) -> None:
             f"Unidade com código '{code}' já existe para esta torre/condomínio."
         )
 
+
+def mask_personal_name(name: Optional[str]) -> str:
+    """
+    LGPD / CA-33: Mascara nome pessoal para papéis não administrativos (ex: Comissão, Conselho).
+    Ex: 'Carlos Eduardo Silva' -> 'C***** E****** S****'
+    """
+    if not name or not name.strip():
+        return "Anônimo"
+    parts = name.strip().split()
+    masked = []
+    for p in parts:
+        if len(p) <= 2:
+            masked.append(p[0] + "*")
+        else:
+            masked.append(p[0] + "*" * (len(p) - 1))
+    return " ".join(masked)
+
+
+def mask_phone_number(phone: Optional[str]) -> str:
+    """
+    LGPD / CA-33: Mascara telefone/WhatsApp para papéis não administrativos.
+    Ex: '11987654321' -> '(11) 9****-**21'
+    """
+    if not phone or not phone.strip():
+        return "—"
+    digits = "".join(filter(str.isdigit, phone))
+    if len(digits) >= 10:
+        ddd = digits[:2]
+        first = digits[2] if len(digits) == 11 else ""
+        last = digits[-2:]
+        return f"({ddd}) {first}****-**{last}"
+    return "—"
+
+
+def mask_email_address(email: Optional[str]) -> str:
+    """
+    LGPD / CA-33: Mascara endereço de e-mail para papéis não administrativos.
+    Ex: 'carlos.silva@provedor.com.br' -> 'c***a@p***.com.br'
+    """
+    if not email or not email.strip() or '@' not in email:
+        return "—"
+    user, domain = email.strip().split('@', 1)
+    masked_user = user[0] + "***" + (user[-1] if len(user) > 2 else "")
+    domain_parts = domain.split('.')
+    masked_domain = domain_parts[0][0] + "***" if domain_parts else "***"
+    tld = ".".join(domain_parts[1:]) if len(domain_parts) > 1 else "com"
+    return f"{masked_user}@{masked_domain}.{tld}"
+
+

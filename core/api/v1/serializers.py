@@ -692,6 +692,13 @@ class AdminConsultationListCreateSerializer(serializers.ModelSerializer):
 
 
 class AdminConsultationSuggestionListSerializer(serializers.ModelSerializer):
+    """
+    Serializer de sugestões para o painel de gestão.
+    LGPD / CA-33: Mascara dados de contato para papéis não administrativos (Comissão, Conselho).
+    Apenas o Síndico ativo (ou admin) com context={'is_sindico': True} visualiza dados em aberto.
+    """
+    is_masked = serializers.SerializerMethodField()
+
     class Meta:
         model = ConsultationSuggestion
         fields = [
@@ -700,9 +707,36 @@ class AdminConsultationSuggestionListSerializer(serializers.ModelSerializer):
             'block_tower', 'unit_code', 'target_reference',
             'action_type', 'suggestion_text', 'justification',
             'has_divergence', 'divergence_details', 'registered_email',
-            'status', 'created_at', 'updated_at'
+            'status', 'is_masked', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'protocol', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'protocol', 'is_masked', 'created_at', 'updated_at']
+
+    def get_is_masked(self, obj):
+        return not bool(self.context.get('is_sindico', False))
+
+    def to_representation(self, instance):
+        from domain.identity.invariants import (
+            mask_personal_name,
+            mask_phone_number,
+            mask_email_address,
+        )
+        data = super().to_representation(instance)
+        is_sindico = bool(self.context.get('is_sindico', False))
+
+        if not is_sindico:
+            data['resident_name'] = mask_personal_name(data.get('resident_name'))
+            data['resident_phone'] = mask_phone_number(data.get('resident_phone'))
+            data['resident_email'] = mask_email_address(data.get('resident_email'))
+            if data.get('registered_email'):
+                data['registered_email'] = mask_email_address(data.get('registered_email'))
+            if data.get('divergence_details'):
+                data['divergence_details'] = "Divergência detectada entre o e-mail informado e o cadastro da unidade."
+            data['is_masked'] = True
+        else:
+            data['is_masked'] = False
+
+        return data
+
 
 
 class PublicLandingInfoSerializer(serializers.ModelSerializer):

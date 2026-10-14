@@ -24,6 +24,7 @@ import {
   Maximize2,
   Minimize2,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   consultationService,
@@ -1158,6 +1159,20 @@ export const PublicConsultationPage: React.FC = () => {
                         placeholder="Ex: Traz mais segurança, melhora a convivência ou reduz ruídos..."
                         className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
                       />
+                    </div>
+
+                    {/* Aviso de Privacidade e Proteção de Dados (LGPD) */}
+                    <div className="p-3 bg-slate-50 border border-slate-200/90 rounded-xl text-left space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Privacidade e Proteção de Dados (LGPD)</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        <strong>Finalidade:</strong> Seus dados de identificação e contato (nome, telefone e e-mail) são coletados exclusivamente para verificação de legitimidade da participação no condomínio e para eventuais esclarecimentos da gestão sobre a minuta normativa.
+                      </p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        <strong>Sigilo e Proteção:</strong> Seus contatos não são expostos publicamente a vizinhos e possuem acesso restrito e auditado exclusivamente pelo Síndico ativo. Você poderá acompanhar suas sugestões a qualquer momento com o protocolo emitido.
+                      </p>
                     </div>
 
                     {/* Botão de Envio */}

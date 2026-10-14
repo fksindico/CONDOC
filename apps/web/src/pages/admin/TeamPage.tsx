@@ -89,7 +89,7 @@ export const TeamPage: React.FC = () => {
             <Badge variant="info">MFA Recomendado</Badge>
           </CardTitle>
           <CardDescription>
-            A publicação de versões no portal é restrita com exclusividade ao papel ativo de Síndico.
+            A publicação de versões para consulta pública é restrita com exclusividade ao papel ativo de Síndico.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

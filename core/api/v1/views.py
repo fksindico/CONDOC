@@ -2954,12 +2954,30 @@ class AdminConsultationDetailUpdateDeleteView(APIView):
 
 class AdminConsultationSuggestionsListView(APIView):
     """
-    Listagem filtrável das sugestões recebidas para acompanhamento pelo síndico.
-    Permite filtrar por ação, unidade, torre, texto de busca e divergência cadastral.
+    Listagem filtrável das sugestões recebidas para acompanhamento.
+    LGPD & Privacidade (CA-33):
+    - Síndico ativo (ou admin): visualização completa com auditoria imutável (IdentityAccessEvent).
+    - Não-administrativo (Comissão, Conselho Fiscal): dados de contato mascarados/anonimizados.
     """
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id, consultation_id):
+        actor_id, role = _resolve_actor_and_role(request, condominium_id)
+        is_sindico = (role in ('sindico', 'admin'))
+
+        # Trilha de auditoria imutável caso o síndico acesse dados pessoais de contato
+        if is_sindico and actor_id:
+            try:
+                IdentityAuditService.log_access(
+                    actor_account_id=actor_id,
+                    target_type='consultation_suggestions_view',
+                    target_id=consultation_id,
+                    purpose=f"Consulta administrativa aos dados de contato e autoria de sugestões da consulta {consultation_id}",
+                    condominium_id=condominium_id
+                )
+            except Exception:
+                pass
+
         action_type = request.query_params.get('action_type')
         unit_code = request.query_params.get('unit_code')
         block_tower = request.query_params.get('block_tower')
@@ -2982,7 +3000,11 @@ class AdminConsultationSuggestionsListView(APIView):
             search_text=search_text,
             has_divergence=has_divergence,
         )
-        serializer = AdminConsultationSuggestionListSerializer(suggestions, many=True)
+        serializer = AdminConsultationSuggestionListSerializer(
+            suggestions,
+            many=True,
+            context={'request': request, 'is_sindico': is_sindico}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -3027,22 +3049,46 @@ class PublicLandingInfoView(APIView):
 class AdminConsultationExportView(APIView):
     """
     Exporta todas as sugestões em CSV para abertura perfeita no Microsoft Excel/Sheets.
+    LGPD & Privacidade (CA-33):
+    - Síndico ativo (ou admin): exportação com dados completos e registro em IdentityAccessEvent.
+    - Não-administrativo (Comissão, Conselho): exportação anonimizada/mascarada.
     """
     permission_classes = [AllowAny]
 
     def get(self, request, condominium_id, consultation_id):
+        actor_id, role = _resolve_actor_and_role(request, condominium_id)
+        is_sindico = (role in ('sindico', 'admin'))
+
+        # Trilha de auditoria imutável para exportação de dados pessoais
+        if is_sindico and actor_id:
+            try:
+                IdentityAuditService.log_access(
+                    actor_account_id=actor_id,
+                    target_type='consultation_suggestions_export',
+                    target_id=consultation_id,
+                    purpose=f"Exportação de planilha CSV com dados de contato de sugestões da consulta {consultation_id}",
+                    condominium_id=condominium_id
+                )
+            except Exception:
+                pass
+
         try:
             csv_content = SimplifiedConsultationService.export_suggestions_csv(
                 condominium_id=condominium_id,
                 consultation_id=consultation_id,
+                is_sindico=is_sindico,
             )
             response = HttpResponse(csv_content, content_type='text/csv; charset=utf-8')
-            response['Content-Disposition'] = f'attachment; filename="sugestoes_consulta_{consultation_id}.csv"'
+            filename = f"sugestoes_consulta_{consultation_id}"
+            if not is_sindico:
+                filename += "_anonimizado"
+            response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
             return response
         except PublicConsultation.DoesNotExist:
             return Response({"error": "Consulta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erro na exportação: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class CondominiumDashboardMetricsView(APIView):

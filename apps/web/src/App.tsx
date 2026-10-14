@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { PortalLayout } from '@/components/layout/PortalLayout';
 import { AssemblyLayout } from '@/components/layout/AssemblyLayout';
 
 // Páginas de Autenticação & Onboarding
@@ -31,17 +30,6 @@ import { SuggestionDetailPage } from '@/pages/admin/SuggestionDetailPage';
 import { CampaignStatsPage } from '@/pages/admin/CampaignStatsPage';
 import { TeamPage } from '@/pages/admin/TeamPage';
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage';
-
-// Páginas do Portal do Morador (M01 a M12)
-import { ResidentDashboardPage } from '@/pages/portal/ResidentDashboardPage';
-import { DocumentReaderPage } from '@/pages/portal/DocumentReaderPage';
-import { SuggestionCreatePage } from '@/pages/portal/SuggestionCreatePage';
-import { PublicSuggestionsWallPage } from '@/pages/portal/PublicSuggestionsWallPage';
-import { PublicSuggestionDetailPage } from '@/pages/portal/PublicSuggestionDetailPage';
-import { MySuggestionsPage } from '@/pages/portal/MySuggestionsPage';
-import { MyAgreementsPage } from '@/pages/portal/MyAgreementsPage';
-import { ResidentProfilePage } from '@/pages/portal/ResidentProfilePage';
-import { AccessStatusPage } from '@/pages/portal/AccessStatusPage';
 
 // Modo de Apresentação em Assembleia (Leitura)
 import { AssemblyPresentationPage } from '@/pages/assembly/AssemblyPresentationPage';
@@ -89,18 +77,8 @@ export const App: React.FC = () => {
         <Route path="auditoria" element={<AuditLogsPage />} />
       </Route>
 
-      {/* Portal do Morador (M01 a M12) */}
-      <Route path="/portal" element={<PortalLayout />}>
-        <Route index element={<ResidentDashboardPage />} />
-        <Route path="documento" element={<DocumentReaderPage />} />
-        <Route path="sugerir" element={<SuggestionCreatePage />} />
-        <Route path="mural" element={<PublicSuggestionsWallPage />} />
-        <Route path="mural/:id" element={<PublicSuggestionDetailPage />} />
-        <Route path="minhas-sugestoes" element={<MySuggestionsPage />} />
-        <Route path="minhas-concordancias" element={<MyAgreementsPage />} />
-        <Route path="meu-cadastro" element={<ResidentProfilePage />} />
-        <Route path="situacao" element={<AccessStatusPage />} />
-      </Route>
+      {/* Redirecionamento amigável de rotas legadas do Portal para a Landing Page pública (Sem senhas para moradores) */}
+      <Route path="/portal/*" element={<Navigate to="/" replace />} />
 
       {/* Modo de Apresentação em Assembleia (Somente Leitura - UI-38, CA-45) */}
       <Route path="/assembleia/:docId" element={<AssemblyLayout />}>

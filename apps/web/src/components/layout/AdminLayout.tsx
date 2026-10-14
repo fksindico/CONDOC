@@ -181,7 +181,7 @@ export const AdminLayout: React.FC = () => {
             onChange={(e) => {
               const val = e.target.value;
               if (val === 'morador') {
-                window.location.href = '/portal';
+                window.location.href = '/';
               } else {
                 setActiveRole(val);
               }
@@ -190,7 +190,7 @@ export const AdminLayout: React.FC = () => {
           >
             <option value="sindico">👑 Visão Síndico (Acesso Geral)</option>
             <option value="conselho">🛡️ Visão Conselho / Comissão</option>
-            <option value="morador">🏠 Ver como Morador (/portal)</option>
+            <option value="morador">🏠 Ver como Morador (Landing / Consultas)</option>
           </select>
         </div>
 
