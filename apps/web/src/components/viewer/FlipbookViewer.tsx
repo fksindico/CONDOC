@@ -20,6 +20,9 @@ import {
   Book,
   Home,
   Sliders,
+  ArrowLeftRight,
+  Hand,
+  Move,
 } from 'lucide-react';
 
 // Configura o worker do PDF.js localmente empacotado pelo Vite (100% OSS e offline)
@@ -60,9 +63,12 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   const [pagesData, setPagesData] = useState<PageData[]>([]);
 
   // Estados de Interface e Modos de Visualização
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('auto');
+  // Por padrão: 'single' (1 Página Focada) para garantir máxima legibilidade e enquadramento perfeito
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('single');
   const [effectiveMode, setEffectiveMode] = useState<'single' | 'double' | 'scroll'>('single');
   const [zoomLevel, setZoomLevel] = useState(100); // 100%
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const [showThumbnails, setShowThumbnails] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [bookDimensions, setBookDimensions] = useState<{ bookWidth: number; pageHeight: number; pageWidth: number }>({
@@ -79,8 +85,14 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   const pageFlipInstance = useRef<PageFlip | null>(null);
   const currentPageRef = useRef(1);
   const isManualNavRef = useRef(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; initialPanX: number; initialPanY: number }>({
+    startX: 0,
+    startY: 0,
+    initialPanX: 0,
+    initialPanY: 0,
+  });
 
-  // Sincroniza referência de página atual para evitar recriação desnecessária de efeitos
+  // Sincroniza referência de página atual
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
@@ -231,18 +243,18 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     };
   }, [pdfUrl]);
 
-  // 2. Calcula as dimensões exatas e o modo efetivo para ajuste perfeito (Fit-to-Screen)
+  // 2. Calcula as dimensões exatas e o modo efetivo para enquadramento perfeito (Fit-to-Screen)
   const computeOptimalDimensions = useCallback(() => {
     if (!stageRef.current || pagesData.length === 0) return null;
 
     const stage = stageRef.current;
     const isMobile = stage.clientWidth < 640;
-    const paddingH = isMobile ? 24 : 56;
-    const paddingV = isMobile ? 24 : 56;
+    // Margens para garantir respiro visual e ausência total de cortes no topo/base/laterais
+    const paddingH = isMobile ? 20 : 40;
+    const paddingV = isMobile ? 20 : 40;
 
-    // Área visível real disponível com folga de respiração
-    const availableWidth = Math.max(240, stage.clientWidth - paddingH);
-    const availableHeight = Math.max(320, stage.clientHeight - paddingV);
+    const availableWidth = Math.max(200, stage.clientWidth - paddingH);
+    const availableHeight = Math.max(260, stage.clientHeight - paddingV);
     const baseAspect = pagesData[0]?.aspectRatio || 0.707; // padrão A4 ~0.707
 
     // Determina o modo efetivo
@@ -269,27 +281,27 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     let bookWidth: number;
 
     if (mode === 'single') {
-      // MODO 1 PÁGINA CENTRALIZADA: proporção é a da própria folha (baseAspect)
+      // MODO 1 PÁGINA CENTRALIZADA: proporção da folha é baseAspect (w / h = baseAspect)
       if (availableWidth / availableHeight > baseAspect) {
-        // Altura é o fator limitante
+        // Altura é o fator limitante: folha preenche a altura sem cortar
         pageHeight = Math.floor(availableHeight);
         pageWidth = Math.floor(pageHeight * baseAspect);
       } else {
-        // Largura é o fator limitante
+        // Largura é o fator limitante: folha preenche a largura sem cortar
         pageWidth = Math.floor(availableWidth);
         pageHeight = Math.floor(pageWidth / baseAspect);
       }
       bookWidth = pageWidth;
     } else {
-      // MODO 2 PÁGINAS (LIVRO ABERTO): proporção é o dobro (2 * baseAspect)
+      // MODO 2 PÁGINAS (LIVRO ABERTO): proporção total é o dobro (2 * baseAspect)
       const spreadAspect = 2 * baseAspect;
       if (availableWidth / availableHeight > spreadAspect) {
-        // Altura é o fator limitante
+        // Altura é limitante
         pageHeight = Math.floor(availableHeight);
         bookWidth = Math.floor(pageHeight * spreadAspect);
         pageWidth = Math.floor(bookWidth / 2);
       } else {
-        // Largura é o fator limitante
+        // Largura é limitante
         bookWidth = Math.floor(availableWidth);
         pageWidth = Math.floor(bookWidth / 2);
         pageHeight = Math.floor(pageWidth / baseAspect);
@@ -302,17 +314,26 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     return dims;
   }, [layoutMode, pagesData]);
 
-  // 3. Monta o PageFlip com dimensões fixas rigorosamente calculadas
+  // 3. Monta o PageFlip estritamente quando estiver no modo 'double'
   const initPageFlip = useCallback(() => {
     if (loading || pagesData.length === 0) return;
 
     const dims = computeOptimalDimensions();
-    if (!dims || dims.mode === 'scroll') return;
+    // No modo single ou scroll, destrói qualquer instância do PageFlip para não haver conflitos
+    if (!dims || dims.mode !== 'double') {
+      if (pageFlipInstance.current) {
+        try {
+          pageFlipInstance.current.destroy();
+        } catch {}
+        pageFlipInstance.current = null;
+      }
+      return;
+    }
 
     const mount = bookMountRef.current;
     if (!mount) return;
 
-    // Destrói instância anterior se existir
+    // Destrói instância anterior
     if (pageFlipInstance.current) {
       try {
         pageFlipInstance.current.destroy();
@@ -322,10 +343,9 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       pageFlipInstance.current = null;
     }
 
-    // Limpa o ponto de montagem estável
+    // Limpa montagem
     mount.innerHTML = '';
 
-    // Cria o container filho efêmero com o tamanho exato do livro
     const bookContainer = document.createElement('div');
     bookContainer.className = 'stf__parent-container flex items-center justify-center m-auto shadow-2xl';
     bookContainer.style.width = `${dims.bookWidth}px`;
@@ -363,16 +383,16 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       const flip = new PageFlip(bookContainer, {
         width: dims.pageWidth,
         height: dims.pageHeight,
-        size: 'fixed', // FIXED garante enquadramento sem overflow
+        size: 'fixed',
         minWidth: 200,
         maxWidth: 2000,
         minHeight: 250,
         maxHeight: 2000,
         drawShadow: true,
         flippingTime: 400,
-        usePortrait: dims.mode === 'single',
+        usePortrait: false, // Em modo double, sempre spread de 2 páginas
         startPage: Math.max(0, currentPageRef.current - 1),
-        showCover: false, // showCover: false garante alinhamento centralizado sem deslocamento
+        showCover: true, // Capa como folha única inicial, páginas internas como duplas
         mobileScrollSupport: false,
         useMouseEvents: true,
         showPageCorners: true,
@@ -429,7 +449,10 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       }
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        initPageFlip();
+        computeOptimalDimensions();
+        if (layoutMode === 'double') {
+          initPageFlip();
+        }
       }, 150);
     });
 
@@ -438,12 +461,37 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       observer.disconnect();
       clearTimeout(timeoutId);
     };
-  }, [initPageFlip]);
+  }, [layoutMode, computeOptimalDimensions, initPageFlip]);
 
-  // 5. Atalhos de Teclado
+  // 5. Suporte a Pan (Arrasto com Mouse) em toda a janela quando isDragging for true
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onWindowMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragStartRef.current.startX;
+      const deltaY = e.clientY - dragStartRef.current.startY;
+      setPanOffset({
+        x: dragStartRef.current.initialPanX + deltaX,
+        y: dragStartRef.current.initialPanY + deltaY,
+      });
+    };
+
+    const onWindowMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
+    };
+  }, [isDragging]);
+
+  // 6. Atalhos de Teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignora se o foco estiver em inputs de texto
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
@@ -460,12 +508,27 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       } else if (e.key === 'End') {
         e.preventDefault();
         goToPage(totalPages);
+      } else if (e.key === '+' || e.key === '=') {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          handleZoomIn();
+        }
+      } else if (e.key === '-') {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          handleZoomOut();
+        }
+      } else if (e.key === '0') {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          handleResetZoomAndFit();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [totalPages, effectiveMode]);
+  }, [totalPages, effectiveMode, currentPage]);
 
   // Monitoramento de Scroll Spy no Modo Rolagem Contínua
   const handleScrollModeScroll = useCallback(() => {
@@ -501,9 +564,9 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     }
   }, [pagesData]);
 
-  // Navegação
+  // Navegação de Páginas
   const handlePrevPage = () => {
-    if (effectiveMode !== 'scroll' && pageFlipInstance.current) {
+    if (effectiveMode === 'double' && pageFlipInstance.current) {
       pageFlipInstance.current.flipPrev();
     } else {
       const prev = Math.max(1, currentPage - 1);
@@ -512,7 +575,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   };
 
   const handleNextPage = () => {
-    if (effectiveMode !== 'scroll' && pageFlipInstance.current) {
+    if (effectiveMode === 'double' && pageFlipInstance.current) {
       pageFlipInstance.current.flipNext();
     } else {
       const next = Math.min(totalPages, currentPage + 1);
@@ -525,15 +588,16 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     setCurrentPage(p);
     setInputPage(String(p));
     currentPageRef.current = p;
+    // Reseta o pan para a nova página começar centralizada
+    setPanOffset({ x: 0, y: 0 });
 
-    if (effectiveMode !== 'scroll' && pageFlipInstance.current) {
+    if (effectiveMode === 'double' && pageFlipInstance.current) {
       pageFlipInstance.current.turnToPage(p - 1);
-    } else if (scrollContainerRef.current) {
+    } else if (effectiveMode === 'scroll' && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const el = document.getElementById(`scroll-page-${p}`);
       if (el) {
         isManualNavRef.current = true;
-        // Rola estritamente o container interno para o topo da folha selecionada sem rolar a janela externa
         const targetScrollTop = el.offsetTop - container.offsetTop - 16;
         container.scrollTo({
           top: Math.max(0, targetScrollTop),
@@ -556,12 +620,96 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     }
   };
 
-  // Zoom
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(175, z + 15));
-  const handleZoomOut = () => setZoomLevel((z) => Math.max(65, z - 15));
-  const handleResetZoom = () => {
+  // Zoom & Enquadramento Interativo
+  const handleZoomIn = () => {
+    setZoomLevel((z) => Math.min(300, z + 25));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((z) => Math.max(50, z - 25));
+  };
+
+  const handleResetZoomAndFit = () => {
     setZoomLevel(100);
-    initPageFlip();
+    setPanOffset({ x: 0, y: 0 });
+    computeOptimalDimensions();
+    if (effectiveMode === 'double') {
+      initPageFlip();
+    }
+  };
+
+  const handleFitWidth = () => {
+    if (!stageRef.current || pagesData.length === 0) return;
+    const availableWidth = stageRef.current.clientWidth - 40;
+    if (bookDimensions.pageWidth > 0) {
+      const targetZoom = Math.round((availableWidth / bookDimensions.pageWidth) * 100);
+      setZoomLevel(Math.min(300, Math.max(60, targetZoom)));
+      setPanOffset({ x: 0, y: 0 });
+    }
+  };
+
+  // Eventos de Pan (Arrasto com Mouse e Touch)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (effectiveMode === 'scroll') return;
+    if (e.button !== 0) return; // Apenas clique botão esquerdo
+    setIsDragging(true);
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialPanX: panOffset.x,
+      initialPanY: panOffset.y,
+    };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (effectiveMode === 'scroll') return;
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setIsDragging(true);
+      dragStartRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        initialPanX: panOffset.x,
+        initialPanY: panOffset.y,
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || e.touches.length !== 1 || effectiveMode === 'scroll') return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - dragStartRef.current.startX;
+    const deltaY = touch.clientY - dragStartRef.current.startY;
+    setPanOffset({
+      x: dragStartRef.current.initialPanX + deltaX,
+      y: dragStartRef.current.initialPanY + deltaY,
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomDelta = e.deltaY < 0 ? 15 : -15;
+      setZoomLevel((prev) => Math.min(300, Math.max(50, prev + zoomDelta)));
+    } else if (zoomLevel > 100 && effectiveMode !== 'scroll') {
+      // Quando ampliado, rodar o scroll do mouse translada o pan verticalmente
+      e.preventDefault();
+      setPanOffset((prev) => ({
+        x: prev.x,
+        y: prev.y - e.deltaY * 0.8,
+      }));
+    }
+  };
+
+  // Alternância de Modos
+  const handleModeChange = (newMode: LayoutMode) => {
+    setLayoutMode(newMode);
+    setZoomLevel(100);
+    setPanOffset({ x: 0, y: 0 });
   };
 
   // Fullscreen
@@ -577,11 +725,16 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   useEffect(() => {
     const onFsChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
-      setTimeout(initPageFlip, 200);
+      setTimeout(() => {
+        computeOptimalDimensions();
+        if (layoutMode === 'double') {
+          initPageFlip();
+        }
+      }, 200);
     };
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
-  }, [initPageFlip]);
+  }, [layoutMode, computeOptimalDimensions, initPageFlip]);
 
   return (
     <div
@@ -591,9 +744,9 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       }`}
     >
       {/* 1. BARRA SUPERIOR DE FERRAMENTAS E CONTROLES */}
-      <header className="px-3 sm:px-4 py-2.5 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0 z-30">
+      <header className="px-2.5 sm:px-4 py-2 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 shrink-0 z-30">
         {/* Lado Esquerdo: Miniaturas e Título */}
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <button
             type="button"
             onClick={() => setShowThumbnails(!showThumbnails)}
@@ -604,12 +757,12 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             }`}
             title="Abrir painel lateral de miniaturas de páginas"
           >
-            <LayoutGrid className="w-4 h-4" />
+            <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Páginas</span>
           </button>
 
           <span
-            className="text-xs font-bold text-slate-200 truncate max-w-[130px] sm:max-w-[200px]"
+            className="text-xs font-bold text-slate-200 truncate max-w-[100px] sm:max-w-[180px] md:max-w-[240px]"
             title={documentTitle}
           >
             {documentTitle}
@@ -617,7 +770,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         </div>
 
         {/* Centro: Controles de Paginação Direta */}
-        <div className="flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-900/90 px-1.5 sm:px-2 py-1 rounded-xl border border-slate-800 text-xs">
           <button
             type="button"
             onClick={() => goToPage(1)}
@@ -639,14 +792,14 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
           </button>
 
           <form onSubmit={handleGoToPageSubmit} className="flex items-center gap-1">
-            <span className="text-slate-400 text-[11px] hidden sm:inline">Pág.</span>
+            <span className="text-slate-400 text-[11px] hidden md:inline">Pág.</span>
             <input
               type="text"
               value={inputPage}
               onChange={(e) => setInputPage(e.target.value)}
               onBlur={handleGoToPageSubmit}
               disabled={loading || totalPages === 0}
-              className="w-10 text-center bg-slate-950 border border-slate-700 rounded-md px-1 py-0.5 text-xs font-mono font-bold text-white focus:outline-hidden focus:border-indigo-500"
+              className="w-9 sm:w-10 text-center bg-slate-950 border border-slate-700 rounded-md px-1 py-0.5 text-xs font-mono font-bold text-white focus:outline-hidden focus:border-indigo-500"
             />
             <span className="text-slate-400 text-[11px]">de {totalPages || '—'}</span>
           </form>
@@ -663,40 +816,40 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         </div>
 
         {/* Lado Direito: Modos de Visualização, Enquadramento, Zoom e Ações */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Seletor de Modos (1 Página, 2 Páginas, Rolagem) */}
           <div className="flex items-center bg-slate-900 p-0.5 rounded-xl border border-slate-800">
             <button
               type="button"
-              onClick={() => setLayoutMode('single')}
+              onClick={() => handleModeChange('single')}
               className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
                 effectiveMode === 'single' && layoutMode !== 'scroll'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="1 Página Centralizada (Folhear 3D focado)"
+              title="1 Página Centralizada (Foco na folha inteira sem cortes)"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">1 Pág</span>
+              <span className="hidden sm:inline">1 Pág</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setLayoutMode('double')}
+              onClick={() => handleModeChange('double')}
               className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
                 effectiveMode === 'double' && layoutMode !== 'scroll'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="2 Páginas (Livro Aberto lado a lado)"
+              title="2 Páginas (Livro Aberto lado a lado com folheamento 3D)"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">2 Págs</span>
+              <span className="hidden sm:inline">2 Págs</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setLayoutMode('scroll')}
+              onClick={() => handleModeChange('scroll')}
               className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
                 layoutMode === 'scroll'
                   ? 'bg-indigo-600 text-white shadow-xs'
@@ -705,36 +858,66 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
               title="Rolagem Contínua Vertical"
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Rolagem</span>
+              <span className="hidden sm:inline">Rolagem</span>
             </button>
           </div>
 
-          {/* Ajustar à Tela (Fit-to-Screen) */}
-          <button
-            type="button"
-            onClick={handleResetZoom}
-            className="p-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-lg text-slate-300 transition"
-            title="Ajustar automaticamente à altura e largura da tela"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+          {/* Ferramentas de Zoom & Enquadramento */}
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-900 px-1 py-0.5 rounded-xl border border-slate-800 text-xs">
+            {/* Ajustar à Tela (Fit-to-Page / 100%) */}
+            <button
+              type="button"
+              onClick={handleResetZoomAndFit}
+              className={`p-1 sm:p-1.5 rounded-lg transition ${
+                zoomLevel === 100 && panOffset.x === 0 && panOffset.y === 0
+                  ? 'bg-slate-800 text-indigo-400 font-bold'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+              title="Ajustar Página Inteira (Fit-to-Page): exibe a página completa sem cortes"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
 
-          {/* Zoom */}
-          <div className="hidden lg:flex items-center gap-0.5 bg-slate-900 px-1 py-0.5 rounded-xl border border-slate-800 text-xs">
+            {/* Ajustar Largura (Fit-to-Width) */}
+            <button
+              type="button"
+              onClick={handleFitWidth}
+              className="p-1 sm:p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition hidden md:inline-flex"
+              title="Ajustar à Largura da Tela (Fit-to-Width): expande a folha para preencher a largura"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+            </button>
+
+            <div className="w-[1px] h-3.5 bg-slate-800 mx-0.5 hidden sm:block" />
+
+            {/* Zoom Out */}
             <button
               type="button"
               onClick={handleZoomOut}
-              className="p-1 hover:bg-slate-800 rounded text-slate-300"
-              title="Diminuir Zoom"
+              disabled={zoomLevel <= 50}
+              className="p-1 hover:bg-slate-800 disabled:opacity-30 rounded text-slate-300 transition"
+              title="Diminuir Zoom (-)"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="px-1 text-[11px] font-mono text-slate-300 font-bold">{zoomLevel}%</span>
+
+            {/* Indicador de Zoom Clicável */}
+            <button
+              type="button"
+              onClick={handleResetZoomAndFit}
+              className="px-1 text-[11px] font-mono text-slate-200 font-bold hover:text-indigo-400 transition"
+              title="Clique para redefinir zoom para 100%"
+            >
+              {zoomLevel}%
+            </button>
+
+            {/* Zoom In */}
             <button
               type="button"
               onClick={handleZoomIn}
-              className="p-1 hover:bg-slate-800 rounded text-slate-300"
-              title="Aumentar Zoom"
+              disabled={zoomLevel >= 300}
+              className="p-1 hover:bg-slate-800 disabled:opacity-30 rounded text-slate-300 transition"
+              title="Aumentar Zoom (+)"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
@@ -745,7 +928,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             <button
               type="button"
               onClick={onDownloadPdf}
-              className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 transition"
+              className="px-2 sm:px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 transition"
               title="Baixar PDF Original"
             >
               <Download className="w-3.5 h-3.5" />
@@ -755,7 +938,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             <a
               href={pdfUrl}
               download
-              className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 transition"
+              className="px-2 sm:px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 transition"
               title="Baixar PDF Original"
             >
               <Download className="w-3.5 h-3.5" />
@@ -767,7 +950,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl transition"
+            className="p-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl transition hidden sm:inline-flex"
             title={isFullscreen ? 'Sair da tela cheia' : 'Modo Tela Cheia Imersiva'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -819,7 +1002,20 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         {/* PALCO PRINCIPAL COM CENTRALIZAÇÃO MATEMÁTICA E AJUSTE RIGOROSO */}
         <main
           ref={stageRef}
-          className="flex-1 relative flex items-center justify-center overflow-hidden p-2 sm:p-6 bg-slate-950"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
+          className={`flex-1 relative flex items-center justify-center overflow-hidden p-2 sm:p-4 bg-slate-950 select-none ${
+            effectiveMode !== 'scroll'
+              ? zoomLevel > 100
+                ? isDragging
+                  ? 'cursor-grabbing'
+                  : 'cursor-grab'
+                : 'cursor-default'
+              : 'cursor-default'
+          }`}
         >
           {/* Feedback de Carregamento Progressivo */}
           {loading && (
@@ -865,38 +1061,109 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             </div>
           )}
 
-          {/* MODO 1 E 2: FLIPBOOK 3D (1 PÁGINA CENTRALIZADA OU 2 PÁGINAS SPREAD) */}
-          {!loading && !error && effectiveMode !== 'scroll' && (
-            <div
-              className="w-full h-full flex items-center justify-center relative select-none"
-              style={{
-                transform: zoomLevel !== 100 ? `scale(${zoomLevel / 100})` : 'none',
-                transformOrigin: 'center center',
-              }}
-            >
+          {/* Dica Flutuante Interativa quando o documento estiver ampliado (Zoom > 100%) */}
+          {!loading && !error && effectiveMode !== 'scroll' && zoomLevel > 100 && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 text-slate-200 text-xs font-medium shadow-xl backdrop-blur-xs flex items-center gap-2 pointer-events-none animate-in fade-in duration-200">
+              <Move className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Arraste com o mouse para mover</span>
+              <span className="text-indigo-400 font-mono font-bold">({zoomLevel}%)</span>
+            </div>
+          )}
+
+          {/* MODO 1: PÁGINA ÚNICA CENTRALIZADA (1 PÁGINA FOCADA COM FIT E ZOOM/PAN) */}
+          {!loading && !error && effectiveMode === 'single' && pagesData.length > 0 && (
+            <div className="w-full h-full flex items-center justify-center relative select-none overflow-hidden">
               {/* Botão Flutuante de Folhear para a Esquerda (<) */}
               <button
                 type="button"
                 onClick={handlePrevPage}
                 disabled={currentPage <= 1}
-                className="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-slate-900/80 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
+                className="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
                 title="Página anterior (←)"
               >
                 <ChevronLeft className="w-6 h-6 -ml-0.5" />
               </button>
 
-              {/* Ponto de Montagem Estável do React - NUNCA removido pelo destroy() do PageFlip */}
+              {/* Folha Única Centralizada com Transform (Zoom + Pan) */}
               <div
-                ref={bookMountRef}
-                className="flipbook-mount w-full h-full flex items-center justify-center m-auto relative"
-              />
+                className="relative flex items-center justify-center"
+                style={{
+                  width: `${bookDimensions.pageWidth}px`,
+                  height: `${bookDimensions.pageHeight}px`,
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel / 100})`,
+                  transformOrigin: 'center center',
+                  transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                }}
+              >
+                {(() => {
+                  const activePage = pagesData[currentPage - 1] || pagesData[0];
+                  return (
+                    <div className="w-full h-full bg-white shadow-2xl rounded-sm overflow-hidden border border-slate-700/60 relative flex items-center justify-center select-none ring-1 ring-slate-800/40">
+                      <img
+                        key={activePage.pageNumber}
+                        src={activePage.imageUrl}
+                        alt={`Página ${activePage.pageNumber}`}
+                        className="w-full h-full object-contain pointer-events-none select-none block animate-in fade-in duration-150"
+                        draggable={false}
+                      />
+                      {/* Indicador discreto de página no canto inferior direito da folha */}
+                      <div className="absolute bottom-2.5 right-3 px-2 py-0.5 rounded-md bg-slate-900/70 backdrop-blur-xs text-[10px] font-mono text-white/90 pointer-events-none border border-slate-700/50">
+                        {activePage.pageNumber} / {totalPages}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
 
               {/* Botão Flutuante de Folhear para a Direita (>) */}
               <button
                 type="button"
                 onClick={handleNextPage}
                 disabled={currentPage >= totalPages}
-                className="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-slate-900/80 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
+                className="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
+                title="Próxima página (→)"
+              >
+                <ChevronRight className="w-6 h-6 -mr-0.5" />
+              </button>
+            </div>
+          )}
+
+          {/* MODO 2: LIVRO ABERTO (2 PÁGINAS LADO A LADO COM EFEITO FLIP 3D) */}
+          {!loading && !error && effectiveMode === 'double' && (
+            <div className="w-full h-full flex items-center justify-center relative select-none overflow-hidden">
+              {/* Botão Flutuante de Folhear para a Esquerda (<) */}
+              <button
+                type="button"
+                onClick={handlePrevPage}
+                disabled={currentPage <= 1}
+                className="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
+                title="Página anterior (←)"
+              >
+                <ChevronLeft className="w-6 h-6 -ml-0.5" />
+              </button>
+
+              {/* Container com Transform (Zoom + Pan) */}
+              <div
+                className="relative flex items-center justify-center"
+                style={{
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel / 100})`,
+                  transformOrigin: 'center center',
+                  transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                }}
+              >
+                {/* Ponto de Montagem Estável do PageFlip */}
+                <div
+                  ref={bookMountRef}
+                  className="flipbook-mount flex items-center justify-center m-auto relative"
+                />
+              </div>
+
+              {/* Botão Flutuante de Folhear para a Direita (>) */}
+              <button
+                type="button"
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages}
+                className="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
                 title="Próxima página (→)"
               >
                 <ChevronRight className="w-6 h-6 -mr-0.5" />
@@ -967,7 +1234,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       </div>
 
       {/* 3. BARRA INFERIOR / TIMELINE SLIDER INTERATIVO DE PÁGINAS */}
-      <footer className="px-4 py-2 bg-slate-950 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0 z-30">
+      <footer className="px-3 sm:px-4 py-2 bg-slate-950 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0 z-30">
         {/* Controle Deslizante (Timeline Scrubber) */}
         <div className="flex items-center gap-3 w-full sm:max-w-md">
           <span className="text-[11px] font-mono font-bold text-slate-400 shrink-0">
@@ -991,7 +1258,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         {/* Dica de Navegabilidade e Status */}
         <div className="flex items-center gap-3 text-[11px] text-slate-400">
           <span className="hidden md:inline">
-            💡 Dica: Use as setas do teclado <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">←</kbd> <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">→</kbd> para folhear.
+            💡 Dica: Use as setas do teclado <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">←</kbd> <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">→</kbd> para navegar.
           </span>
           <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-semibold uppercase text-indigo-400">
             {effectiveMode === 'single' ? '1 Página Centralizada' : effectiveMode === 'double' ? '2 Páginas (Livro Aberto)' : 'Rolagem Contínua'}
