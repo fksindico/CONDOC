@@ -63,7 +63,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   const [pagesData, setPagesData] = useState<PageData[]>([]);
 
   // Estados de Interface e Modos de Visualização
-  // Por padrão: 'single' (1 Página Focada) para garantir máxima legibilidade e enquadramento perfeito
+  // Por padrão: 'single' (1 Página com Folheamento 3D Focado)
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('single');
   const [effectiveMode, setEffectiveMode] = useState<'single' | 'double' | 'scroll'>('single');
   const [zoomLevel, setZoomLevel] = useState(100); // 100%
@@ -250,8 +250,8 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     const stage = stageRef.current;
     const isMobile = stage.clientWidth < 640;
     // Margens para garantir respiro visual e ausência total de cortes no topo/base/laterais
-    const paddingH = isMobile ? 20 : 40;
-    const paddingV = isMobile ? 20 : 40;
+    const paddingH = isMobile ? 16 : 36;
+    const paddingV = isMobile ? 16 : 36;
 
     const availableWidth = Math.max(200, stage.clientWidth - paddingH);
     const availableHeight = Math.max(260, stage.clientHeight - paddingV);
@@ -314,13 +314,12 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     return dims;
   }, [layoutMode, pagesData]);
 
-  // 3. Monta o PageFlip estritamente quando estiver no modo 'double'
+  // 3. Monta o PageFlip para os modos 'single' (1 Pág 3D) e 'double' (2 Págs 3D)
   const initPageFlip = useCallback(() => {
     if (loading || pagesData.length === 0) return;
 
     const dims = computeOptimalDimensions();
-    // No modo single ou scroll, destrói qualquer instância do PageFlip para não haver conflitos
-    if (!dims || dims.mode !== 'double') {
+    if (!dims || dims.mode === 'scroll') {
       if (pageFlipInstance.current) {
         try {
           pageFlipInstance.current.destroy();
@@ -333,7 +332,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     const mount = bookMountRef.current;
     if (!mount) return;
 
-    // Destrói instância anterior
+    // Destrói instância anterior se existir
     if (pageFlipInstance.current) {
       try {
         pageFlipInstance.current.destroy();
@@ -343,13 +342,20 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       pageFlipInstance.current = null;
     }
 
-    // Limpa montagem
     mount.innerHTML = '';
 
+    const isSingle = dims.mode === 'single';
+
+    // Cria o container do livro:
+    // No modo single: largura é RIGOROSAMENTE dims.pageWidth.
+    // Isso garante que blockWidth < pageWidth * 2, travando o PageFlip em Orientation.PORTRAIT!
+    // No modo double: largura é dims.bookWidth (2 * dims.pageWidth).
     const bookContainer = document.createElement('div');
     bookContainer.className = 'stf__parent-container flex items-center justify-center m-auto shadow-2xl';
-    bookContainer.style.width = `${dims.bookWidth}px`;
+    bookContainer.style.width = isSingle ? `${dims.pageWidth}px` : `${dims.bookWidth}px`;
+    bookContainer.style.maxWidth = isSingle ? `${dims.pageWidth}px` : `${dims.bookWidth}px`;
     bookContainer.style.height = `${dims.pageHeight}px`;
+    bookContainer.style.maxHeight = `${dims.pageHeight}px`;
     bookContainer.style.position = 'relative';
     bookContainer.style.margin = 'auto';
     mount.appendChild(bookContainer);
@@ -359,13 +365,17 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     pagesData.forEach((page, idx) => {
       const pageDiv = document.createElement('div');
       pageDiv.className =
-        'page bg-white shadow-xl overflow-hidden select-none flex items-center justify-center';
+        'page bg-white shadow-xl overflow-hidden select-none flex items-center justify-center relative';
       pageDiv.style.width = `${dims.pageWidth}px`;
       pageDiv.style.height = `${dims.pageHeight}px`;
 
-      // Capa e contracapa duras
-      if (idx === 0 || idx === pagesData.length - 1) {
+      // Densidade:
+      // No modo single: todas as folhas são 'soft' para permitir o folheamento suave 3D de cada folha.
+      // No modo double: capa e contracapa são 'hard' para simular capa dura de livro.
+      if (!isSingle && (idx === 0 || idx === pagesData.length - 1)) {
         pageDiv.setAttribute('data-density', 'hard');
+      } else {
+        pageDiv.setAttribute('data-density', 'soft');
       }
 
       const img = document.createElement('img');
@@ -375,6 +385,14 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       img.loading = idx < 4 ? 'eager' : 'lazy';
 
       pageDiv.appendChild(img);
+
+      // Marca d'água sutil de numeração
+      const badge = document.createElement('div');
+      badge.className =
+        'absolute bottom-2.5 right-3 px-2 py-0.5 rounded-md bg-slate-900/70 backdrop-blur-xs text-[10px] font-mono text-white/90 pointer-events-none border border-slate-700/50 z-10';
+      badge.innerText = `${page.pageNumber} / ${pagesData.length}`;
+      pageDiv.appendChild(badge);
+
       bookContainer.appendChild(pageDiv);
       pageElements.push(pageDiv);
     });
@@ -384,19 +402,21 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         width: dims.pageWidth,
         height: dims.pageHeight,
         size: 'fixed',
-        minWidth: 200,
-        maxWidth: 2000,
-        minHeight: 250,
-        maxHeight: 2000,
+        autoSize: false, // MANDATÓRIO: impede que o PageFlip force width 100% no container
+        minWidth: dims.pageWidth,
+        maxWidth: dims.pageWidth,
+        minHeight: dims.pageHeight,
+        maxHeight: dims.pageHeight,
         drawShadow: true,
-        flippingTime: 400,
-        usePortrait: false, // Em modo double, sempre spread de 2 páginas
+        flippingTime: isSingle ? 450 : 500,
+        usePortrait: isSingle, // TRUE no modo single garante retrato com folheamento 3D de 1 página
         startPage: Math.max(0, currentPageRef.current - 1),
-        showCover: true, // Capa como folha única inicial, páginas internas como duplas
+        showCover: !isSingle, // TRUE no modo double; FALSE no modo single para tratar toda página como folha individual
         mobileScrollSupport: false,
         useMouseEvents: true,
         showPageCorners: true,
-        swipeDistance: 20,
+        swipeDistance: 25,
+        maxShadowOpacity: isSingle ? 0.5 : 0.8,
       });
 
       flip.loadFromHTML(pageElements);
@@ -449,10 +469,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       }
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        computeOptimalDimensions();
-        if (layoutMode === 'double') {
-          initPageFlip();
-        }
+        initPageFlip();
       }, 150);
     });
 
@@ -461,7 +478,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       observer.disconnect();
       clearTimeout(timeoutId);
     };
-  }, [layoutMode, computeOptimalDimensions, initPageFlip]);
+  }, [initPageFlip]);
 
   // 5. Suporte a Pan (Arrasto com Mouse) em toda a janela quando isDragging for true
   useEffect(() => {
@@ -564,9 +581,9 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     }
   }, [pagesData]);
 
-  // Navegação de Páginas
+  // Navegação de Páginas com Efeito 3D de Virada de Página (Flip)
   const handlePrevPage = () => {
-    if (effectiveMode === 'double' && pageFlipInstance.current) {
+    if (pageFlipInstance.current && effectiveMode !== 'scroll') {
       pageFlipInstance.current.flipPrev();
     } else {
       const prev = Math.max(1, currentPage - 1);
@@ -575,7 +592,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
   };
 
   const handleNextPage = () => {
-    if (effectiveMode === 'double' && pageFlipInstance.current) {
+    if (pageFlipInstance.current && effectiveMode !== 'scroll') {
       pageFlipInstance.current.flipNext();
     } else {
       const next = Math.min(totalPages, currentPage + 1);
@@ -588,11 +605,17 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     setCurrentPage(p);
     setInputPage(String(p));
     currentPageRef.current = p;
-    // Reseta o pan para a nova página começar centralizada
     setPanOffset({ x: 0, y: 0 });
 
-    if (effectiveMode === 'double' && pageFlipInstance.current) {
-      pageFlipInstance.current.turnToPage(p - 1);
+    if (pageFlipInstance.current && effectiveMode !== 'scroll') {
+      const diff = p - currentPage;
+      if (diff === 1) {
+        pageFlipInstance.current.flipNext();
+      } else if (diff === -1) {
+        pageFlipInstance.current.flipPrev();
+      } else {
+        pageFlipInstance.current.turnToPage(p - 1);
+      }
     } else if (effectiveMode === 'scroll' && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const el = document.getElementById(`scroll-page-${p}`);
@@ -633,7 +656,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     setZoomLevel(100);
     setPanOffset({ x: 0, y: 0 });
     computeOptimalDimensions();
-    if (effectiveMode === 'double') {
+    if (effectiveMode !== 'scroll') {
       initPageFlip();
     }
   };
@@ -648,22 +671,25 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
     }
   };
 
-  // Eventos de Pan (Arrasto com Mouse e Touch)
+  // Eventos de Pan (Arrasto com Mouse e Touch quando zoom > 100%)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (effectiveMode === 'scroll') return;
     if (e.button !== 0) return; // Apenas clique botão esquerdo
-    setIsDragging(true);
-    dragStartRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      initialPanX: panOffset.x,
-      initialPanY: panOffset.y,
-    };
+    // Se o zoom for maior que 100%, captura o clique para arrastar (pan)
+    if (zoomLevel > 100) {
+      setIsDragging(true);
+      dragStartRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        initialPanX: panOffset.x,
+        initialPanY: panOffset.y,
+      };
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (effectiveMode === 'scroll') return;
-    if (e.touches.length === 1) {
+    if (zoomLevel > 100 && e.touches.length === 1) {
       const touch = e.touches[0];
       setIsDragging(true);
       dragStartRef.current = {
@@ -727,14 +753,14 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
       setIsFullscreen(!!document.fullscreenElement);
       setTimeout(() => {
         computeOptimalDimensions();
-        if (layoutMode === 'double') {
+        if (effectiveMode !== 'scroll') {
           initPageFlip();
         }
       }, 200);
     };
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
-  }, [layoutMode, computeOptimalDimensions, initPageFlip]);
+  }, [computeOptimalDimensions, effectiveMode, initPageFlip]);
 
   return (
     <div
@@ -786,7 +812,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             onClick={handlePrevPage}
             disabled={currentPage <= 1 || loading}
             className="p-1 hover:bg-slate-800 disabled:opacity-30 rounded-md transition text-slate-300 hover:text-white"
-            title="Página anterior (←)"
+            title="Folhear página anterior (←)"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -809,7 +835,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             onClick={handleNextPage}
             disabled={currentPage >= totalPages || loading}
             className="p-1 hover:bg-slate-800 disabled:opacity-30 rounded-md transition text-slate-300 hover:text-white"
-            title="Próxima página (→)"
+            title="Folhear próxima página (→)"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -827,7 +853,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="1 Página Centralizada (Foco na folha inteira sem cortes)"
+              title="1 Página com Folheamento 3D Focado (Página única sem cortes)"
             >
               <FileText className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">1 Pág</span>
@@ -841,7 +867,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="2 Páginas (Livro Aberto lado a lado com folheamento 3D)"
+              title="2 Páginas com Folheamento 3D (Livro Aberto lado a lado)"
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">2 Págs</span>
@@ -873,7 +899,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
                   ? 'bg-slate-800 text-indigo-400 font-bold'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
-              title="Ajustar Página Inteira (Fit-to-Page): exibe a página completa sem cortes"
+              title="Ajustar Página Inteira (Fit-to-Page): exibe a folha completa sem cortes"
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
@@ -999,7 +1025,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
           </aside>
         )}
 
-        {/* PALCO PRINCIPAL COM CENTRALIZAÇÃO MATEMÁTICA E AJUSTE RIGOROSO */}
+        {/* PALCO PRINCIPAL COM CENTRALIZAÇÃO E EFEITO 3D REAL DE VIRAR PÁGINAS */}
         <main
           ref={stageRef}
           onMouseDown={handleMouseDown}
@@ -1070,8 +1096,8 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
             </div>
           )}
 
-          {/* MODO 1: PÁGINA ÚNICA CENTRALIZADA (1 PÁGINA FOCADA COM FIT E ZOOM/PAN) */}
-          {!loading && !error && effectiveMode === 'single' && pagesData.length > 0 && (
+          {/* MODO 1 E 2: FLIPBOOK 3D (1 PÁGINA CENTRALIZADA COM VIRADA DE PÁGINA OU 2 PÁGINAS LIVRO ABERTO) */}
+          {!loading && !error && effectiveMode !== 'scroll' && (
             <div className="w-full h-full flex items-center justify-center relative select-none overflow-hidden">
               {/* Botão Flutuante de Folhear para a Esquerda (<) */}
               <button
@@ -1079,70 +1105,12 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
                 onClick={handlePrevPage}
                 disabled={currentPage <= 1}
                 className="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
-                title="Página anterior (←)"
+                title="Folhear página anterior (←)"
               >
                 <ChevronLeft className="w-6 h-6 -ml-0.5" />
               </button>
 
-              {/* Folha Única Centralizada com Transform (Zoom + Pan) */}
-              <div
-                className="relative flex items-center justify-center"
-                style={{
-                  width: `${bookDimensions.pageWidth}px`,
-                  height: `${bookDimensions.pageHeight}px`,
-                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel / 100})`,
-                  transformOrigin: 'center center',
-                  transition: isDragging ? 'none' : 'transform 0.15s ease-out',
-                }}
-              >
-                {(() => {
-                  const activePage = pagesData[currentPage - 1] || pagesData[0];
-                  return (
-                    <div className="w-full h-full bg-white shadow-2xl rounded-sm overflow-hidden border border-slate-700/60 relative flex items-center justify-center select-none ring-1 ring-slate-800/40">
-                      <img
-                        key={activePage.pageNumber}
-                        src={activePage.imageUrl}
-                        alt={`Página ${activePage.pageNumber}`}
-                        className="w-full h-full object-contain pointer-events-none select-none block animate-in fade-in duration-150"
-                        draggable={false}
-                      />
-                      {/* Indicador discreto de página no canto inferior direito da folha */}
-                      <div className="absolute bottom-2.5 right-3 px-2 py-0.5 rounded-md bg-slate-900/70 backdrop-blur-xs text-[10px] font-mono text-white/90 pointer-events-none border border-slate-700/50">
-                        {activePage.pageNumber} / {totalPages}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Botão Flutuante de Folhear para a Direita (>) */}
-              <button
-                type="button"
-                onClick={handleNextPage}
-                disabled={currentPage >= totalPages}
-                className="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
-                title="Próxima página (→)"
-              >
-                <ChevronRight className="w-6 h-6 -mr-0.5" />
-              </button>
-            </div>
-          )}
-
-          {/* MODO 2: LIVRO ABERTO (2 PÁGINAS LADO A LADO COM EFEITO FLIP 3D) */}
-          {!loading && !error && effectiveMode === 'double' && (
-            <div className="w-full h-full flex items-center justify-center relative select-none overflow-hidden">
-              {/* Botão Flutuante de Folhear para a Esquerda (<) */}
-              <button
-                type="button"
-                onClick={handlePrevPage}
-                disabled={currentPage <= 1}
-                className="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
-                title="Página anterior (←)"
-              >
-                <ChevronLeft className="w-6 h-6 -ml-0.5" />
-              </button>
-
-              {/* Container com Transform (Zoom + Pan) */}
+              {/* Ponto de Montagem do PageFlip 3D com Transform (Zoom + Pan) */}
               <div
                 className="relative flex items-center justify-center"
                 style={{
@@ -1151,7 +1119,6 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
                   transition: isDragging ? 'none' : 'transform 0.15s ease-out',
                 }}
               >
-                {/* Ponto de Montagem Estável do PageFlip */}
                 <div
                   ref={bookMountRef}
                   className="flipbook-mount flex items-center justify-center m-auto relative"
@@ -1164,7 +1131,7 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
                 onClick={handleNextPage}
                 disabled={currentPage >= totalPages}
                 className="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-indigo-600 border border-slate-700 text-white flex items-center justify-center shadow-2xl backdrop-blur-md transition-all hover:scale-110 disabled:opacity-0 disabled:pointer-events-none"
-                title="Próxima página (→)"
+                title="Folhear próxima página (→)"
               >
                 <ChevronRight className="w-6 h-6 -mr-0.5" />
               </button>
@@ -1258,10 +1225,10 @@ export const FlipbookViewer: React.FC<FlipbookViewerProps> = ({
         {/* Dica de Navegabilidade e Status */}
         <div className="flex items-center gap-3 text-[11px] text-slate-400">
           <span className="hidden md:inline">
-            💡 Dica: Use as setas do teclado <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">←</kbd> <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">→</kbd> para navegar.
+            💡 Dica: Use as setas do teclado <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">←</kbd> <kbd className="px-1 py-0.5 bg-slate-800 rounded border border-slate-700 text-[10px] font-mono">→</kbd> ou arraste a ponta da folha para folhear em 3D.
           </span>
           <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-semibold uppercase text-indigo-400">
-            {effectiveMode === 'single' ? '1 Página Centralizada' : effectiveMode === 'double' ? '2 Páginas (Livro Aberto)' : 'Rolagem Contínua'}
+            {effectiveMode === 'single' ? '1 Pág (Folheamento 3D)' : effectiveMode === 'double' ? '2 Págs (Livro Aberto)' : 'Rolagem Contínua'}
           </span>
         </div>
       </footer>
